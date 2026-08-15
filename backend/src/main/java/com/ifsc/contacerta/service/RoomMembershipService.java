@@ -6,7 +6,9 @@ import com.ifsc.contacerta.entity.RoomMembership;
 import com.ifsc.contacerta.entity.User;
 import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.mapper.RoomMembershipMapper;
+import com.ifsc.contacerta.model.AccountStatus;
 import com.ifsc.contacerta.model.MembershipStatus;
+import com.ifsc.contacerta.model.Role;
 import com.ifsc.contacerta.repository.RoomMembershipRepository;
 import com.ifsc.contacerta.repository.RoomRepository;
 import com.ifsc.contacerta.repository.UserRepository;
@@ -28,8 +30,20 @@ public class RoomMembershipService {
 
 	@Transactional
 	public RoomMembershipResponse join(UUID studentId, String joinCode) {
-		User student = userRepository.findById(studentId).orElseThrow();
-		Room room = roomRepository.findByJoinCode(joinCode.trim().toUpperCase(Locale.ROOT)).orElseThrow();
+		User student = userRepository.findById(studentId).orElseThrow(() -> new ApiException(
+				HttpStatus.NOT_FOUND,
+				"STUDENT_NOT_FOUND",
+				"Student was not found."
+		));
+		if (student.getRole() != Role.STUDENT) {
+			throw new ApiException(HttpStatus.FORBIDDEN, "STUDENT_REQUIRED", "A student account is required.");
+		}
+		if (student.getStatus() != AccountStatus.ACTIVE) {
+			throw new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_INACTIVE", "Student account is inactive.");
+		}
+		Room room = roomRepository.findByJoinCode(joinCode.trim().toUpperCase(Locale.ROOT)).orElseThrow(() ->
+				new ApiException(HttpStatus.NOT_FOUND, "ROOM_NOT_FOUND", "Room was not found.")
+		);
 		if (room.getArchivedAt() != null) {
 			throw new ApiException(
 					HttpStatus.UNPROCESSABLE_CONTENT,

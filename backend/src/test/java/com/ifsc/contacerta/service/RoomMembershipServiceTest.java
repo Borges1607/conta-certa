@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -156,6 +157,76 @@ class RoomMembershipServiceTest {
 		assertThat(membership.getStatus()).isEqualTo(MembershipStatus.REMOVED);
 		assertThat(membership.getRemovedBy()).isEqualTo(teacher);
 		assertThat(membership.getRemovedAt()).isNotNull();
+	}
+
+	@Test
+	void deveRejeitarIngressoQuandoUsuarioNaoForAluno() {
+		UserRepository userRepository = mock(UserRepository.class);
+		Institution institution = institution();
+		User teacher = user(Role.TEACHER, "ana6@example.com", "PROF-6", institution);
+		when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
+		RoomMembershipService service = new RoomMembershipService(
+				userRepository, mock(RoomRepository.class), mock(RoomMembershipRepository.class)
+		);
+
+		assertThatThrownBy(() -> service.join(teacher.getId(), "ABC239"))
+				.isInstanceOfSatisfying(ApiException.class, exception -> {
+					assertThat(exception.getStatus().value()).isEqualTo(403);
+					assertThat(exception.getCode()).isEqualTo("STUDENT_REQUIRED");
+				});
+	}
+
+	@Test
+	void deveRejeitarIngressoDeAlunoInativo() {
+		UserRepository userRepository = mock(UserRepository.class);
+		Institution institution = institution();
+		User student = new User(
+				Role.STUDENT, AccountStatus.INACTIVE, "Aluno Inativo", "inativo@example.com", "ALUNO-6", institution
+		);
+		when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
+		RoomMembershipService service = new RoomMembershipService(
+				userRepository, mock(RoomRepository.class), mock(RoomMembershipRepository.class)
+		);
+
+		assertThatThrownBy(() -> service.join(student.getId(), "ABC239"))
+				.isInstanceOfSatisfying(ApiException.class, exception -> {
+					assertThat(exception.getStatus().value()).isEqualTo(403);
+					assertThat(exception.getCode()).isEqualTo("ACCOUNT_INACTIVE");
+				});
+	}
+
+	@Test
+	void deveRetornarErroExplicitoQuandoAlunoNaoExistir() {
+		UUID studentId = UUID.randomUUID();
+		UserRepository userRepository = mock(UserRepository.class);
+		when(userRepository.findById(studentId)).thenReturn(Optional.empty());
+		RoomMembershipService service = new RoomMembershipService(
+				userRepository, mock(RoomRepository.class), mock(RoomMembershipRepository.class)
+		);
+
+		assertThatThrownBy(() -> service.join(studentId, "ABC239"))
+				.isInstanceOfSatisfying(ApiException.class, exception -> {
+					assertThat(exception.getStatus().value()).isEqualTo(404);
+					assertThat(exception.getCode()).isEqualTo("STUDENT_NOT_FOUND");
+				});
+	}
+
+	@Test
+	void deveRetornarErroExplicitoQuandoCodigoDaSalaNaoExistir() {
+		UserRepository userRepository = mock(UserRepository.class);
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		User student = user(Role.STUDENT, "bruno6@example.com", "ALUNO-7", institution());
+		when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
+		when(roomRepository.findByJoinCode("INVALIDO")).thenReturn(Optional.empty());
+		RoomMembershipService service = new RoomMembershipService(
+				userRepository, roomRepository, mock(RoomMembershipRepository.class)
+		);
+
+		assertThatThrownBy(() -> service.join(student.getId(), "invalido"))
+				.isInstanceOfSatisfying(ApiException.class, exception -> {
+					assertThat(exception.getStatus().value()).isEqualTo(404);
+					assertThat(exception.getCode()).isEqualTo("ROOM_NOT_FOUND");
+				});
 	}
 
 	private Institution institution() {
