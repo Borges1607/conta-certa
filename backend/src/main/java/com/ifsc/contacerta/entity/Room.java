@@ -16,6 +16,9 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -24,6 +27,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "rooms")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Room {
 
 	@Id
@@ -72,9 +77,6 @@ public class Room {
 	@Column(nullable = false)
 	private long version;
 
-	protected Room() {
-	}
-
 	public Room(
 			String name,
 			String description,
@@ -108,17 +110,5 @@ public class Room {
 		updatedAt = Instant.now();
 	}
 
-	public UUID getId() { return id; }
-	public User getTeacher() { return teacher; }
-	public Institution getInstitution() { return institution; }
-	public String getName() { return name; }
-	public String getDescription() { return description; }
-	public Grade getGrade() { return grade; }
 	public List<String> getContentTopics() { return List.copyOf(contentTopics); }
-	public int getPassingScorePercent() { return passingScorePercent; }
-	public String getJoinCode() { return joinCode; }
-	public Instant getArchivedAt() { return archivedAt; }
-	public Instant getCreatedAt() { return createdAt; }
-	public Instant getUpdatedAt() { return updatedAt; }
-	public long getVersion() { return version; }
 }

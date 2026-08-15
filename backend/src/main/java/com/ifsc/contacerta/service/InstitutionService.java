@@ -7,6 +7,7 @@ import com.ifsc.contacerta.entity.Institution;
 import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.mapper.InstitutionMapper;
 import com.ifsc.contacerta.repository.InstitutionRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,13 +16,10 @@ import java.util.List;
 import java.util.Locale;
 
 @Service
+@RequiredArgsConstructor
 public class InstitutionService {
 
 	private final InstitutionRepository institutionRepository;
-
-	public InstitutionService(InstitutionRepository institutionRepository) {
-		this.institutionRepository = institutionRepository;
-	}
 
 	@Transactional
 	public InstitutionResponse create(CreateInstitutionRequest request) {

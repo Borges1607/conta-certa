@@ -14,12 +14,17 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "users")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
 
 	@Id
@@ -65,9 +70,6 @@ public class User {
 	@Column(nullable = false)
 	private long version;
 
-	protected User() {
-	}
-
 	public User(
 			Role role,
 			AccountStatus status,
@@ -97,55 +99,4 @@ public class User {
 		updatedAt = Instant.now();
 	}
 
-	public UUID getId() {
-		return id;
-	}
-
-	public Role getRole() {
-		return role;
-	}
-
-	public AccountStatus getStatus() {
-		return status;
-	}
-
-	public String getFullName() {
-		return fullName;
-	}
-
-	public String getEmail() {
-		return email;
-	}
-
-	public String getPasswordHash() {
-		return passwordHash;
-	}
-
-	public String getRegistrationNumber() {
-		return registrationNumber;
-	}
-
-	public Institution getInstitution() {
-		return institution;
-	}
-
-	public Instant getEmailVerifiedAt() {
-		return emailVerifiedAt;
-	}
-
-	public boolean isMustChangePassword() {
-		return mustChangePassword;
-	}
-
-	public Instant getCreatedAt() {
-		return createdAt;
-	}
-
-	public Instant getUpdatedAt() {
-		return updatedAt;
-	}
-
-	public long getVersion() {
-		return version;
-	}
 }

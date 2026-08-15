@@ -1,11 +1,13 @@
 package com.ifsc.contacerta.service;
 
 import com.ifsc.contacerta.repository.RoomRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.random.RandomGenerator;
 
 @Component
+@RequiredArgsConstructor
 public class JoinCodeGenerator {
 
 	private static final String ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -13,11 +15,6 @@ public class JoinCodeGenerator {
 
 	private final RoomRepository roomRepository;
 	private final RandomGenerator random;
-
-	public JoinCodeGenerator(RoomRepository roomRepository, RandomGenerator random) {
-		this.roomRepository = roomRepository;
-		this.random = random;
-	}
 
 	public String generateUnique() {
 		String code;

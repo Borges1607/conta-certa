@@ -1,6 +1,7 @@
 package com.ifsc.contacerta.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -15,13 +16,10 @@ import java.net.URI;
 import java.util.UUID;
 
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
 
 	private final Clock clock;
-
-	public GlobalExceptionHandler(Clock clock) {
-		this.clock = clock;
-	}
 
 	@ExceptionHandler(ApiException.class)
 	public ResponseEntity<ProblemDetail> handleApiException(

@@ -7,12 +7,14 @@ import com.ifsc.contacerta.entity.User;
 import com.ifsc.contacerta.mapper.RoomMapper;
 import com.ifsc.contacerta.repository.RoomRepository;
 import com.ifsc.contacerta.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class RoomService {
 
 	private static final int DEFAULT_PASSING_SCORE_PERCENT = 50;
@@ -20,16 +22,6 @@ public class RoomService {
 	private final UserRepository userRepository;
 	private final RoomRepository roomRepository;
 	private final JoinCodeGenerator joinCodeGenerator;
-
-	public RoomService(
-			UserRepository userRepository,
-			RoomRepository roomRepository,
-			JoinCodeGenerator joinCodeGenerator
-	) {
-		this.userRepository = userRepository;
-		this.roomRepository = roomRepository;
-		this.joinCodeGenerator = joinCodeGenerator;
-	}
 
 	@Transactional
 	public RoomResponse create(UUID teacherId, CreateRoomRequest request) {

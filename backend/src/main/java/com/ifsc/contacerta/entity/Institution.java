@@ -7,12 +7,17 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "institutions")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Institution {
 
 	@Id
@@ -43,9 +48,6 @@ public class Institution {
 	@Column(nullable = false)
 	private long version;
 
-	protected Institution() {
-	}
-
 	public Institution(
 			String name,
 			String cnpj,
@@ -73,39 +75,4 @@ public class Institution {
 		updatedAt = Instant.now();
 	}
 
-	public UUID getId() {
-		return id;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public String getCnpj() {
-		return cnpj;
-	}
-
-	public String getContactEmail() {
-		return contactEmail;
-	}
-
-	public String getContactPhone() {
-		return contactPhone;
-	}
-
-	public boolean isActive() {
-		return active;
-	}
-
-	public Instant getCreatedAt() {
-		return createdAt;
-	}
-
-	public Instant getUpdatedAt() {
-		return updatedAt;
-	}
-
-	public long getVersion() {
-		return version;
-	}
 }

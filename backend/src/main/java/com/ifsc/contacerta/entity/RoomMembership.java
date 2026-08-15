@@ -13,12 +13,17 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "room_memberships")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RoomMembership {
 
 	@Id
@@ -56,9 +61,6 @@ public class RoomMembership {
 	@Column(nullable = false)
 	private long version;
 
-	protected RoomMembership() {
-	}
-
 	public RoomMembership(Room room, User student) {
 		this.id = UUID.randomUUID();
 		this.room = room;
@@ -79,14 +81,4 @@ public class RoomMembership {
 		updatedAt = Instant.now();
 	}
 
-	public UUID getId() { return id; }
-	public Room getRoom() { return room; }
-	public User getStudent() { return student; }
-	public MembershipStatus getStatus() { return status; }
-	public Instant getJoinedAt() { return joinedAt; }
-	public Instant getRemovedAt() { return removedAt; }
-	public User getRemovedBy() { return removedBy; }
-	public Instant getCreatedAt() { return createdAt; }
-	public Instant getUpdatedAt() { return updatedAt; }
-	public long getVersion() { return version; }
 }
