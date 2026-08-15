@@ -30,6 +30,10 @@ Configure um PostgreSQL acessível antes de iniciar a aplicação.
 
 Siga o estilo existente: tabulação em Java e XML, uma classe pública por arquivo e imports explícitos. Use `PascalCase` para classes, `camelCase` para métodos e variáveis e `UPPER_SNAKE_CASE` para constantes. Não há formatador ou linter configurado; preserve o padrão dos arquivos vizinhos.
 
+Não use nomes de tipos totalmente qualificados diretamente em campos, assinaturas ou implementações (por exemplo, `java.util.UUID`). Declare imports explícitos no topo do arquivo; imports com curinga também não são permitidos.
+
+Use Lombok para eliminar boilerplate: `@RequiredArgsConstructor` na injeção por construtor, `@Getter` em entidades e exceções e `@NoArgsConstructor(access = AccessLevel.PROTECTED)` em entidades JPA. Não use `@Data`, `@Setter` ou `@AllArgsConstructor` em entidades. Mantenha construtores manuais somente quando eles executarem inicialização ou invariantes de domínio.
+
 ## Diretrizes de testes
 
 O projeto usa JUnit 5 e Spring Boot Test. Nomeie testes como `ClasseTest` ou `ClasseTests` e métodos pelo comportamento esperado, por exemplo `deveCriarContaValida`. Cubra regras de serviço com testes unitários e use `@SpringBootTest` somente quando precisar do contexto completo. Não existe meta formal de cobertura; toda correção deve incluir um teste de regressão quando aplicável.
