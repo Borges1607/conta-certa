@@ -25,13 +25,6 @@ public class InstitutionService {
 	@Transactional
 	public InstitutionResponse create(CreateInstitutionRequest request) {
 		String cnpj = digitsOnly(request.cnpj());
-		if (!isValidCnpj(cnpj)) {
-			throw new ApiException(
-					HttpStatus.UNPROCESSABLE_CONTENT,
-					"INVALID_CNPJ",
-					"CNPJ is invalid."
-			);
-		}
 		if (institutionRepository.findByCnpj(cnpj).isPresent()) {
 			throw new ApiException(
 					HttpStatus.CONFLICT,
@@ -60,25 +53,5 @@ public class InstitutionService {
 
 	private String digitsOnly(String value) {
 		return value.replaceAll("\\D", "");
-	}
-
-	private boolean isValidCnpj(String cnpj) {
-		if (cnpj.length() != 14 || cnpj.chars().distinct().count() == 1) {
-			return false;
-		}
-
-		int firstDigit = calculateDigit(cnpj.substring(0, 12), new int[]{5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2});
-		int secondDigit = calculateDigit(cnpj.substring(0, 12) + firstDigit, new int[]{6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2});
-
-		return cnpj.charAt(12) - '0' == firstDigit && cnpj.charAt(13) - '0' == secondDigit;
-	}
-
-	private int calculateDigit(String base, int[] weights) {
-		int sum = 0;
-		for (int index = 0; index < weights.length; index++) {
-			sum += (base.charAt(index) - '0') * weights[index];
-		}
-		int remainder = sum % 11;
-		return remainder < 2 ? 0 : 11 - remainder;
 	}
 }
