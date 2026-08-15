@@ -1,0 +1,166 @@
+classDiagram
+    direction TB
+
+    class Usuario {
+        String id
+        String nome
+        String email
+        String senha
+        String tipo
+        String criadoEm
+        String codigoSala
+    }
+
+    class Professor {
+        String id
+        String nome
+        String email
+    }
+
+    class Aluno {
+        String id
+        String nome
+        String email
+        String codigoSala
+    }
+
+    class Sala {
+        String id
+        String nome
+        String codigo
+        String professorId
+        String[] licaoIds
+        String criadaEm
+    }
+
+    class LicaoPadrao {
+        String id
+        String titulo
+        String descricao
+        Number xp
+        Number estrelas
+        Number maxEstrelas
+        Boolean bloqueada
+        Boolean concluida
+        String cor
+    }
+
+    class LicaoPersonalizada {
+        String id
+        String titulo
+        String descricao
+        String cor
+        String criadoPor
+        String criadaEm
+        Boolean isPersonalizada
+    }
+
+    class Exercicio {
+        String pergunta
+        String[] opcoes
+        Number respostaCorreta
+        String explicacao
+    }
+
+    class Questao {
+        String id
+        String licaoId
+        String tituloLicao
+        String pergunta
+        String[] opcoes
+        Number respostaCorreta
+        String explicacao
+        String criadoPor
+        String criadaEm
+        Boolean isPadrao
+        Boolean isDesativada
+    }
+
+    class QuestaoDesativada {
+        String questaoId
+        String professorId
+    }
+
+    class ProgressoAluno {
+        String alunoId
+        String nomeAluno
+        String emailAluno
+        String codigoSala
+        String nomeSala
+        Number totalXP
+        Number licoesCompletas
+        Number totalEstrelas
+        String ultimaAtividade
+    }
+
+    class ProgressoLicao {
+        String licaoId
+        Number estrelas
+        Boolean concluida
+        Boolean bloqueada
+    }
+
+    class Videoaula {
+        String id
+        String titulo
+        String descricao
+        String urlVideo
+        String categoria
+        String criadoPor
+        String criadaEm
+    }
+
+    class VisualizacaoVideo {
+        String videoId
+        String alunoId
+        String nomeAluno
+        String visualizadoEm
+        Boolean concluido
+    }
+
+    class Slide {
+        String id
+        String titulo
+        String descricao
+        String urlSlide
+        String categoria
+        String criadoPor
+        String criadaEm
+        Boolean isArquivo
+        String nomeArquivo
+        String tipoArquivo
+    }
+
+    class VisualizacaoSlide {
+        String slideId
+        String alunoId
+        String nomeAluno
+        String visualizadoEm
+        Boolean concluido
+    }
+
+    Usuario <|-- Professor
+    Usuario <|-- Aluno
+
+    Professor "1" --> "0..*" Sala : cria
+    Professor "1" --> "0..*" LicaoPersonalizada : cria
+    Professor "1" --> "0..*" Questao : cria
+    Professor "1" --> "0..*" QuestaoDesativada : desativa
+    Professor "1" --> "0..*" Videoaula : publica
+    Professor "1" --> "0..*" Slide : publica
+
+    Sala "1" --> "0..*" LicaoPadrao : disponibiliza
+    Sala "1" --> "0..*" LicaoPersonalizada : disponibiliza
+    Aluno "0..*" --> "1" Sala : pertence
+
+    LicaoPadrao "1" --> "1..*" Exercicio : contém
+    LicaoPersonalizada "1" --> "0..*" Questao : contém
+
+    Aluno "1" --> "1" ProgressoAluno : possui
+    ProgressoAluno "1" --> "0..*" ProgressoLicao : detalha
+
+    Videoaula "1" --> "0..*" VisualizacaoVideo : gera
+    Aluno "1" --> "0..*" VisualizacaoVideo : registra
+
+    Slide "1" --> "0..*" VisualizacaoSlide : gera
+    Aluno "1" --> "0..*" VisualizacaoSlide : registra
