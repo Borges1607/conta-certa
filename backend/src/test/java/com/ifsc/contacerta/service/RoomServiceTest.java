@@ -235,6 +235,27 @@ class RoomServiceTest {
 		assertThat(response.joinCode()).isEqualTo("XYZ789");
 	}
 
+	@Test
+	void deveRejeitarPercentualInvalidoAoAtualizarSala() {
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		Institution institution = institution();
+		User teacher = new User(
+				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana10@example.com", "PROF-11", institution
+		);
+		Room room = new Room(
+				"1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC238", teacher, institution
+		);
+		when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
+		RoomService service = new RoomService(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class));
+
+		assertThatThrownBy(() -> service.update(teacher.getId(), room.getId(), new UpdateRoomRequest(
+				"1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), -1
+		)))
+				.isInstanceOfSatisfying(ApiException.class, exception ->
+						assertThat(exception.getCode()).isEqualTo("INVALID_PASSING_SCORE")
+				);
+	}
+
 	private CreateRoomRequest validRequest(Integer passingScore) {
 		return new CreateRoomRequest(
 				"1º ano A",

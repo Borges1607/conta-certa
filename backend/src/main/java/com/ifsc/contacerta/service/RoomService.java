@@ -47,13 +47,7 @@ public class RoomService {
 		int passingScore = request.passingScorePercent() == null
 				? DEFAULT_PASSING_SCORE_PERCENT
 				: request.passingScorePercent();
-		if (passingScore < 0 || passingScore > 100) {
-			throw new ApiException(
-					HttpStatus.UNPROCESSABLE_CONTENT,
-					"INVALID_PASSING_SCORE",
-					"Passing score must be between 0 and 100."
-			);
-		}
+		validatePassingScore(passingScore);
 		Room room = new Room(
 				request.name(),
 				request.description(),
@@ -72,6 +66,7 @@ public class RoomService {
 	public RoomResponse update(UUID teacherId, UUID roomId, UpdateRoomRequest request) {
 		Room room = requireOwnedRoom(teacherId, roomId);
 		requireMutable(room);
+		validatePassingScore(request.passingScorePercent());
 		room.update(
 				request.name(),
 				request.description(),
@@ -110,6 +105,16 @@ public class RoomService {
 					HttpStatus.UNPROCESSABLE_CONTENT,
 					"ROOM_ARCHIVED",
 					"Archived rooms are read-only."
+			);
+		}
+	}
+
+	private void validatePassingScore(int passingScore) {
+		if (passingScore < 0 || passingScore > 100) {
+			throw new ApiException(
+					HttpStatus.UNPROCESSABLE_CONTENT,
+					"INVALID_PASSING_SCORE",
+					"Passing score must be between 0 and 100."
 			);
 		}
 	}
