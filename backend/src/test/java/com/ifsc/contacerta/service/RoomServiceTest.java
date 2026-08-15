@@ -256,6 +256,40 @@ class RoomServiceTest {
 				);
 	}
 
+	@Test
+	void deveDuplicarConfiguracaoDaSalaComNovoIdECodigo() {
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		JoinCodeGenerator joinCodeGenerator = mock(JoinCodeGenerator.class);
+		Institution institution = institution();
+		User teacher = new User(
+				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana11@example.com", "PROF-12", institution
+		);
+		Room source = new Room(
+				"Sala original",
+				"Descrição original",
+				Grade.HIGH_SCHOOL_2,
+				List.of("Juros simples", "Juros compostos"),
+				65,
+				"ABC239",
+				teacher,
+				institution
+		);
+		when(roomRepository.findById(source.getId())).thenReturn(Optional.of(source));
+		when(joinCodeGenerator.generateUnique()).thenReturn("XYZ790");
+		when(roomRepository.save(any(Room.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		RoomService service = new RoomService(mock(UserRepository.class), roomRepository, joinCodeGenerator);
+
+		var response = service.duplicate(teacher.getId(), source.getId(), "Cópia da sala");
+
+		assertThat(response.id()).isNotEqualTo(source.getId());
+		assertThat(response.name()).isEqualTo("Cópia da sala");
+		assertThat(response.description()).isEqualTo(source.getDescription());
+		assertThat(response.grade()).isEqualTo(source.getGrade());
+		assertThat(response.contentTopics()).containsExactlyElementsOf(source.getContentTopics());
+		assertThat(response.passingScorePercent()).isEqualTo(source.getPassingScorePercent());
+		assertThat(response.joinCode()).isEqualTo("XYZ790");
+	}
+
 	private CreateRoomRequest validRequest(Integer passingScore) {
 		return new CreateRoomRequest(
 				"1º ano A",

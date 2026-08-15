@@ -91,6 +91,13 @@ public class RoomService {
 		return RoomMapper.toResponse(room);
 	}
 
+	@Transactional
+	public RoomResponse duplicate(UUID teacherId, UUID roomId, String newName) {
+		Room source = requireOwnedRoom(teacherId, roomId);
+		Room copy = source.duplicate(newName, joinCodeGenerator.generateUnique());
+		return RoomMapper.toResponse(roomRepository.save(copy));
+	}
+
 	private Room requireOwnedRoom(UUID teacherId, UUID roomId) {
 		Room room = roomRepository.findById(roomId).orElseThrow();
 		if (!room.getTeacher().getId().equals(teacherId)) {

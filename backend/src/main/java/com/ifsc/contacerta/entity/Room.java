@@ -134,5 +134,18 @@ public class Room {
 		this.joinCode = joinCode;
 	}
 
+	public Room duplicate(String newName, String newJoinCode) {
+		return new Room(
+				newName,
+				description,
+				grade,
+				contentTopics,
+				passingScorePercent,
+				newJoinCode,
+				teacher,
+				institution
+		);
+	}
+
 	public List<String> getContentTopics() { return List.copyOf(contentTopics); }
 }
