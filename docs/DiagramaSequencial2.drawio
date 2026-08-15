@@ -1,0 +1,163 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Página-1" id="JnblUg7T6idSpf5igtX3">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <UserObject label="" plantUmlData="{&#xa;  &quot;data&quot;: &quot;@startuml\nsequenceDiagram\n    autonumber\n    actor Professor\n    participant Sistema\n    participant LicaoPersonalizada\n    participant Questao\n    participant QuestaoDesativada\n\n    %% Criar Lição Personalizada\n    Professor-&gt;&gt;Sistema: criarLicaoPersonalizada(titulo, descricao, cor)\n    Sistema-&gt;&gt;LicaoPersonalizada: new LicaoPersonalizada(criadoPor=profId, criadaEm)\n    LicaoPersonalizada--&gt;&gt;Sistema: LicaoCriada\n    Sistema--&gt;&gt;Professor: Sucesso (LicaoPersonalizada ID)\n\n    %% Desativar Questão\n    Professor-&gt;&gt;Sistema: desativarQuestao(questaoId)\n    Sistema-&gt;&gt;Questao: buscar(questaoId)\n    Sistema-&gt;&gt;QuestaoDesativada: new QuestaoDesativada(questaoId, professorId)\n    Sistema-&gt;&gt;Questao: setIsDesativada(true)\n    Questao--&gt;&gt;Sistema: Questão Atualizada\n    Sistema--&gt;&gt;Professor: Confirmar Desativação\n@enduml&quot;,&#xa;  &quot;config&quot;: null&#xa;}" id="O6sGntqjAW02AzH0WXy4-1">
+          <mxCell connectable="0" parent="1" style="group;transparentBounds=1;editIcon=1;lockedGroup=0;groupPadding=10;" vertex="1">
+            <mxGeometry as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="" plantUmlId="life_0" plantUmlBaseStyle="endArrow=none;html=1;strokeColor=#181818;strokeWidth=0.5;dashed=1;dashPattern=5 5;" plantUmlBaseValue="" id="O6sGntqjAW02AzH0WXy4-2">
+          <mxCell edge="1" parent="O6sGntqjAW02AzH0WXy4-1" style="endArrow=none;html=1;strokeColor=#181818;strokeWidth=0.5;dashed=1;dashPattern=5 5;rounded=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="42" y="87" as="sourcePoint" />
+              <mxPoint x="42" y="428" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="Sistema" plantUmlId="p_1" plantUmlBaseStyle="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" plantUmlBaseValue="Sistema" id="O6sGntqjAW02AzH0WXy4-3">
+          <mxCell parent="O6sGntqjAW02AzH0WXy4-1" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" vertex="1">
+            <mxGeometry height="454" width="65.3" x="319.05" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="LicaoPersonalizada" plantUmlId="p_2" plantUmlBaseStyle="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" plantUmlBaseValue="LicaoPersonalizada" id="O6sGntqjAW02AzH0WXy4-4">
+          <mxCell parent="O6sGntqjAW02AzH0WXy4-1" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" vertex="1">
+            <mxGeometry height="454" width="140" x="630.4" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="Questao" plantUmlId="p_3" plantUmlBaseStyle="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" plantUmlBaseValue="Questao" id="O6sGntqjAW02AzH0WXy4-5">
+          <mxCell parent="O6sGntqjAW02AzH0WXy4-1" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" vertex="1">
+            <mxGeometry height="454" width="65" x="780.4" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="QuestaoDesativada" plantUmlId="p_4" plantUmlBaseStyle="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" plantUmlBaseValue="QuestaoDesativada" id="O6sGntqjAW02AzH0WXy4-6">
+          <mxCell parent="O6sGntqjAW02AzH0WXy4-1" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" vertex="1">
+            <mxGeometry height="454" width="135.79999999999998" x="855.4" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="1 criarLicaoPersonalizada(titulo, descricao, cor)" plantUmlId="msg_5" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="1 criarLicaoPersonalizada(titulo, descricao, cor)" id="O6sGntqjAW02AzH0WXy4-7">
+          <mxCell edge="1" parent="O6sGntqjAW02AzH0WXy4-1" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="O6sGntqjAW02AzH0WXy4-3">
+            <mxGeometry relative="1" x="-0.036" as="geometry">
+              <Array as="points">
+                <mxPoint x="197.3" y="122" />
+              </Array>
+              <mxPoint x="42" y="122" as="sourcePoint" />
+              <mxPoint x="351.7" y="122" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="2 new LicaoPersonalizada(criadoPor=profId, criadaEm)" plantUmlId="msg_6" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="2 new LicaoPersonalizada(criadoPor=profId, criadaEm)" id="O6sGntqjAW02AzH0WXy4-8">
+          <mxCell edge="1" parent="O6sGntqjAW02AzH0WXy4-1" source="O6sGntqjAW02AzH0WXy4-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="O6sGntqjAW02AzH0WXy4-4">
+            <mxGeometry relative="1" x="-0.032" as="geometry">
+              <Array as="points">
+                <mxPoint x="526.3" y="154" />
+              </Array>
+              <mxPoint x="351.7" y="154" as="sourcePoint" />
+              <mxPoint x="700.4" y="154" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="3 LicaoCriada" plantUmlId="msg_7" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" plantUmlBaseValue="3 LicaoCriada" id="O6sGntqjAW02AzH0WXy4-9">
+          <mxCell edge="1" parent="O6sGntqjAW02AzH0WXy4-1" source="O6sGntqjAW02AzH0WXy4-4" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" target="O6sGntqjAW02AzH0WXy4-3">
+            <mxGeometry relative="1" x="0.671" as="geometry">
+              <Array as="points">
+                <mxPoint x="526.3" y="186" />
+              </Array>
+              <mxPoint x="700.4" y="186" as="sourcePoint" />
+              <mxPoint x="351.7" y="186" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="4 Sucesso (LicaoPersonalizada ID)" plantUmlId="msg_8" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" plantUmlBaseValue="4 Sucesso (LicaoPersonalizada ID)" id="O6sGntqjAW02AzH0WXy4-10">
+          <mxCell edge="1" parent="O6sGntqjAW02AzH0WXy4-1" source="O6sGntqjAW02AzH0WXy4-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;">
+            <mxGeometry relative="1" x="0.226" as="geometry">
+              <Array as="points">
+                <mxPoint x="197.3" y="218" />
+              </Array>
+              <mxPoint x="351.7" y="218" as="sourcePoint" />
+              <mxPoint x="42" y="218" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="5 desativarQuestao(questaoId)" plantUmlId="msg_9" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="5 desativarQuestao(questaoId)" id="O6sGntqjAW02AzH0WXy4-11">
+          <mxCell edge="1" parent="O6sGntqjAW02AzH0WXy4-1" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="O6sGntqjAW02AzH0WXy4-3">
+            <mxGeometry relative="1" x="-0.374" as="geometry">
+              <Array as="points">
+                <mxPoint x="197.3" y="250" />
+              </Array>
+              <mxPoint x="42" y="250" as="sourcePoint" />
+              <mxPoint x="351.7" y="250" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="6 buscar(questaoId)" plantUmlId="msg_10" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="6 buscar(questaoId)" id="O6sGntqjAW02AzH0WXy4-12">
+          <mxCell edge="1" parent="O6sGntqjAW02AzH0WXy4-1" source="O6sGntqjAW02AzH0WXy4-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="O6sGntqjAW02AzH0WXy4-5">
+            <mxGeometry relative="1" x="-0.715" as="geometry">
+              <Array as="points">
+                <mxPoint x="582.3" y="282" />
+              </Array>
+              <mxPoint x="351.7" y="282" as="sourcePoint" />
+              <mxPoint x="812.9" y="282" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="7 new QuestaoDesativada(questaoId, professorId)" plantUmlId="msg_11" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="7 new QuestaoDesativada(questaoId, professorId)" id="O6sGntqjAW02AzH0WXy4-13">
+          <mxCell edge="1" parent="O6sGntqjAW02AzH0WXy4-1" source="O6sGntqjAW02AzH0WXy4-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="O6sGntqjAW02AzH0WXy4-6">
+            <mxGeometry relative="1" x="-0.461" as="geometry">
+              <Array as="points">
+                <mxPoint x="637.3" y="314" />
+              </Array>
+              <mxPoint x="351.7" y="314" as="sourcePoint" />
+              <mxPoint x="923.3" y="314" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="8 setIsDesativada(true)" plantUmlId="msg_12" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="8 setIsDesativada(true)" id="O6sGntqjAW02AzH0WXy4-14">
+          <mxCell edge="1" parent="O6sGntqjAW02AzH0WXy4-1" source="O6sGntqjAW02AzH0WXy4-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="O6sGntqjAW02AzH0WXy4-5">
+            <mxGeometry relative="1" x="-0.674" as="geometry">
+              <Array as="points">
+                <mxPoint x="582.3" y="346" />
+              </Array>
+              <mxPoint x="351.7" y="346" as="sourcePoint" />
+              <mxPoint x="812.9" y="346" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="9 Questão Atualizada" plantUmlId="msg_13" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" plantUmlBaseValue="9 Questão Atualizada" id="O6sGntqjAW02AzH0WXy4-15">
+          <mxCell edge="1" parent="O6sGntqjAW02AzH0WXy4-1" source="O6sGntqjAW02AzH0WXy4-5" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" target="O6sGntqjAW02AzH0WXy4-3">
+            <mxGeometry relative="1" x="0.656" as="geometry">
+              <Array as="points">
+                <mxPoint x="582.3" y="378" />
+              </Array>
+              <mxPoint x="812.9" y="378" as="sourcePoint" />
+              <mxPoint x="351.7" y="378" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="10 Confirmar Desativação" plantUmlId="msg_14" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" plantUmlBaseValue="10 Confirmar Desativação" id="O6sGntqjAW02AzH0WXy4-16">
+          <mxCell edge="1" parent="O6sGntqjAW02AzH0WXy4-1" source="O6sGntqjAW02AzH0WXy4-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;">
+            <mxGeometry relative="1" x="0.404" as="geometry">
+              <Array as="points">
+                <mxPoint x="197.3" y="410" />
+              </Array>
+              <mxPoint x="351.7" y="410" as="sourcePoint" />
+              <mxPoint x="42" y="410" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="Professor" plantUmlId="p_15" plantUmlBaseStyle="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#E2E2F0;strokeColor=#181818;fontColor=#000000;fontSize=14;html=1;" plantUmlBaseValue="Professor" id="O6sGntqjAW02AzH0WXy4-17">
+          <mxCell parent="O6sGntqjAW02AzH0WXy4-1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#E2E2F0;strokeColor=#181818;fontColor=#000000;fontSize=14;html=1;" vertex="1">
+            <mxGeometry height="38" width="24" x="30" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="Professor" plantUmlId="pf_16" plantUmlBaseStyle="shape=umlActor;verticalLabelPosition=top;verticalAlign=bottom;fillColor=#E2E2F0;strokeColor=#181818;fontColor=#000000;fontSize=14;html=1;" plantUmlBaseValue="Professor" id="O6sGntqjAW02AzH0WXy4-18">
+          <mxCell parent="O6sGntqjAW02AzH0WXy4-1" style="shape=umlActor;verticalLabelPosition=top;verticalAlign=bottom;fillColor=#E2E2F0;strokeColor=#181818;fontColor=#000000;fontSize=14;html=1;" vertex="1">
+            <mxGeometry height="38" width="24" x="30" y="446" as="geometry" />
+          </mxCell>
+        </UserObject>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,205 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Página-1" id="AcfkjbXjKIJYCMIrhYRn">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <UserObject label="" plantUmlData="{&#xa;  &quot;data&quot;: &quot;@startuml\nsequenceDiagram\n    autonumber\n    actor Aluno\n    participant Sistema\n    participant LicaoPadrao\n    participant Questao\n    participant ProgressoLicao\n    participant ProgressoAluno\n\n    Aluno-&gt;&gt;Sistema: iniciarLicao(licaoId)\n    Sistema-&gt;&gt;LicaoPadrao: obterQuestoes(licaoId)\n    LicaoPadrao-&gt;&gt;Questao: buscarQuestoesAtivas()\n    Questao--&gt;&gt;Sistema: Lista de Questões\n    Sistema--&gt;&gt;Aluno: Exibe Exercícios\n\n    loop Para cada Questão\n        Aluno-&gt;&gt;Sistema: responderQuestao(questaoId, respostaOpcao)\n        Sistema-&gt;&gt;Questao: validarResposta(respostaOpcao)\n        Questao--&gt;&gt;Sistema: Correto / Incorreto\n    end\n\n    Sistema-&gt;&gt;ProgressoLicao: registrar(licaoId, estrelas, concluida=true)\n    Sistema-&gt;&gt;ProgressoAluno: atualizar(totalXP, licoesCompletas, totalEstrelas)\n    ProgressoAluno--&gt;&gt;Sistema: Progresso Atualizado\n    Sistema--&gt;&gt;Aluno: Exibe Resultado e Recompensas (XP / Estrelas)\n@enduml&quot;,&#xa;  &quot;config&quot;: null&#xa;}" id="tbue7FEvVX8lAswMjGEO-1">
+          <mxCell connectable="0" parent="1" style="group;transparentBounds=1;editIcon=1;lockedGroup=0;groupPadding=10;" vertex="1">
+            <mxGeometry as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="" plantUmlId="life_0" plantUmlBaseStyle="endArrow=none;html=1;strokeColor=#181818;strokeWidth=0.5;dashed=1;dashPattern=5 5;" plantUmlBaseValue="" id="tbue7FEvVX8lAswMjGEO-2">
+          <mxCell edge="1" parent="tbue7FEvVX8lAswMjGEO-1" style="endArrow=none;html=1;strokeColor=#181818;strokeWidth=0.5;dashed=1;dashPattern=5 5;rounded=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="51.7" y="87" as="sourcePoint" />
+              <mxPoint x="51.7" y="525.5" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="Sistema" plantUmlId="p_1" plantUmlBaseStyle="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" plantUmlBaseValue="Sistema" id="tbue7FEvVX8lAswMjGEO-3">
+          <mxCell parent="tbue7FEvVX8lAswMjGEO-1" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" vertex="1">
+            <mxGeometry height="551.5" width="65.3" x="345.1857142857144" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="LicaoPadrao" plantUmlId="p_2" plantUmlBaseStyle="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" plantUmlBaseValue="LicaoPadrao" id="tbue7FEvVX8lAswMjGEO-4">
+          <mxCell parent="tbue7FEvVX8lAswMjGEO-1" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" vertex="1">
+            <mxGeometry height="551.5" width="92.6" x="500.2785714285715" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="Questao" plantUmlId="p_3" plantUmlBaseStyle="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" plantUmlBaseValue="Questao" id="tbue7FEvVX8lAswMjGEO-5">
+          <mxCell parent="tbue7FEvVX8lAswMjGEO-1" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" vertex="1">
+            <mxGeometry height="551.5" width="65" x="689.507142857143" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="ProgressoLicao" plantUmlId="p_4" plantUmlBaseStyle="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" plantUmlBaseValue="ProgressoLicao" id="tbue7FEvVX8lAswMjGEO-6">
+          <mxCell parent="tbue7FEvVX8lAswMjGEO-1" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" vertex="1">
+            <mxGeometry height="551.5" width="112.39999999999999" x="764.507142857143" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="ProgressoAluno" plantUmlId="p_5" plantUmlBaseStyle="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" plantUmlBaseValue="ProgressoAluno" id="tbue7FEvVX8lAswMjGEO-7">
+          <mxCell parent="tbue7FEvVX8lAswMjGEO-1" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" vertex="1">
+            <mxGeometry height="551.5" width="112.39999999999999" x="886.907142857143" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="" plantUmlId="grpframe_6" plantUmlBaseStyle="rounded=0;fillColor=none;strokeColor=#000000;strokeWidth=1.5;" plantUmlBaseValue="" id="tbue7FEvVX8lAswMjGEO-8">
+          <mxCell parent="tbue7FEvVX8lAswMjGEO-1" style="rounded=0;fillColor=none;strokeColor=#000000;strokeWidth=1.5;" vertex="1">
+            <mxGeometry height="115.5" width="734.507142857143" x="30" y="265" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="loop" plantUmlId="grptab_7" plantUmlBaseStyle="rounded=0;fillColor=#EEEEEE;strokeColor=#000000;strokeWidth=1.5;fontColor=#000000;fontSize=13;fontStyle=1;align=left;spacingLeft=10;verticalAlign=middle;html=1;" plantUmlBaseValue="loop" id="tbue7FEvVX8lAswMjGEO-9">
+          <mxCell parent="tbue7FEvVX8lAswMjGEO-1" style="rounded=0;fillColor=#EEEEEE;strokeColor=#000000;strokeWidth=1.5;fontColor=#000000;fontSize=13;fontStyle=1;align=left;spacingLeft=10;verticalAlign=middle;html=1;" vertex="1">
+            <mxGeometry height="19.7" width="67.67885714285714" x="30" y="265" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="[Para cada Questão]" plantUmlId="grpcond_8" plantUmlBaseStyle="text;html=1;fontColor=#000000;fontSize=11;fontStyle=1;align=left;verticalAlign=middle;" plantUmlBaseValue="[Para cada Questão]" id="tbue7FEvVX8lAswMjGEO-10">
+          <mxCell parent="tbue7FEvVX8lAswMjGEO-1" style="text;html=1;fontColor=#000000;fontSize=11;fontStyle=1;align=left;verticalAlign=middle;" vertex="1">
+            <mxGeometry height="15" width="115.42914285714285" x="107.67885714285714" y="268" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="1 iniciarLicao(licaoId)" plantUmlId="msg_9" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="1 iniciarLicao(licaoId)" id="tbue7FEvVX8lAswMjGEO-11">
+          <mxCell edge="1" parent="tbue7FEvVX8lAswMjGEO-1" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="tbue7FEvVX8lAswMjGEO-3">
+            <mxGeometry relative="1" x="-0.559" as="geometry">
+              <Array as="points">
+                <mxPoint x="215" y="122" />
+              </Array>
+              <mxPoint x="51.7" y="122" as="sourcePoint" />
+              <mxPoint x="377.8357142857144" y="122" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="2 obterQuestoes(licaoId)" plantUmlId="msg_10" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="2 obterQuestoes(licaoId)" id="tbue7FEvVX8lAswMjGEO-12">
+          <mxCell edge="1" parent="tbue7FEvVX8lAswMjGEO-1" source="tbue7FEvVX8lAswMjGEO-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="tbue7FEvVX8lAswMjGEO-4">
+            <mxGeometry relative="1" x="-0.065" as="geometry">
+              <Array as="points">
+                <mxPoint x="462" y="154" />
+              </Array>
+              <mxPoint x="377.8357142857144" y="154" as="sourcePoint" />
+              <mxPoint x="546.5785714285715" y="154" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="3 buscarQuestoesAtivas()" plantUmlId="msg_11" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="3 buscarQuestoesAtivas()" id="tbue7FEvVX8lAswMjGEO-13">
+          <mxCell edge="1" parent="tbue7FEvVX8lAswMjGEO-1" source="tbue7FEvVX8lAswMjGEO-4" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="tbue7FEvVX8lAswMjGEO-5">
+            <mxGeometry relative="1" x="-0.063" as="geometry">
+              <Array as="points">
+                <mxPoint x="634" y="186" />
+              </Array>
+              <mxPoint x="546.5785714285715" y="186" as="sourcePoint" />
+              <mxPoint x="722.007142857143" y="186" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="4 Lista de Questões" plantUmlId="msg_12" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" plantUmlBaseValue="4 Lista de Questões" id="tbue7FEvVX8lAswMjGEO-14">
+          <mxCell edge="1" parent="tbue7FEvVX8lAswMjGEO-1" source="tbue7FEvVX8lAswMjGEO-5" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" target="tbue7FEvVX8lAswMjGEO-3">
+            <mxGeometry relative="1" x="0.56" as="geometry">
+              <Array as="points">
+                <mxPoint x="550" y="218" />
+              </Array>
+              <mxPoint x="722.007142857143" y="218" as="sourcePoint" />
+              <mxPoint x="377.8357142857144" y="218" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="5 Exibe Exercícios" plantUmlId="msg_13" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" plantUmlBaseValue="5 Exibe Exercícios" id="tbue7FEvVX8lAswMjGEO-15">
+          <mxCell edge="1" parent="tbue7FEvVX8lAswMjGEO-1" source="tbue7FEvVX8lAswMjGEO-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;">
+            <mxGeometry relative="1" x="0.547" as="geometry">
+              <Array as="points">
+                <mxPoint x="215" y="250" />
+              </Array>
+              <mxPoint x="377.8357142857144" y="250" as="sourcePoint" />
+              <mxPoint x="51.7" y="250" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="6 responderQuestao(questaoId, respostaOpcao)" plantUmlId="msg_14" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="6 responderQuestao(questaoId, respostaOpcao)" id="tbue7FEvVX8lAswMjGEO-16">
+          <mxCell edge="1" parent="tbue7FEvVX8lAswMjGEO-1" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="tbue7FEvVX8lAswMjGEO-3">
+            <mxGeometry relative="1" x="-0.103" as="geometry">
+              <Array as="points">
+                <mxPoint x="215" y="308.5" />
+              </Array>
+              <mxPoint x="51.7" y="308.5" as="sourcePoint" />
+              <mxPoint x="377.8357142857144" y="308.5" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="7 validarResposta(respostaOpcao)" plantUmlId="msg_15" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="7 validarResposta(respostaOpcao)" id="tbue7FEvVX8lAswMjGEO-17">
+          <mxCell edge="1" parent="tbue7FEvVX8lAswMjGEO-1" source="tbue7FEvVX8lAswMjGEO-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="tbue7FEvVX8lAswMjGEO-5">
+            <mxGeometry relative="1" x="-0.373" as="geometry">
+              <Array as="points">
+                <mxPoint x="550" y="340.5" />
+              </Array>
+              <mxPoint x="377.8357142857144" y="340.5" as="sourcePoint" />
+              <mxPoint x="722.007142857143" y="340.5" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="8 Correto / Incorreto" plantUmlId="msg_16" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" plantUmlBaseValue="8 Correto / Incorreto" id="tbue7FEvVX8lAswMjGEO-18">
+          <mxCell edge="1" parent="tbue7FEvVX8lAswMjGEO-1" source="tbue7FEvVX8lAswMjGEO-5" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" target="tbue7FEvVX8lAswMjGEO-3">
+            <mxGeometry relative="1" x="0.556" as="geometry">
+              <Array as="points">
+                <mxPoint x="550" y="372.5" />
+              </Array>
+              <mxPoint x="722.007142857143" y="372.5" as="sourcePoint" />
+              <mxPoint x="377.8357142857144" y="372.5" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="9 registrar(licaoId, estrelas, concluida=true)" plantUmlId="msg_17" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="9 registrar(licaoId, estrelas, concluida=true)" id="tbue7FEvVX8lAswMjGEO-19">
+          <mxCell edge="1" parent="tbue7FEvVX8lAswMjGEO-1" source="tbue7FEvVX8lAswMjGEO-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="tbue7FEvVX8lAswMjGEO-6">
+            <mxGeometry relative="1" x="-0.382" as="geometry">
+              <Array as="points">
+                <mxPoint x="599" y="411.5" />
+              </Array>
+              <mxPoint x="377.8357142857144" y="411.5" as="sourcePoint" />
+              <mxPoint x="820.707142857143" y="411.5" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="10 atualizar(totalXP, licoesCompletas, totalEstrelas)" plantUmlId="msg_18" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="10 atualizar(totalXP, licoesCompletas, totalEstrelas)" id="tbue7FEvVX8lAswMjGEO-20">
+          <mxCell edge="1" parent="tbue7FEvVX8lAswMjGEO-1" source="tbue7FEvVX8lAswMjGEO-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="tbue7FEvVX8lAswMjGEO-7">
+            <mxGeometry relative="1" x="-0.432" as="geometry">
+              <Array as="points">
+                <mxPoint x="660" y="443.5" />
+              </Array>
+              <mxPoint x="377.8357142857144" y="443.5" as="sourcePoint" />
+              <mxPoint x="943.107142857143" y="443.5" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="11 Progresso Atualizado" plantUmlId="msg_19" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" plantUmlBaseValue="11 Progresso Atualizado" id="tbue7FEvVX8lAswMjGEO-21">
+          <mxCell edge="1" parent="tbue7FEvVX8lAswMjGEO-1" source="tbue7FEvVX8lAswMjGEO-7" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" target="tbue7FEvVX8lAswMjGEO-3">
+            <mxGeometry relative="1" x="0.687" as="geometry">
+              <Array as="points">
+                <mxPoint x="660" y="475.5" />
+              </Array>
+              <mxPoint x="943.107142857143" y="475.5" as="sourcePoint" />
+              <mxPoint x="377.8357142857144" y="475.5" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="12 Exibe Resultado e Recompensas (XP / Estrelas)" plantUmlId="msg_20" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" plantUmlBaseValue="12 Exibe Resultado e Recompensas (XP / Estrelas)" id="tbue7FEvVX8lAswMjGEO-22">
+          <mxCell edge="1" parent="tbue7FEvVX8lAswMjGEO-1" source="tbue7FEvVX8lAswMjGEO-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;">
+            <mxGeometry relative="1" x="-0.028" as="geometry">
+              <Array as="points">
+                <mxPoint x="215" y="507.5" />
+              </Array>
+              <mxPoint x="377.8357142857144" y="507.5" as="sourcePoint" />
+              <mxPoint x="51.7" y="507.5" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="Aluno" plantUmlId="p_21" plantUmlBaseStyle="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#E2E2F0;strokeColor=#181818;fontColor=#000000;fontSize=14;html=1;" plantUmlBaseValue="Aluno" id="tbue7FEvVX8lAswMjGEO-23">
+          <mxCell parent="tbue7FEvVX8lAswMjGEO-1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#E2E2F0;strokeColor=#181818;fontColor=#000000;fontSize=14;html=1;" vertex="1">
+            <mxGeometry height="38" width="24" x="39.7" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="Aluno" plantUmlId="pf_22" plantUmlBaseStyle="shape=umlActor;verticalLabelPosition=top;verticalAlign=bottom;fillColor=#E2E2F0;strokeColor=#181818;fontColor=#000000;fontSize=14;html=1;" plantUmlBaseValue="Aluno" id="tbue7FEvVX8lAswMjGEO-24">
+          <mxCell parent="tbue7FEvVX8lAswMjGEO-1" style="shape=umlActor;verticalLabelPosition=top;verticalAlign=bottom;fillColor=#E2E2F0;strokeColor=#181818;fontColor=#000000;fontSize=14;html=1;" vertex="1">
+            <mxGeometry height="38" width="24" x="39.7" y="543.5" as="geometry" />
+          </mxCell>
+        </UserObject>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

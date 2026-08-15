@@ -1,0 +1,217 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Página-1" id="Y4OphBd2b4IkuI4BE7E8">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <UserObject label="" plantUmlData="{&#xa;  &quot;data&quot;: &quot;@startuml\nsequenceDiagram\n    autonumber\n    actor Aluno\n    participant Sistema\n    participant Videoaula\n    participant VisualizacaoVideo\n    participant Slide\n    participant VisualizacaoSlide\n    participant ProgressoAluno\n\n    %% Videoaula\n    Aluno-&gt;&gt;Sistema: assistirVideo(videoId)\n    Sistema-&gt;&gt;Videoaula: obterUrlVideo(videoId)\n    Videoaula--&gt;&gt;Sistema: urlVideo\n    Sistema--&gt;&gt;Aluno: Reproduzir Vídeo\n    Aluno-&gt;&gt;Sistema: concluirVideo(videoId)\n    Sistema-&gt;&gt;VisualizacaoVideo: new VisualizacaoVideo(videoId, alunoId, visualizadoEm, concluido=true)\n    Sistema-&gt;&gt;ProgressoAluno: registrarAtividade(\&quot;Videoaula vista\&quot;)\n\n    %% Slide\n    Aluno-&gt;&gt;Sistema: visualizarSlide(slideId)\n    Sistema-&gt;&gt;Slide: obterUrlSlide(slideId)\n    Slide--&gt;&gt;Sistema: urlSlide\n    Sistema--&gt;&gt;Aluno: Exibir Slide\n    Aluno-&gt;&gt;Sistema: concluirSlide(slideId)\n    Sistema-&gt;&gt;VisualizacaoSlide: new VisualizacaoSlide(slideId, alunoId, visualizadoEm, concluido=true)\n    Sistema-&gt;&gt;ProgressoAluno: registrarAtividade(\&quot;Slide visto\&quot;)\n@enduml&quot;,&#xa;  &quot;config&quot;: null&#xa;}" id="Chc7veooacTIFtmQo06G-1">
+          <mxCell connectable="0" parent="1" style="group;transparentBounds=1;editIcon=1;lockedGroup=0;groupPadding=10;" vertex="1">
+            <mxGeometry as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="" plantUmlId="life_0" plantUmlBaseStyle="endArrow=none;html=1;strokeColor=#181818;strokeWidth=0.5;dashed=1;dashPattern=5 5;" plantUmlBaseValue="" id="Chc7veooacTIFtmQo06G-2">
+          <mxCell edge="1" parent="Chc7veooacTIFtmQo06G-1" style="endArrow=none;html=1;strokeColor=#181818;strokeWidth=0.5;dashed=1;dashPattern=5 5;rounded=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="42" y="87" as="sourcePoint" />
+              <mxPoint x="42" y="556" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="Sistema" plantUmlId="p_1" plantUmlBaseStyle="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" plantUmlBaseValue="Sistema" id="Chc7veooacTIFtmQo06G-3">
+          <mxCell parent="Chc7veooacTIFtmQo06G-1" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" vertex="1">
+            <mxGeometry height="582" width="65.3" x="182.55" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="Videoaula" plantUmlId="p_2" plantUmlBaseStyle="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" plantUmlBaseValue="Videoaula" id="Chc7veooacTIFtmQo06G-4">
+          <mxCell parent="Chc7veooacTIFtmQo06G-1" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" vertex="1">
+            <mxGeometry height="582" width="77" x="342.1" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="VisualizacaoVideo" plantUmlId="p_3" plantUmlBaseStyle="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" plantUmlBaseValue="VisualizacaoVideo" id="Chc7veooacTIFtmQo06G-5">
+          <mxCell parent="Chc7veooacTIFtmQo06G-1" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" vertex="1">
+            <mxGeometry height="582" width="132.2" x="619.2571428571429" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="Slide" plantUmlId="p_4" plantUmlBaseStyle="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" plantUmlBaseValue="Slide" id="Chc7veooacTIFtmQo06G-6">
+          <mxCell parent="Chc7veooacTIFtmQo06G-1" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" vertex="1">
+            <mxGeometry height="582" width="45.8" x="761.4571428571429" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="VisualizacaoSlide" plantUmlId="p_5" plantUmlBaseStyle="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" plantUmlBaseValue="VisualizacaoSlide" id="Chc7veooacTIFtmQo06G-7">
+          <mxCell parent="Chc7veooacTIFtmQo06G-1" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" vertex="1">
+            <mxGeometry height="582" width="128.6" x="817.257142857143" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="ProgressoAluno" plantUmlId="p_6" plantUmlBaseStyle="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" plantUmlBaseValue="ProgressoAluno" id="Chc7veooacTIFtmQo06G-8">
+          <mxCell parent="Chc7veooacTIFtmQo06G-1" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=57;lifelineMirror=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#E2E2F0;strokeColor=#181818;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;" vertex="1">
+            <mxGeometry height="582" width="112.39999999999999" x="955.8571428571429" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="1 assistirVideo(videoId)" plantUmlId="msg_7" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="1 assistirVideo(videoId)" id="Chc7veooacTIFtmQo06G-9">
+          <mxCell edge="1" parent="Chc7veooacTIFtmQo06G-1" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="Chc7veooacTIFtmQo06G-3">
+            <mxGeometry relative="1" x="-0.109" as="geometry">
+              <Array as="points">
+                <mxPoint x="128.3" y="122" />
+              </Array>
+              <mxPoint x="42" y="122" as="sourcePoint" />
+              <mxPoint x="215.20000000000002" y="122" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="2 obterUrlVideo(videoId)" plantUmlId="msg_8" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="2 obterUrlVideo(videoId)" id="Chc7veooacTIFtmQo06G-10">
+          <mxCell edge="1" parent="Chc7veooacTIFtmQo06G-1" source="Chc7veooacTIFtmQo06G-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="Chc7veooacTIFtmQo06G-4">
+            <mxGeometry relative="1" x="-0.067" as="geometry">
+              <Array as="points">
+                <mxPoint x="298.3" y="154" />
+              </Array>
+              <mxPoint x="215.20000000000002" y="154" as="sourcePoint" />
+              <mxPoint x="380.6" y="154" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="3 urlVideo" plantUmlId="msg_9" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" plantUmlBaseValue="3 urlVideo" id="Chc7veooacTIFtmQo06G-11">
+          <mxCell edge="1" parent="Chc7veooacTIFtmQo06G-1" source="Chc7veooacTIFtmQo06G-4" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" target="Chc7veooacTIFtmQo06G-3">
+            <mxGeometry relative="1" x="0.437" as="geometry">
+              <Array as="points">
+                <mxPoint x="298.3" y="186" />
+              </Array>
+              <mxPoint x="380.6" y="186" as="sourcePoint" />
+              <mxPoint x="215.20000000000002" y="186" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="4 Reproduzir Vídeo" plantUmlId="msg_10" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" plantUmlBaseValue="4 Reproduzir Vídeo" id="Chc7veooacTIFtmQo06G-12">
+          <mxCell edge="1" parent="Chc7veooacTIFtmQo06G-1" source="Chc7veooacTIFtmQo06G-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;">
+            <mxGeometry relative="1" x="0.147" as="geometry">
+              <Array as="points">
+                <mxPoint x="128.3" y="218" />
+              </Array>
+              <mxPoint x="215.20000000000002" y="218" as="sourcePoint" />
+              <mxPoint x="42" y="218" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="5 concluirVideo(videoId)" plantUmlId="msg_11" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="5 concluirVideo(videoId)" id="Chc7veooacTIFtmQo06G-13">
+          <mxCell edge="1" parent="Chc7veooacTIFtmQo06G-1" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="Chc7veooacTIFtmQo06G-3">
+            <mxGeometry relative="1" x="-0.089" as="geometry">
+              <Array as="points">
+                <mxPoint x="128.3" y="250" />
+              </Array>
+              <mxPoint x="42" y="250" as="sourcePoint" />
+              <mxPoint x="215.20000000000002" y="250" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="6 new VisualizacaoVideo(videoId, alunoId, visualizadoEm, concluido=true)" plantUmlId="msg_12" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="6 new VisualizacaoVideo(videoId, alunoId, visualizadoEm, concluido=true)" id="Chc7veooacTIFtmQo06G-14">
+          <mxCell edge="1" parent="Chc7veooacTIFtmQo06G-1" source="Chc7veooacTIFtmQo06G-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="Chc7veooacTIFtmQo06G-5">
+            <mxGeometry relative="1" x="-0.023" as="geometry">
+              <Array as="points">
+                <mxPoint x="450.3" y="282" />
+              </Array>
+              <mxPoint x="215.20000000000002" y="282" as="sourcePoint" />
+              <mxPoint x="685.3571428571429" y="282" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="7 registrarAtividade(&quot;Videoaula vista&quot;)" plantUmlId="msg_13" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="7 registrarAtividade(&quot;Videoaula vista&quot;)" id="Chc7veooacTIFtmQo06G-15">
+          <mxCell edge="1" parent="Chc7veooacTIFtmQo06G-1" source="Chc7veooacTIFtmQo06G-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="Chc7veooacTIFtmQo06G-8">
+            <mxGeometry relative="1" x="-0.703" as="geometry">
+              <Array as="points">
+                <mxPoint x="613.3" y="314" />
+              </Array>
+              <mxPoint x="215.20000000000002" y="314" as="sourcePoint" />
+              <mxPoint x="1012.0571428571429" y="314" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="8 visualizarSlide(slideId)" plantUmlId="msg_14" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="8 visualizarSlide(slideId)" id="Chc7veooacTIFtmQo06G-16">
+          <mxCell edge="1" parent="Chc7veooacTIFtmQo06G-1" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="Chc7veooacTIFtmQo06G-3">
+            <mxGeometry relative="1" x="-0.064" as="geometry">
+              <Array as="points">
+                <mxPoint x="128.3" y="346" />
+              </Array>
+              <mxPoint x="42" y="346" as="sourcePoint" />
+              <mxPoint x="215.20000000000002" y="346" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="9 obterUrlSlide(slideId)" plantUmlId="msg_15" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="9 obterUrlSlide(slideId)" id="Chc7veooacTIFtmQo06G-17">
+          <mxCell edge="1" parent="Chc7veooacTIFtmQo06G-1" source="Chc7veooacTIFtmQo06G-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="Chc7veooacTIFtmQo06G-6">
+            <mxGeometry relative="1" x="-0.74" as="geometry">
+              <Array as="points">
+                <mxPoint x="499.3" y="378" />
+              </Array>
+              <mxPoint x="215.20000000000002" y="378" as="sourcePoint" />
+              <mxPoint x="784.3571428571429" y="378" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="10 urlSlide" plantUmlId="msg_16" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" plantUmlBaseValue="10 urlSlide" id="Chc7veooacTIFtmQo06G-18">
+          <mxCell edge="1" parent="Chc7veooacTIFtmQo06G-1" source="Chc7veooacTIFtmQo06G-6" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" target="Chc7veooacTIFtmQo06G-3">
+            <mxGeometry relative="1" x="0.83" as="geometry">
+              <Array as="points">
+                <mxPoint x="499.3" y="410" />
+              </Array>
+              <mxPoint x="784.3571428571429" y="410" as="sourcePoint" />
+              <mxPoint x="215.20000000000002" y="410" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="11 Exibir Slide" plantUmlId="msg_17" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;" plantUmlBaseValue="11 Exibir Slide" id="Chc7veooacTIFtmQo06G-19">
+          <mxCell edge="1" parent="Chc7veooacTIFtmQo06G-1" source="Chc7veooacTIFtmQo06G-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;">
+            <mxGeometry relative="1" x="0.312" as="geometry">
+              <Array as="points">
+                <mxPoint x="128.3" y="442" />
+              </Array>
+              <mxPoint x="215.20000000000002" y="442" as="sourcePoint" />
+              <mxPoint x="42" y="442" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="12 concluirSlide(slideId)" plantUmlId="msg_18" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="12 concluirSlide(slideId)" id="Chc7veooacTIFtmQo06G-20">
+          <mxCell edge="1" parent="Chc7veooacTIFtmQo06G-1" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="Chc7veooacTIFtmQo06G-3">
+            <mxGeometry relative="1" x="-0.086" as="geometry">
+              <Array as="points">
+                <mxPoint x="128.3" y="474" />
+              </Array>
+              <mxPoint x="42" y="474" as="sourcePoint" />
+              <mxPoint x="215.20000000000002" y="474" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="13 new VisualizacaoSlide(slideId, alunoId, visualizadoEm, concluido=true)" plantUmlId="msg_19" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="13 new VisualizacaoSlide(slideId, alunoId, visualizadoEm, concluido=true)" id="Chc7veooacTIFtmQo06G-21">
+          <mxCell edge="1" parent="Chc7veooacTIFtmQo06G-1" source="Chc7veooacTIFtmQo06G-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="Chc7veooacTIFtmQo06G-7">
+            <mxGeometry relative="1" x="-0.31" as="geometry">
+              <Array as="points">
+                <mxPoint x="548.3" y="506" />
+              </Array>
+              <mxPoint x="215.20000000000002" y="506" as="sourcePoint" />
+              <mxPoint x="881.5571428571429" y="506" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="14 registrarAtividade(&quot;Slide visto&quot;)" plantUmlId="msg_20" plantUmlBaseStyle="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" plantUmlBaseValue="14 registrarAtividade(&quot;Slide visto&quot;)" id="Chc7veooacTIFtmQo06G-22">
+          <mxCell edge="1" parent="Chc7veooacTIFtmQo06G-1" source="Chc7veooacTIFtmQo06G-3" style="endArrow=open;endFill=0;endSize=9;html=1;rounded=0;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;strokeColor=#181818;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;" target="Chc7veooacTIFtmQo06G-8">
+            <mxGeometry relative="1" x="-0.731" as="geometry">
+              <Array as="points">
+                <mxPoint x="613.3" y="538" />
+              </Array>
+              <mxPoint x="215.20000000000002" y="538" as="sourcePoint" />
+              <mxPoint x="1012.0571428571429" y="538" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="Aluno" plantUmlId="p_21" plantUmlBaseStyle="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#E2E2F0;strokeColor=#181818;fontColor=#000000;fontSize=14;html=1;" plantUmlBaseValue="Aluno" id="Chc7veooacTIFtmQo06G-23">
+          <mxCell parent="Chc7veooacTIFtmQo06G-1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#E2E2F0;strokeColor=#181818;fontColor=#000000;fontSize=14;html=1;" vertex="1">
+            <mxGeometry height="38" width="24" x="30" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="Aluno" plantUmlId="pf_22" plantUmlBaseStyle="shape=umlActor;verticalLabelPosition=top;verticalAlign=bottom;fillColor=#E2E2F0;strokeColor=#181818;fontColor=#000000;fontSize=14;html=1;" plantUmlBaseValue="Aluno" id="Chc7veooacTIFtmQo06G-24">
+          <mxCell parent="Chc7veooacTIFtmQo06G-1" style="shape=umlActor;verticalLabelPosition=top;verticalAlign=bottom;fillColor=#E2E2F0;strokeColor=#181818;fontColor=#000000;fontSize=14;html=1;" vertex="1">
+            <mxGeometry height="38" width="24" x="30" y="574" as="geometry" />
+          </mxCell>
+        </UserObject>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
