@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.net.URI;
 import java.util.UUID;
 
 @RestControllerAdvice
@@ -57,7 +58,7 @@ public class GlobalExceptionHandler {
 	) {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
 		problem.setTitle(status.getReasonPhrase());
-		problem.setInstance(java.net.URI.create(request.getRequestURI()));
+		problem.setInstance(URI.create(request.getRequestURI()));
 		problem.setProperty("code", code);
 		problem.setProperty("timestamp", Instant.now(clock));
 		problem.setProperty("traceId", traceId(request));

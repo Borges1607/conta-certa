@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class InstitutionService {
@@ -36,7 +37,7 @@ public class InstitutionService {
 		Institution institution = new Institution(
 				request.name().trim(),
 				cnpj,
-				request.contactEmail().trim().toLowerCase(java.util.Locale.ROOT),
+				request.contactEmail().trim().toLowerCase(Locale.ROOT),
 				digitsOnly(request.contactPhone()),
 				true
 		);

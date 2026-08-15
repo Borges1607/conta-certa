@@ -10,6 +10,8 @@ import com.ifsc.contacerta.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 public class RoomService {
 
@@ -30,7 +32,7 @@ public class RoomService {
 	}
 
 	@Transactional
-	public RoomResponse create(java.util.UUID teacherId, CreateRoomRequest request) {
+	public RoomResponse create(UUID teacherId, CreateRoomRequest request) {
 		User teacher = userRepository.findById(teacherId).orElseThrow();
 		int passingScore = request.passingScorePercent() == null
 				? DEFAULT_PASSING_SCORE_PERCENT

@@ -8,6 +8,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -20,7 +23,7 @@ class InstitutionServiceTest {
 
 	@Test
 	void deveNormalizarCnpjAoCriarInstituicao() {
-		when(institutionRepository.findByCnpj("11222333000181")).thenReturn(java.util.Optional.empty());
+		when(institutionRepository.findByCnpj("11222333000181")).thenReturn(Optional.empty());
 		when(institutionRepository.save(any(Institution.class)))
 				.thenAnswer(invocation -> invocation.getArgument(0));
 		InstitutionService service = new InstitutionService(institutionRepository);
@@ -39,7 +42,7 @@ class InstitutionServiceTest {
 
 	@Test
 	void deveListarOpcoesDeInstituicoesAtivas() {
-		when(institutionRepository.findByActiveTrueOrderByNameAsc()).thenReturn(java.util.List.of(
+		when(institutionRepository.findByActiveTrueOrderByNameAsc()).thenReturn(List.of(
 				new Institution("Alfa Escola", "11222333000181", "alfa@example.com", "48999990001", true),
 				new Institution("Zeta Escola", "12345678000190", "zeta@example.com", "48999990000", true)
 		));
