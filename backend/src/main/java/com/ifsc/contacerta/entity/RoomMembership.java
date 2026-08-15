@@ -81,4 +81,18 @@ public class RoomMembership {
 		updatedAt = Instant.now();
 	}
 
+	public void remove(User teacher) {
+		if (status == MembershipStatus.ACTIVE) {
+			status = MembershipStatus.REMOVED;
+			removedAt = Instant.now();
+			removedBy = teacher;
+		}
+	}
+
+	public void reactivate() {
+		status = MembershipStatus.ACTIVE;
+		removedAt = null;
+		removedBy = null;
+	}
+
 }
