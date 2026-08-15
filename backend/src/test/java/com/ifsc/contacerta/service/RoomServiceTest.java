@@ -1,6 +1,7 @@
 package com.ifsc.contacerta.service;
 
 import com.ifsc.contacerta.dto.room.CreateRoomRequest;
+import com.ifsc.contacerta.dto.room.UpdateRoomRequest;
 import com.ifsc.contacerta.entity.Institution;
 import com.ifsc.contacerta.entity.Room;
 import com.ifsc.contacerta.entity.User;
@@ -127,6 +128,111 @@ class RoomServiceTest {
 					assertThat(exception.getStatus().value()).isEqualTo(422);
 					assertThat(exception.getCode()).isEqualTo("INSTITUTION_INACTIVE");
 				});
+	}
+
+	@Test
+	void deveAtualizarSalaDoProfessorProprietario() {
+		UserRepository userRepository = mock(UserRepository.class);
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		Institution institution = institution();
+		User teacher = new User(
+				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana6@example.com", "PROF-6", institution
+		);
+		Room room = new Room(
+				"Sala antiga", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC234", teacher, institution
+		);
+		when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
+		when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
+		RoomService service = new RoomService(userRepository, roomRepository, mock(JoinCodeGenerator.class));
+
+		var response = service.update(teacher.getId(), room.getId(), new UpdateRoomRequest(
+				"Sala atualizada",
+				"Novo conteúdo",
+				Grade.HIGH_SCHOOL_2,
+				List.of("Juros simples", "Juros compostos"),
+				70
+		));
+
+		assertThat(response.name()).isEqualTo("Sala atualizada");
+		assertThat(response.grade()).isEqualTo(Grade.HIGH_SCHOOL_2);
+		assertThat(response.contentTopics()).containsExactly("Juros simples", "Juros compostos");
+		assertThat(response.passingScorePercent()).isEqualTo(70);
+	}
+
+	@Test
+	void deveRejeitarAtualizacaoPorOutroProfessor() {
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		Institution institution = institution();
+		User owner = new User(
+				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana7@example.com", "PROF-7", institution
+		);
+		User anotherTeacher = new User(
+				Role.TEACHER, AccountStatus.ACTIVE, "Professor Carlos", "carlos@example.com", "PROF-8", institution
+		);
+		Room room = new Room(
+				"1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC235", owner, institution
+		);
+		when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
+		RoomService service = new RoomService(
+				mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class)
+		);
+
+		assertThatThrownBy(() -> service.update(anotherTeacher.getId(), room.getId(), new UpdateRoomRequest(
+				"Alteração indevida", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50
+		)))
+				.isInstanceOfSatisfying(ApiException.class, exception -> {
+					assertThat(exception.getStatus().value()).isEqualTo(403);
+					assertThat(exception.getCode()).isEqualTo("ROOM_ACCESS_DENIED");
+				});
+	}
+
+	@Test
+	void deveArquivarSalaDeFormaIdempotenteEBloquearEdicao() {
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		Institution institution = institution();
+		User teacher = new User(
+				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana8@example.com", "PROF-9", institution
+		);
+		Room room = new Room(
+				"1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC236", teacher, institution
+		);
+		when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
+		RoomService service = new RoomService(
+				mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class)
+		);
+
+		service.archive(teacher.getId(), room.getId());
+		var firstArchivedAt = room.getArchivedAt();
+		service.archive(teacher.getId(), room.getId());
+
+		assertThat(firstArchivedAt).isNotNull().isEqualTo(room.getArchivedAt());
+		assertThatThrownBy(() -> service.update(teacher.getId(), room.getId(), new UpdateRoomRequest(
+				"Alteração bloqueada", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50
+		)))
+				.isInstanceOfSatisfying(ApiException.class, exception -> {
+					assertThat(exception.getStatus().value()).isEqualTo(422);
+					assertThat(exception.getCode()).isEqualTo("ROOM_ARCHIVED");
+				});
+	}
+
+	@Test
+	void deveRegenerarCodigoDaSalaDoProfessor() {
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		JoinCodeGenerator joinCodeGenerator = mock(JoinCodeGenerator.class);
+		Institution institution = institution();
+		User teacher = new User(
+				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana9@example.com", "PROF-10", institution
+		);
+		Room room = new Room(
+				"1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC237", teacher, institution
+		);
+		when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
+		when(joinCodeGenerator.generateUnique()).thenReturn("XYZ789");
+		RoomService service = new RoomService(mock(UserRepository.class), roomRepository, joinCodeGenerator);
+
+		var response = service.regenerateCode(teacher.getId(), room.getId());
+
+		assertThat(response.joinCode()).isEqualTo("XYZ789");
 	}
 
 	private CreateRoomRequest validRequest(Integer passingScore) {

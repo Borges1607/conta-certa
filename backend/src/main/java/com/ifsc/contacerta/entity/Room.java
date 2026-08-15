@@ -110,5 +110,29 @@ public class Room {
 		updatedAt = Instant.now();
 	}
 
+	public void update(
+			String name,
+			String description,
+			Grade grade,
+			List<String> contentTopics,
+			int passingScorePercent
+	) {
+		this.name = name;
+		this.description = description;
+		this.grade = grade;
+		this.contentTopics = new ArrayList<>(contentTopics);
+		this.passingScorePercent = passingScorePercent;
+	}
+
+	public void archive() {
+		if (archivedAt == null) {
+			archivedAt = Instant.now();
+		}
+	}
+
+	public void changeJoinCode(String joinCode) {
+		this.joinCode = joinCode;
+	}
+
 	public List<String> getContentTopics() { return List.copyOf(contentTopics); }
 }

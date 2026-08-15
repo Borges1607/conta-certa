@@ -2,6 +2,7 @@ package com.ifsc.contacerta.service;
 
 import com.ifsc.contacerta.dto.room.CreateRoomRequest;
 import com.ifsc.contacerta.dto.room.RoomResponse;
+import com.ifsc.contacerta.dto.room.UpdateRoomRequest;
 import com.ifsc.contacerta.entity.Room;
 import com.ifsc.contacerta.entity.User;
 import com.ifsc.contacerta.exception.ApiException;
@@ -65,5 +66,51 @@ public class RoomService {
 		);
 
 		return RoomMapper.toResponse(roomRepository.save(room));
+	}
+
+	@Transactional
+	public RoomResponse update(UUID teacherId, UUID roomId, UpdateRoomRequest request) {
+		Room room = requireOwnedRoom(teacherId, roomId);
+		requireMutable(room);
+		room.update(
+				request.name(),
+				request.description(),
+				request.grade(),
+				request.contentTopics(),
+				request.passingScorePercent()
+		);
+		return RoomMapper.toResponse(room);
+	}
+
+	@Transactional
+	public void archive(UUID teacherId, UUID roomId) {
+		Room room = requireOwnedRoom(teacherId, roomId);
+		room.archive();
+	}
+
+	@Transactional
+	public RoomResponse regenerateCode(UUID teacherId, UUID roomId) {
+		Room room = requireOwnedRoom(teacherId, roomId);
+		requireMutable(room);
+		room.changeJoinCode(joinCodeGenerator.generateUnique());
+		return RoomMapper.toResponse(room);
+	}
+
+	private Room requireOwnedRoom(UUID teacherId, UUID roomId) {
+		Room room = roomRepository.findById(roomId).orElseThrow();
+		if (!room.getTeacher().getId().equals(teacherId)) {
+			throw new ApiException(HttpStatus.FORBIDDEN, "ROOM_ACCESS_DENIED", "Room belongs to another teacher.");
+		}
+		return room;
+	}
+
+	private void requireMutable(Room room) {
+		if (room.getArchivedAt() != null) {
+			throw new ApiException(
+					HttpStatus.UNPROCESSABLE_CONTENT,
+					"ROOM_ARCHIVED",
+					"Archived rooms are read-only."
+			);
+		}
 	}
 }
