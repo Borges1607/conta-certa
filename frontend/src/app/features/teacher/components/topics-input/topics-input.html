@@ -1,0 +1,63 @@
+<div class="topics">
+  @if (topics().length > 0) {
+    <ul class="topics__list">
+      @for (topic of topics(); track topic; let i = $index; let first = $first; let last = $last) {
+        <li class="topics__item">
+          <p-chip [label]="topic" />
+          <p-button
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [text]="true"
+            size="small"
+            [disabled]="disabled() || first"
+            [ariaLabel]="'Mover ' + topic + ' para antes'"
+            (onClick)="move(i, -1)"
+          />
+          <p-button
+            icon="pi pi-arrow-right"
+            severity="secondary"
+            [text]="true"
+            size="small"
+            [disabled]="disabled() || last"
+            [ariaLabel]="'Mover ' + topic + ' para depois'"
+            (onClick)="move(i, 1)"
+          />
+          <p-button
+            icon="pi pi-times"
+            severity="danger"
+            [text]="true"
+            size="small"
+            [disabled]="disabled()"
+            [ariaLabel]="'Remover ' + topic"
+            (onClick)="remove(i)"
+          />
+        </li>
+      }
+    </ul>
+  }
+
+  <div class="topics__add">
+    <input
+      pInputText
+      type="text"
+      [id]="inputId()"
+      [value]="draft()"
+      [disabled]="disabled()"
+      [placeholder]="placeholder()"
+      [attr.aria-describedby]="inputId() + '-hint'"
+      (input)="onInput($event)"
+      (keydown)="onKeydown($event)"
+    />
+    <p-button
+      label="Adicionar"
+      icon="pi pi-plus"
+      [outlined]="true"
+      [disabled]="disabled() || draft().trim().length === 0"
+      (onClick)="add()"
+    />
+  </div>
+
+  <small class="cc-muted" [id]="inputId() + '-hint'">
+    A ordem dos temas é a ordem que o aluno vê. Use Enter para adicionar.
+  </small>
+</div>

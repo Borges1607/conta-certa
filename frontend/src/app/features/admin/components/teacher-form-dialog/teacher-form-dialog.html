@@ -1,0 +1,120 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="onVisibleChange($event)"
+  [header]="header()"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '34rem', maxWidth: '95vw' }"
+>
+  <form class="form" [formGroup]="form" (ngSubmit)="submit()">
+    @if (conflict()) {
+      <cc-version-conflict-notice
+        resourceLabel="Este professor"
+        [reloading]="reloading()"
+        (reload)="reload()"
+      />
+    }
+
+    @if (!isEdit()) {
+      <p-message severity="info" styleClass="form__notice">
+        Um convite será enviado para que o professor defina a própria senha. Você não cria nem vê
+        a senha de ninguém.
+      </p-message>
+    }
+
+    <cc-form-field
+      label="Nome completo"
+      inputId="teacher-name"
+      [required]="true"
+      [control]="form.controls.fullName"
+    >
+      <input
+        pInputText
+        id="teacher-name"
+        type="text"
+        autocomplete="name"
+        [fluid]="true"
+        formControlName="fullName"
+      />
+    </cc-form-field>
+
+    @if (isEdit()) {
+      <div class="form__readonly">
+        <span class="form__readonly-label">E-mail</span>
+        <span class="form__readonly-value">{{ email() }}</span>
+        <small class="cc-muted cc-xs">
+          O e-mail identifica a conta e não é editável por aqui.
+        </small>
+      </div>
+    } @else {
+      <cc-form-field
+        label="E-mail"
+        inputId="teacher-email"
+        hint="É para este endereço que o convite vai."
+        [required]="true"
+        [control]="form.controls.email"
+      >
+        <input
+          pInputText
+          id="teacher-email"
+          type="email"
+          autocomplete="email"
+          [fluid]="true"
+          formControlName="email"
+        />
+      </cc-form-field>
+    }
+
+    <cc-form-field
+      label="Matrícula"
+      inputId="teacher-registration"
+      [required]="true"
+      [control]="form.controls.registrationNumber"
+    >
+      <input
+        pInputText
+        id="teacher-registration"
+        type="text"
+        autocomplete="off"
+        [fluid]="true"
+        formControlName="registrationNumber"
+      />
+    </cc-form-field>
+
+    <cc-form-field
+      label="Instituição"
+      inputId="teacher-institution"
+      hint="Somente instituições ativas aparecem na lista."
+      [required]="true"
+      [control]="form.controls.institutionId"
+    >
+      <p-select
+        inputId="teacher-institution"
+        formControlName="institutionId"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Selecione a instituição"
+        [options]="options()"
+        [filter]="true"
+        filterBy="name,cnpj"
+        [fluid]="true"
+      />
+    </cc-form-field>
+
+    @if (optionsFailed()) {
+      <p-message severity="warn" styleClass="form__notice">
+        Não foi possível carregar as instituições.
+        <button type="button" class="form__link" (click)="loadOptions()">Tentar novamente</button>
+      </p-message>
+    }
+
+    <div class="form__actions">
+      <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="close()" />
+      <cc-submit-button
+        [label]="isEdit() ? 'Salvar alterações' : 'Criar e enviar convite'"
+        [submitting]="guard.submitting()"
+        [disabled]="conflict()"
+      />
+    </div>
+  </form>
+</p-dialog>

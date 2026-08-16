@@ -1,0 +1,79 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="onVisibleChange($event)"
+  [header]="header()"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '34rem', maxWidth: '95vw' }"
+>
+  <form class="form" [formGroup]="form" (ngSubmit)="submit()">
+    @if (conflict()) {
+      <cc-version-conflict-notice
+        resourceLabel="Esta instituição"
+        [reloading]="reloading()"
+        (reload)="reload()"
+      />
+    }
+
+    <cc-form-field
+      label="Nome"
+      inputId="institution-name"
+      [required]="true"
+      [control]="form.controls.name"
+    >
+      <input
+        pInputText
+        id="institution-name"
+        type="text"
+        autocomplete="organization"
+        [fluid]="true"
+        formControlName="name"
+      />
+    </cc-form-field>
+
+    <cc-form-field
+      label="CNPJ"
+      inputId="institution-cnpj"
+      hint="Enviado sem pontuação, com 14 dígitos."
+      [required]="true"
+      [control]="form.controls.cnpj"
+    >
+      <cc-cnpj-input inputId="institution-cnpj" formControlName="cnpj" />
+    </cc-form-field>
+
+    <cc-form-field
+      label="E-mail de contato"
+      inputId="institution-email"
+      [required]="true"
+      [control]="form.controls.contactEmail"
+    >
+      <input
+        pInputText
+        id="institution-email"
+        type="email"
+        autocomplete="email"
+        [fluid]="true"
+        formControlName="contactEmail"
+      />
+    </cc-form-field>
+
+    <cc-form-field
+      label="Telefone de contato"
+      inputId="institution-phone"
+      hint="Enviado no formato internacional, por exemplo +5548999999999."
+      [required]="true"
+      [control]="form.controls.contactPhone"
+    >
+      <cc-phone-input inputId="institution-phone" formControlName="contactPhone" />
+    </cc-form-field>
+
+    <div class="form__actions">
+      <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="close()" />
+      <cc-submit-button
+        [label]="isEdit() ? 'Salvar alterações' : 'Criar instituição'"
+        [submitting]="guard.submitting()"
+        [disabled]="conflict()"
+      />
+    </div>
+  </form>
+</p-dialog>

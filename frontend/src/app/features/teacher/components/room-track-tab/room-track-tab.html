@@ -1,0 +1,52 @@
+<div class="track">
+  @if (!archived()) {
+    <div class="track__toolbar">
+      <p-button label="Adicionar lição" icon="pi pi-plus" (onClick)="openCreate()" />
+      <span class="cc-small cc-muted">
+        A ordem aqui é a ordem que o aluno vê na trilha.
+      </span>
+    </div>
+  }
+
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="list" [count]="3" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as items) {
+    @if (items.length === 0) {
+      <cc-empty-state
+        title="A trilha desta sala está vazia"
+        message="Adicione lições do seu acervo. Elas ficam disponíveis para o aluno na ordem definida aqui."
+        actionLabel="Adicionar lição"
+        icon="pi pi-map"
+        (action)="openCreate()"
+      />
+    } @else {
+      <ol class="track__list">
+        @for (assignment of items; track assignment.id; let first = $first; let last = $last) {
+          <li>
+            <cc-assignment-row
+              [assignment]="assignment"
+              [readOnly]="archived()"
+              [busy]="busyId() === assignment.id"
+              [isFirst]="first"
+              [isLast]="last"
+              (editRequested)="openEdit($event)"
+              (removeRequested)="remove($event)"
+              (moveUpRequested)="move($event, -1)"
+              (moveDownRequested)="move($event, 1)"
+            />
+          </li>
+        }
+      </ol>
+    }
+  }
+</div>
+
+<cc-assignment-form
+  [(visible)]="formVisible"
+  [roomId]="roomId()"
+  [assignment]="editing()"
+  [nextPosition]="nextPosition()"
+  (saved)="onSaved()"
+/>

@@ -1,0 +1,151 @@
+<div class="cc-page result-page">
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="detail" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as result) {
+    @if (expiredByTime()) {
+      <p class="expired" role="status">
+        <i class="pi pi-clock" aria-hidden="true"></i>
+        Seu tempo terminou e a tentativa foi corrigida automaticamente.
+      </p>
+    }
+
+    <!-- Todos os números abaixo vêm da API, sem exceção. -->
+    <section class="summary cc-card cc-card-lg" [class.summary--passed]="result.passed">
+      <div class="summary__verdict">
+        <i
+          class="summary__icon pi"
+          [class.pi-check-circle]="result.passed"
+          [class.pi-times-circle]="!result.passed"
+          aria-hidden="true"
+        ></i>
+        <h1>{{ result.passed ? 'Aprovado!' : 'Ainda não foi dessa vez' }}</h1>
+        <p class="cc-muted">{{ result.lessonTitle }}</p>
+        <cc-star-rating [value]="result.stars" size="lg" [showLabel]="true" />
+      </div>
+
+      <dl class="summary__stats">
+        <div>
+          <dt>Nota</dt>
+          <dd>{{ result.scorePercent }}%</dd>
+        </div>
+        <div>
+          <dt>Acertos</dt>
+          <dd>{{ result.correctAnswers }} de {{ result.totalQuestions }}</dd>
+        </div>
+        <div>
+          <dt>XP nesta tentativa</dt>
+          <dd class="summary__xp">+{{ result.xpEarnedThisAttempt }}</dd>
+        </div>
+        <div>
+          <dt>XP total na sala</dt>
+          <dd>{{ result.roomXpTotal }}</dd>
+        </div>
+      </dl>
+
+      <p class="summary__when cc-xs cc-muted">
+        Iniciada em {{ result.startedAt | ccDateTime }}
+        @if (result.submittedAt; as submitted) {
+          · finalizada em {{ submitted | ccDateTime }}
+        }
+      </p>
+    </section>
+
+    <!-- Explicação das regras, em texto. O frontend não executa estas
+         fórmulas: quem calcula é a API. -->
+    <details class="rules">
+      <summary>Como a nota, as estrelas e o XP funcionam</summary>
+      <ul>
+        <li>A nota mínima desta sala é <strong>{{ result.passingScorePercent }}%</strong>.</li>
+        <li>
+          Faixas de estrelas: abaixo de 50% nenhuma, 50–69% uma, 70–89% duas e 90–100% três.
+        </li>
+        <li>Cada acerto vale 10 XP de potencial.</li>
+        <li>
+          Só a melhoria do seu <strong>melhor resultado</strong> gera XP novo — refazer uma
+          lição sem melhorar não soma pontos.
+        </li>
+        <li>Sua melhor tentativa é a que define aprovação e estrelas.</li>
+      </ul>
+    </details>
+
+    <section class="review">
+      <h2>Revisão das questões</h2>
+
+      <ol class="review__list">
+        @for (answer of result.answers; track answer.question.questionSnapshotId; let i = $index) {
+          <li class="review__item cc-card" [class.is-correct]="answer.correct">
+            <header class="review__head">
+              <span class="review__index">Questão {{ i + 1 }}</span>
+              <span
+                class="review__verdict"
+                [class.is-correct]="answer.correct"
+                [class.is-wrong]="!answer.correct"
+              >
+                <i
+                  class="pi"
+                  [class.pi-check]="answer.correct"
+                  [class.pi-times]="!answer.correct"
+                  aria-hidden="true"
+                ></i>
+                {{ answer.correct ? 'Correta' : 'Incorreta' }}
+              </span>
+            </header>
+
+            <cc-markdown class="review__prompt" [content]="answer.question.prompt" [compact]="true" />
+
+            <dl class="review__answers">
+              <div>
+                <dt>Sua resposta</dt>
+                <dd [class.is-wrong]="!answer.correct">{{ describe(answer, 'student') }}</dd>
+              </div>
+              @if (!answer.correct) {
+                <div>
+                  <dt>Resposta correta</dt>
+                  <dd class="is-correct">{{ describe(answer, 'correct') }}</dd>
+                </div>
+              }
+            </dl>
+
+            @if (answer.explanation) {
+              <div class="review__explanation">
+                <strong class="cc-small">Por quê</strong>
+                <cc-markdown [content]="answer.explanation" [compact]="true" />
+              </div>
+            }
+          </li>
+        }
+      </ol>
+    </section>
+
+    <footer class="result-actions">
+      <p-button
+        label="Voltar à trilha"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        [outlined]="true"
+        [routerLink]="['/aluno/salas', result.roomId, 'trilha']"
+      />
+      <p-button
+        label="Rever a lição"
+        icon="pi pi-book"
+        [routerLink]="['/aluno/salas', result.roomId, 'licoes', result.lessonId]"
+      />
+    </footer>
+
+    @if (!result.passed) {
+      <p class="retry-note cc-small cc-muted">
+        @if (result.attemptsRemaining === null) {
+          Você pode tentar novamente quantas vezes precisar.
+        } @else if (result.attemptsRemaining > 0) {
+          Você ainda tem {{ result.attemptsRemaining }}
+          {{ result.attemptsRemaining === 1 ? 'tentativa' : 'tentativas' }}. Reveja a teoria
+          antes de tentar de novo.
+        } @else {
+          Suas tentativas nesta lição acabaram. Fale com seu professor se precisar de mais uma.
+        }
+      </p>
+    }
+  }
+</div>

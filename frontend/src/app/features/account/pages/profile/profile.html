@@ -1,0 +1,73 @@
+<div class="cc-page">
+  <cc-page-header title="Minha conta" subtitle="Seus dados no Conta Certa." />
+
+  @if (auth.user(); as user) {
+    <div class="profile">
+      <section class="profile__card cc-card">
+        <h2>Dados editáveis</h2>
+
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          @if (formError()) {
+            <p-message severity="error" styleClass="profile__alert">{{ formError() }}</p-message>
+          }
+
+          <cc-form-field
+            label="Nome completo"
+            inputId="fullName"
+            [control]="form.controls.fullName"
+            [required]="true"
+          >
+            <input pInputText id="fullName" formControlName="fullName" autocomplete="name" />
+          </cc-form-field>
+
+          <cc-submit-button label="Salvar" icon="pi pi-check" [submitting]="guard.submitting()" />
+        </form>
+      </section>
+
+      <section class="profile__card cc-card">
+        <h2>Dados administrativos</h2>
+        <p class="cc-muted cc-small">
+          Alterações de e-mail, matrícula ou instituição exigem suporte administrativo.
+        </p>
+
+        <dl class="profile__list">
+          <div>
+            <dt>E-mail</dt>
+            <dd>
+              {{ user.email }}
+              @if (user.emailVerified) {
+                <p-tag value="Verificado" severity="success" />
+              } @else {
+                <p-tag value="Não verificado" severity="warn" />
+              }
+            </dd>
+          </div>
+
+          <div>
+            <dt>Perfil</dt>
+            <dd>{{ roleLabel() }}</dd>
+          </div>
+
+          <div>
+            <dt>Situação da conta</dt>
+            <dd><cc-status-tag [value]="user.status" kind="AccountStatus" /></dd>
+          </div>
+
+          @if (user.registrationNumber) {
+            <div>
+              <dt>Matrícula</dt>
+              <dd>{{ user.registrationNumber }}</dd>
+            </div>
+          }
+
+          @if (user.institution; as institution) {
+            <div>
+              <dt>Instituição</dt>
+              <dd>{{ institution.name }} <small class="cc-muted">{{ cnpj(institution.cnpj) }}</small></dd>
+            </div>
+          }
+        </dl>
+      </section>
+    </div>
+  }
+</div>

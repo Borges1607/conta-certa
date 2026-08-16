@@ -1,0 +1,75 @@
+<article class="lesson cc-card cc-card-lg lesson--{{ badge().modifier }}">
+  <header class="lesson__head">
+    <span class="lesson__order" aria-hidden="true">{{ item().order }}</span>
+
+    <div class="lesson__title">
+      <h3>{{ item().title }}</h3>
+      @if (item().summary) {
+        <p class="cc-muted cc-small">{{ item().summary }}</p>
+      }
+    </div>
+
+    <span class="lesson__badge">
+      <i class="{{ badge().icon }}" aria-hidden="true"></i>
+      {{ badge().label }}
+    </span>
+  </header>
+
+  @if (isLocked()) {
+    <cc-lock-reason
+      [reason]="item().lockReason"
+      [availableFrom]="item().availableFrom"
+      [dueAt]="item().dueAt"
+    />
+  } @else {
+    <dl class="lesson__facts">
+      @if (item().bestScorePercent !== null) {
+        <div>
+          <dt>Melhor nota</dt>
+          <dd>{{ item().bestScorePercent }}%</dd>
+        </div>
+      }
+      @if (item().stars !== null) {
+        <div>
+          <dt>Estrelas</dt>
+          <dd><cc-star-rating [value]="item().stars ?? 0" size="sm" /></dd>
+        </div>
+      }
+      <div>
+        <dt>Tentativas</dt>
+        <dd>{{ attemptsLabel() }}</dd>
+      </div>
+      @if (item().dueAt; as due) {
+        <div>
+          <dt>Prazo</dt>
+          <dd>{{ due | ccDateTime }}</dd>
+        </div>
+      }
+    </dl>
+
+    @if (item().activeAttemptExpiresAt; as expiresAt) {
+      <p class="lesson__timer">
+        <span class="cc-small cc-muted">Tentativa em andamento:</span>
+        <cc-countdown [expiresAt]="expiresAt" />
+      </p>
+    }
+  }
+
+  <footer class="lesson__actions">
+    <a
+      class="lesson__link"
+      [routerLink]="['/aluno/salas', roomId(), 'licoes', item().lessonId]"
+    >
+      Ver conteúdo
+    </a>
+
+    @if (!isLocked()) {
+      <p-button
+        [label]="actionLabel()"
+        [icon]="item().activeAttemptId ? 'pi pi-play' : 'pi pi-pencil'"
+        [loading]="starting()"
+        (onClick)="onPrimaryAction()"
+      />
+    }
+  </footer>
+</article>

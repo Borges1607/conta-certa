@@ -1,0 +1,138 @@
+<div class="cc-page">
+  <cc-page-header
+    title="Professores"
+    subtitle="Convide professores e acompanhe a situação das contas."
+  >
+    <p-button label="Convidar professor" icon="pi pi-user-plus" (onClick)="openCreate()" />
+  </cc-page-header>
+
+  <div class="toolbar">
+    <span class="toolbar__search">
+      <i class="pi pi-search" aria-hidden="true"></i>
+      <input
+        pInputText
+        type="search"
+        placeholder="Buscar por nome, e-mail ou matrícula"
+        aria-label="Buscar professor"
+        [ngModel]="search()"
+        (ngModelChange)="onSearch($event)"
+      />
+    </span>
+
+    <p-select
+      [options]="statusOptions"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="status() ?? null"
+      (ngModelChange)="onStatusChange($event)"
+      ariaLabel="Filtrar por situação"
+    />
+  </div>
+
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="table" [count]="5" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as page) {
+    @if (page.totalElements === 0) {
+      <cc-empty-state
+        title="Nenhum professor encontrado"
+        [message]="
+          search() || status()
+            ? 'Nenhum professor corresponde aos filtros.'
+            : 'Convide o primeiro professor. Ele recebe um e-mail e define a própria senha.'
+        "
+        actionLabel="Convidar professor"
+        icon="pi pi-users"
+        actionIcon="pi pi-user-plus"
+        (action)="openCreate()"
+      />
+    } @else {
+      <div class="cc-scroll-x">
+        <p-table [value]="page.content" dataKey="id" [rowHover]="true">
+          <ng-template #header>
+            <tr>
+              <th scope="col">Professor</th>
+              <th scope="col">Matrícula</th>
+              <th scope="col">Instituição</th>
+              <th scope="col">Situação</th>
+              <th scope="col" class="actions-col"><span class="cc-sr-only">Ações</span></th>
+            </tr>
+          </ng-template>
+
+          <ng-template #body let-teacher>
+            <tr>
+              <td>
+                <a class="teacher__name" [routerLink]="['/admin/professores', teacher.id]">
+                  {{ teacher.fullName }}
+                </a>
+                <br />
+                <small class="cc-muted">{{ teacher.email }}</small>
+              </td>
+              <td>{{ teacher.registrationNumber ?? '—' }}</td>
+              <td>{{ teacher.institution?.name ?? '—' }}</td>
+              <td><cc-account-status-tag [status]="teacher.status" /></td>
+              <td class="actions">
+                <p-button
+                  icon="pi pi-pencil"
+                  severity="secondary"
+                  [text]="true"
+                  [rounded]="true"
+                  ariaLabel="Editar professor"
+                  (onClick)="openEdit(teacher)"
+                />
+                <p-button
+                  icon="pi pi-envelope"
+                  severity="secondary"
+                  [text]="true"
+                  [rounded]="true"
+                  ariaLabel="Enviar link de redefinição de senha"
+                  [loading]="busyId() === teacher.id"
+                  (onClick)="sendReset(teacher)"
+                />
+                @if (teacher.status === 'INACTIVE') {
+                  <p-button
+                    icon="pi pi-check-circle"
+                    severity="success"
+                    [text]="true"
+                    [rounded]="true"
+                    ariaLabel="Reativar professor"
+                    [loading]="busyId() === teacher.id"
+                    (onClick)="activate(teacher)"
+                  />
+                } @else {
+                  <p-button
+                    icon="pi pi-ban"
+                    severity="danger"
+                    [text]="true"
+                    [rounded]="true"
+                    ariaLabel="Desativar professor"
+                    [loading]="busyId() === teacher.id"
+                    (onClick)="deactivate(teacher)"
+                  />
+                }
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      @if (page.totalElements > page.size) {
+        <p-paginator
+          [first]="first()"
+          [rows]="page.size"
+          [totalRecords]="page.totalElements"
+          [rowsPerPageOptions]="[10, 20, 50]"
+          (onPageChange)="onPage($event)"
+        />
+      }
+    }
+  }
+</div>
+
+<cc-teacher-form-dialog
+  [visible]="dialogVisible()"
+  [teacher]="editing()"
+  (closed)="dialogVisible.set(false)"
+  (saved)="onSaved()"
+/>

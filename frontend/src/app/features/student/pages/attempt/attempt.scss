@@ -1,0 +1,130 @@
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--cc-surface-card);
+  border-bottom: 1px solid var(--cc-border);
+}
+
+.bar__inner {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-gap);
+  max-width: var(--cc-content-max);
+  margin: 0 auto;
+  padding: 0.6rem var(--cc-gap);
+}
+
+.bar__title {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 16rem;
+}
+
+.bar__progress {
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.bar__notime {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.offline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.6rem var(--cc-gap);
+  background: var(--cc-draft);
+  color: #fff;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.attempt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-gap-lg);
+  max-width: 52rem;
+}
+
+.question {
+  padding: var(--cc-gap-lg);
+}
+
+.question__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cc-gap-sm);
+  margin-bottom: var(--cc-gap-sm);
+}
+
+.question__index {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--cc-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.question__locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--cc-surface-sunken);
+  color: var(--cc-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.question__prompt {
+  display: block;
+  margin-bottom: var(--cc-gap-lg);
+  font-size: 1.0625rem;
+}
+
+.question__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-gap-sm);
+  flex-wrap: wrap;
+  margin-top: var(--cc-gap-lg);
+  padding-top: var(--cc-gap);
+  border-top: 1px solid var(--cc-border);
+}
+
+.question__hint {
+  margin: 0;
+}
+
+.finish {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--cc-gap);
+  flex-wrap: wrap;
+  padding-bottom: var(--cc-gap-lg);
+
+  p {
+    margin: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .bar__title {
+    display: none;
+  }
+
+  .question {
+    padding: var(--cc-gap);
+  }
+}

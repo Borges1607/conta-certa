@@ -1,0 +1,40 @@
+.meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cc-gap);
+}
+
+.theory__label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.editor-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-gap-sm);
+  flex-wrap: wrap;
+  margin-top: var(--cc-gap);
+  padding-top: var(--cc-gap);
+  border-top: 1px solid var(--cc-border);
+}
+
+.editor-actions__dirty {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--cc-draft);
+  font-weight: 500;
+
+  i {
+    font-size: 0.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

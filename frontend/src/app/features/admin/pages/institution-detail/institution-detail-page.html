@@ -1,0 +1,83 @@
+<div class="cc-page">
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="detail" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as institution) {
+    <cc-page-header [title]="institution.name" [crumbs]="crumbs()">
+      <cc-active-tag [active]="institution.active" />
+      <p-button
+        label="Editar"
+        icon="pi pi-pencil"
+        [outlined]="true"
+        (onClick)="dialogVisible.set(true)"
+      />
+      <p-button
+        [label]="institution.active ? 'Desativar' : 'Ativar'"
+        [icon]="institution.active ? 'pi pi-ban' : 'pi pi-check-circle'"
+        [severity]="institution.active ? 'warn' : 'success'"
+        [outlined]="true"
+        [loading]="busy()"
+        (onClick)="toggleActive()"
+      />
+    </cc-page-header>
+
+    <div class="detail">
+      <section class="cc-card panel">
+        <h2>Dados cadastrais</h2>
+        <dl>
+          <div>
+            <dt>CNPJ</dt>
+            <dd><code>{{ institution.cnpj | ccCnpj }}</code></dd>
+          </div>
+          <div>
+            <dt>E-mail de contato</dt>
+            <dd>{{ institution.contactEmail }}</dd>
+          </div>
+          <div>
+            <dt>Telefone</dt>
+            <dd>{{ institution.contactPhone | ccPhone }}</dd>
+          </div>
+          @if (institution.createdAt) {
+            <div>
+              <dt>Cadastrada em</dt>
+              <dd>{{ institution.createdAt | ccDateTime }}</dd>
+            </div>
+          }
+        </dl>
+      </section>
+
+      <section class="cc-card panel">
+        <h2>Vínculos</h2>
+        @if (institution.teacherCount !== null && institution.teacherCount !== undefined) {
+          <dl>
+            <div>
+              <dt>Professores</dt>
+              <dd>{{ institution.teacherCount }}</dd>
+            </div>
+            <div>
+              <dt>Alunos</dt>
+              <dd>{{ institution.studentCount ?? '—' }}</dd>
+            </div>
+          </dl>
+
+          @if (institution.teacherCount > 0 || (institution.studentCount ?? 0) > 0) {
+            <p class="panel__note cc-small cc-muted">
+              Instituições com vínculos não podem ser excluídas. Para impedir novos cadastros
+              sem afetar quem já usa, desative-a.
+            </p>
+          }
+        } @else {
+          <p class="cc-muted cc-small">O resumo de vínculos não está disponível.</p>
+        }
+      </section>
+    </div>
+
+    <cc-institution-form-dialog
+      [visible]="dialogVisible()"
+      [institution]="institution"
+      (closed)="dialogVisible.set(false)"
+      (saved)="onSaved()"
+    />
+  }
+</div>

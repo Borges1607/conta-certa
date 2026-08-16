@@ -1,0 +1,233 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [header]="isEdit() ? 'Configurar atribuição' : 'Adicionar lição à trilha'"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '38rem', maxWidth: '95vw' }"
+>
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="assignment">
+    @if (conflict()) {
+      <cc-version-conflict-notice
+        title="Esta atribuição foi alterada em outro lugar"
+        message="Alguém — ou você, em outra aba — salvou uma versão mais nova. Recarregue antes de editar de novo."
+        [reloading]="reloading()"
+        (reload)="reload()"
+      />
+    }
+
+    @for (message of summaryErrors(); track message) {
+      <p class="assignment__error" role="alert">{{ message }}</p>
+    }
+
+    @if (!isEdit()) {
+      <cc-form-field
+        label="Lição do acervo"
+        inputId="lessonId"
+        [control]="form.controls.lessonId"
+        [required]="true"
+        hint="Só lições publicadas podem ser atribuídas a uma sala."
+      >
+        <p-select
+          inputId="lessonId"
+          formControlName="lessonId"
+          [options]="lessonOptions()"
+          optionLabel="title"
+          optionValue="id"
+          [filter]="true"
+          filterBy="title"
+          [loading]="lessonsLoading()"
+          placeholder="Selecione uma lição"
+          emptyMessage="Nenhuma lição publicada no seu acervo"
+          [fluid]="true"
+        />
+      </cc-form-field>
+
+      @if (lessonsError()) {
+        <p class="assignment__error" role="alert">{{ lessonsError() }}</p>
+      }
+    }
+
+    <cc-form-field
+      label="Situação na sala"
+      inputId="status"
+      [control]="form.controls.status"
+      hint="Rascunho fica invisível para os alunos."
+    >
+      <p-select
+        inputId="status"
+        formControlName="status"
+        [options]="statusOptions"
+        optionLabel="label"
+        optionValue="value"
+        [fluid]="true"
+      />
+    </cc-form-field>
+
+    <div class="assignment__dates">
+      <cc-form-field
+        label="Disponível a partir de"
+        inputId="availableFrom"
+        [control]="form.controls.availableFrom"
+        [hint]="'Horário de ' + timeZoneLabel"
+      >
+        <p-datepicker
+          inputId="availableFrom"
+          formControlName="availableFrom"
+          [showTime]="true"
+          [showIcon]="true"
+          [showClear]="true"
+          dateFormat="dd/mm/yy"
+          [fluid]="true"
+          (onSelect)="onDateChange()"
+          (onClear)="onDateChange()"
+        />
+      </cc-form-field>
+
+      <cc-form-field
+        label="Prazo final"
+        inputId="dueAt"
+        [control]="form.controls.dueAt"
+        [hint]="'Horário de ' + timeZoneLabel"
+      >
+        <p-datepicker
+          inputId="dueAt"
+          formControlName="dueAt"
+          [showTime]="true"
+          [showIcon]="true"
+          [showClear]="true"
+          dateFormat="dd/mm/yy"
+          [fluid]="true"
+          (onSelect)="onDateChange()"
+          (onClear)="onDateChange()"
+        />
+      </cc-form-field>
+    </div>
+
+    @if (dateRangeInvalid()) {
+      <p class="assignment__error" role="alert">O prazo final precisa ser depois da abertura.</p>
+    }
+
+    <!-- O professor pensa em Brasília; a API fala UTC. Mostrar o instante que
+         será realmente enviado evita a classe de erro mais comum aqui. -->
+    @if (availableFromInstant() || dueAtInstant()) {
+      <dl class="assignment__utc">
+        @if (availableFromInstant(); as instant) {
+          <div>
+            <dt>Abertura enviada como</dt>
+            <dd><code>{{ instant }}</code> — {{ instant | ccDateTime }}</dd>
+          </div>
+        }
+        @if (dueAtInstant(); as instant) {
+          <div>
+            <dt>Prazo enviado como</dt>
+            <dd><code>{{ instant }}</code> — {{ instant | ccDateTime }}</dd>
+          </div>
+        }
+      </dl>
+    }
+
+    <div class="assignment__limits">
+      <cc-form-field
+        label="Tempo limite"
+        inputId="timeLimitMinutes"
+        [control]="form.controls.timeLimitMinutes"
+      >
+        <div class="assignment__limit">
+          <p-inputnumber
+            inputId="timeLimitMinutes"
+            formControlName="timeLimitMinutes"
+            [min]="1"
+            [max]="600"
+            suffix=" min"
+            [disabled]="noTimeLimit()"
+            [fluid]="true"
+          />
+          <div class="assignment__toggle">
+            <p-toggleswitch
+              inputId="noTimeLimit"
+              [ngModel]="noTimeLimit()"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="toggleNoTimeLimit($event)"
+            />
+            <label for="noTimeLimit">Sem limite</label>
+          </div>
+        </div>
+      </cc-form-field>
+
+      <cc-form-field
+        label="Tentativas"
+        inputId="maxAttempts"
+        [control]="form.controls.maxAttempts"
+      >
+        <div class="assignment__limit">
+          <p-inputnumber
+            inputId="maxAttempts"
+            formControlName="maxAttempts"
+            [min]="1"
+            [max]="20"
+            [disabled]="noAttemptLimit()"
+            [fluid]="true"
+          />
+          <div class="assignment__toggle">
+            <p-toggleswitch
+              inputId="noAttemptLimit"
+              [ngModel]="noAttemptLimit()"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="toggleNoAttemptLimit($event)"
+            />
+            <label for="noAttemptLimit">Sem limite</label>
+          </div>
+        </div>
+      </cc-form-field>
+    </div>
+
+    <cc-form-field
+      label="Número de questões"
+      inputId="questionCount"
+      [control]="form.controls.questionCount"
+      hint="Sorteadas entre as questões ativas da lição."
+    >
+      <div class="assignment__limit">
+        <p-inputnumber
+          inputId="questionCount"
+          formControlName="questionCount"
+          [min]="1"
+          [max]="100"
+          [disabled]="allQuestions()"
+          [fluid]="true"
+        />
+        <div class="assignment__toggle">
+          <p-toggleswitch
+            inputId="allQuestions"
+            [ngModel]="allQuestions()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="toggleAllQuestions($event)"
+          />
+          <label for="allQuestions">Todas</label>
+        </div>
+      </div>
+    </cc-form-field>
+
+    <div class="assignment__switches">
+      <div class="assignment__toggle">
+        <p-toggleswitch inputId="shuffleQuestions" formControlName="shuffleQuestions" />
+        <label for="shuffleQuestions">Embaralhar questões</label>
+      </div>
+      <div class="assignment__toggle">
+        <p-toggleswitch inputId="shuffleOptions" formControlName="shuffleOptions" />
+        <label for="shuffleOptions">Embaralhar alternativas</label>
+      </div>
+    </div>
+
+    <footer class="assignment__footer">
+      <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="close()" />
+      <cc-submit-button
+        [label]="isEdit() ? 'Salvar' : 'Adicionar à trilha'"
+        icon="pi pi-check"
+        [submitting]="guard.submitting()"
+        [disabled]="conflict()"
+      />
+    </footer>
+  </form>
+</p-dialog>

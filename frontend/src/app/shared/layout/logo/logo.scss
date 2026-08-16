@@ -1,0 +1,45 @@
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo__mark {
+  flex: none;
+}
+
+.logo__name {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--cc-text);
+}
+
+.logo--sm {
+  .logo__mark {
+    width: 24px;
+    height: 24px;
+  }
+  .logo__name {
+    font-size: 0.9375rem;
+  }
+}
+
+.logo--md {
+  .logo__mark {
+    width: 32px;
+    height: 32px;
+  }
+  .logo__name {
+    font-size: 1.125rem;
+  }
+}
+
+.logo--lg {
+  .logo__mark {
+    width: 48px;
+    height: 48px;
+  }
+  .logo__name {
+    font-size: 1.5rem;
+  }
+}

@@ -1,0 +1,44 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: var(--cc-gap);
+}
+
+.field__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cc-text);
+}
+
+.field__required {
+  color: var(--cc-failed);
+  margin-left: 0.15rem;
+}
+
+.field__hint {
+  color: var(--cc-text-muted);
+  font-size: 0.8125rem;
+}
+
+.field__error {
+  color: var(--cc-failed);
+  font-size: 0.8125rem;
+}
+
+/* O controle projetado ocupa a largura do campo. */
+.field ::ng-deep .p-inputtext,
+.field ::ng-deep .p-select,
+.field ::ng-deep .p-multiselect,
+.field ::ng-deep .p-datepicker,
+.field ::ng-deep .p-inputnumber,
+.field ::ng-deep .p-password,
+.field ::ng-deep textarea {
+  width: 100%;
+}
+
+.field--invalid ::ng-deep .p-inputtext,
+.field--invalid ::ng-deep .p-select,
+.field--invalid ::ng-deep .p-multiselect {
+  border-color: var(--cc-failed);
+}

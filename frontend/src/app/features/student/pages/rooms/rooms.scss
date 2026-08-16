@@ -1,0 +1,20 @@
+:host ::ng-deep .join__alert {
+  display: block;
+  margin-bottom: var(--cc-gap);
+}
+
+.join__code {
+  text-transform: uppercase;
+  letter-spacing: 0.35em;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+  font-family: ui-monospace, monospace;
+}
+
+.join__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--cc-gap-sm);
+  margin-top: var(--cc-gap);
+}

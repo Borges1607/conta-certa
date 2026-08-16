@@ -1,0 +1,40 @@
+.nav ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav__item {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  border: 1px solid var(--cc-border);
+  background: var(--cc-surface-card);
+  color: var(--cc-text-muted);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+
+  &:hover {
+    border-color: var(--p-primary-color);
+  }
+}
+
+/* Respondida — deliberadamente neutro, sem verde nem vermelho. */
+.nav__item.is-answered {
+  background: var(--cc-surface-sunken);
+  border-color: var(--cc-text-muted);
+  color: var(--cc-text);
+}
+
+.nav__item.is-current {
+  border-color: var(--p-primary-color);
+  background: var(--p-primary-color);
+  color: var(--p-primary-contrast-color, #fff);
+}

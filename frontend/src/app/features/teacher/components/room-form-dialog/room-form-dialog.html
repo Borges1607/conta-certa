@@ -1,0 +1,89 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [header]="title()"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '38rem', maxWidth: '95vw' }"
+>
+  <form class="room-form cc-stack" [formGroup]="form" (ngSubmit)="submit()">
+    @if (conflict()) {
+      <cc-version-conflict-notice [reloading]="reloading()" (reload)="reload()" />
+    }
+
+    @if (summaryErrors().length > 0) {
+      <div class="room-form__summary" role="alert">
+        <strong>Verifique o formulário</strong>
+        <ul>
+          @for (message of summaryErrors(); track message) {
+            <li>{{ message }}</li>
+          }
+        </ul>
+      </div>
+    }
+
+    <cc-form-field label="Nome da sala" inputId="room-name" [required]="true" [control]="form.controls.name">
+      <input pInputText id="room-name" type="text" formControlName="name" autocomplete="off" />
+    </cc-form-field>
+
+    <cc-form-field
+      label="Descrição"
+      inputId="room-description"
+      hint="Opcional. Aparece para o aluno na lista de salas."
+      [control]="form.controls.description"
+    >
+      <textarea pTextarea id="room-description" rows="3" formControlName="description"></textarea>
+    </cc-form-field>
+
+    <cc-form-field label="Série" inputId="room-grade" [required]="true" [control]="form.controls.grade">
+      <p-select
+        inputId="room-grade"
+        formControlName="grade"
+        [options]="gradeOptions"
+        optionLabel="label"
+        optionValue="value"
+        [fluid]="true"
+      />
+    </cc-form-field>
+
+    <cc-form-field label="Temas" inputId="room-topics">
+      <cc-topics-input
+        inputId="room-topics"
+        [topics]="topics()"
+        (topicsChange)="onTopicsChange($event)"
+      />
+    </cc-form-field>
+
+    <cc-form-field
+      label="Nota mínima para aprovação"
+      inputId="room-passing"
+      [required]="true"
+      hint="Percentual de 0 a 100. A API é quem aplica esta regra nas tentativas."
+      [control]="form.controls.passingScorePercent"
+    >
+      <p-inputnumber
+        inputId="room-passing"
+        formControlName="passingScorePercent"
+        [min]="0"
+        [max]="100"
+        suffix="%"
+        [showButtons]="true"
+        [fluid]="true"
+      />
+    </cc-form-field>
+
+    <p class="cc-xs cc-muted">
+      A instituição é definida automaticamente pela sua conta e não pode ser escolhida aqui.
+    </p>
+
+    <div class="room-form__actions">
+      <p-button label="Cancelar" severity="secondary" [text]="true" type="button" (onClick)="close()" />
+      <cc-submit-button
+        [label]="isEdit() ? 'Salvar alterações' : 'Criar sala'"
+        icon="pi pi-check"
+        [submitting]="guard.submitting()"
+        [disabled]="conflict()"
+      />
+    </div>
+  </form>
+</p-dialog>

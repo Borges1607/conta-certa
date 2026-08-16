@@ -1,0 +1,55 @@
+.actions-col {
+  width: 6rem;
+}
+
+.origin-cell {
+  max-width: 20rem;
+
+  a {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+    font-size: 0.8125rem;
+  }
+}
+
+.origin {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.kind {
+  margin-bottom: var(--cc-gap);
+}
+
+.kind__label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.upload {
+  margin-bottom: var(--cc-gap);
+}
+
+.upload__done {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 var(--cc-gap-sm);
+  color: var(--cc-approved);
+  font-weight: 500;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--cc-gap-sm);
+  margin-top: var(--cc-gap);
+}

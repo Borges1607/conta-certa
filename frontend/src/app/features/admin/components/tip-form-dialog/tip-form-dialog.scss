@@ -1,0 +1,29 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-gap);
+}
+
+.form__row {
+  display: grid;
+  gap: var(--cc-gap);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  @media (max-width: 640px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.form__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-gap-sm);
+  font-size: 0.9rem;
+}
+
+.form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--cc-gap-sm);
+  margin-top: var(--cc-gap-xs);
+}

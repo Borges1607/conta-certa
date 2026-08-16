@@ -1,0 +1,88 @@
+<div class="md-editor">
+  <div class="md-editor__toolbar" role="toolbar" aria-label="Ferramentas de formatação">
+    @for (action of toolbar; track action.id) {
+      <p-button
+        [icon]="action.icon"
+        [ariaLabel]="action.label"
+        [text]="true"
+        severity="secondary"
+        size="small"
+        type="button"
+        [disabled]="disabled()"
+        (onClick)="apply(action)"
+      />
+    }
+    <p-button
+      icon="pi pi-image"
+      ariaLabel="Inserir imagem"
+      [text]="true"
+      severity="secondary"
+      size="small"
+      type="button"
+      [disabled]="disabled()"
+      (onClick)="openUpload()"
+    />
+    <span class="cc-spacer"></span>
+    <small class="cc-muted cc-xs">Markdown com KaTeX. HTML bruto não é renderizado.</small>
+  </div>
+
+  <div class="md-editor__panes">
+    <div class="md-editor__pane">
+      <label class="md-editor__pane-title" [attr.for]="editorId()">Fonte Markdown</label>
+      <textarea
+        #source
+        pTextarea
+        [id]="editorId()"
+        [rows]="rows()"
+        [value]="value()"
+        [disabled]="disabled()"
+        spellcheck="true"
+        (input)="onInput($event)"
+      ></textarea>
+    </div>
+
+    <div class="md-editor__pane">
+      <p class="md-editor__pane-title">Pré-visualização — igual à do aluno</p>
+      <div class="md-editor__preview" aria-live="polite">
+        @if (value().trim().length === 0) {
+          <p class="cc-muted cc-small">A pré-visualização aparece aqui conforme você escreve.</p>
+        } @else {
+          <cc-markdown [content]="value()" />
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<p-dialog
+  [visible]="uploadVisible()"
+  (visibleChange)="uploadVisible.set($event)"
+  header="Inserir imagem"
+  [modal]="true"
+  [draggable]="false"
+  [closable]="!uploading()"
+  [style]="{ width: '32rem', maxWidth: '95vw' }"
+>
+  <div class="cc-stack">
+    <cc-file-upload
+      [accept]="imageAccept"
+      [uploading]="uploading()"
+      [progress]="uploadProgress()"
+      (fileSelected)="onFileSelected($event)"
+      (cancelled)="cancelUpload()"
+    />
+    <small class="cc-muted">
+      A imagem é anexada à lição e a referência é inserida no ponto do cursor.
+    </small>
+    <div class="md-editor__dialog-actions">
+      <p-button
+        label="Fechar"
+        severity="secondary"
+        [text]="true"
+        type="button"
+        [disabled]="uploading()"
+        (onClick)="closeUpload()"
+      />
+    </div>
+  </div>
+</p-dialog>

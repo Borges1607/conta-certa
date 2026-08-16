@@ -1,0 +1,15 @@
+.hint {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 var(--cc-gap-sm);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--cc-radius);
+  background: var(--cc-surface-sunken);
+  color: var(--cc-text-muted);
+  font-size: 0.8125rem;
+}
+
+.option__marker--square {
+  border-radius: 6px;
+}

@@ -1,0 +1,73 @@
+<cc-global-progress />
+<cc-offline-banner />
+
+<div class="shell">
+  <aside class="shell__sidebar" aria-label="Navegação principal">
+    <div class="shell__brand">
+      <cc-logo size="sm" />
+    </div>
+    <nav class="shell__nav">
+      <ul>
+        @for (item of items(); track item.route) {
+          <li>
+            <a
+              [routerLink]="item.route"
+              routerLinkActive="is-active"
+              [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+            >
+              <i class="{{ item.icon }}" aria-hidden="true"></i>
+              <span>{{ item.label }}</span>
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+  </aside>
+
+  <div class="shell__body">
+    <header class="shell__topbar">
+      <p-button
+        icon="pi pi-bars"
+        severity="secondary"
+        [text]="true"
+        styleClass="shell__menu-button"
+        ariaLabel="Abrir menu"
+        (onClick)="drawerVisible.set(true)"
+      />
+      @if (areaLabel()) {
+        <span class="shell__area">{{ areaLabel() }}</span>
+      }
+      <span class="cc-spacer"></span>
+      <cc-user-menu />
+    </header>
+
+    <main class="shell__content">
+      <router-outlet />
+    </main>
+  </div>
+</div>
+
+<p-drawer
+  [visible]="drawerVisible()"
+  (visibleChange)="drawerVisible.set($event)"
+  header="Navegação"
+  position="left"
+>
+  <nav class="shell__nav shell__nav--drawer">
+    <ul>
+      @for (item of items(); track item.route) {
+        <li>
+          <a
+            [routerLink]="item.route"
+            routerLinkActive="is-active"
+            [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+            (click)="drawerVisible.set(false)"
+          >
+            <i class="{{ item.icon }}" aria-hidden="true"></i>
+            <span>{{ item.label }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+</p-drawer>

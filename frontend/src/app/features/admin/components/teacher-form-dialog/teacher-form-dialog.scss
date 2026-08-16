@@ -1,0 +1,39 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-gap);
+}
+
+.form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--cc-gap-sm);
+  margin-top: var(--cc-gap-xs);
+}
+
+.form__readonly {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.form__readonly-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cc-text-muted);
+}
+
+.form__readonly-value {
+  font-size: 0.95rem;
+}
+
+.form__link {
+  padding: 0;
+  margin-left: 0.35rem;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}

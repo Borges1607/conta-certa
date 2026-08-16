@@ -1,0 +1,105 @@
+<div class="cc-page">
+  <cc-page-header
+    title="Lições"
+    subtitle="Seu acervo. Uma lição pode ser reutilizada em várias salas."
+  >
+    <p-button
+      label="Nova lição"
+      icon="pi pi-plus"
+      [loading]="guard.submitting()"
+      (onClick)="create()"
+    />
+  </cc-page-header>
+
+  <div class="toolbar">
+    <span class="toolbar__search">
+      <i class="pi pi-search" aria-hidden="true"></i>
+      <input
+        pInputText
+        type="search"
+        placeholder="Buscar por título"
+        aria-label="Buscar lição"
+        [ngModel]="search()"
+        (ngModelChange)="applySearch($event)"
+      />
+    </span>
+
+    <p-select
+      [options]="statusOptions"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="status()"
+      (ngModelChange)="status.set($event)"
+      ariaLabel="Filtrar por situação"
+    />
+  </div>
+
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="table" [count]="5" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as page) {
+    @if (page.totalElements === 0) {
+      <cc-empty-state
+        title="Seu acervo está vazio"
+        [message]="
+          search() || status()
+            ? 'Nenhuma lição corresponde aos filtros.'
+            : 'Crie uma lição, escreva a teoria e adicione as questões. Depois é só atribuí-la às suas salas.'
+        "
+        actionLabel="Criar lição"
+        icon="pi pi-book"
+        (action)="create()"
+      />
+    } @else {
+      <div class="cc-scroll-x">
+        <p-table [value]="page.content" dataKey="id" [rowHover]="true">
+          <ng-template #header>
+            <tr>
+              <th scope="col">Lição</th>
+              <th scope="col">Situação</th>
+              <th scope="col">Questões</th>
+              <th scope="col">Salas</th>
+              <th scope="col">Atualizada</th>
+              <th scope="col" class="actions-col"><span class="cc-sr-only">Ações</span></th>
+            </tr>
+          </ng-template>
+
+          <ng-template #body let-lesson>
+            <tr>
+              <td>
+                <a class="lesson__title" [routerLink]="['/professor/licoes', lesson.id]">
+                  {{ lesson.title }}
+                </a>
+                @if (lesson.summary) {
+                  <br />
+                  <small class="cc-muted">{{ lesson.summary }}</small>
+                }
+              </td>
+              <td><cc-lesson-status-tag [status]="lesson.status" /></td>
+              <td>
+                <a [routerLink]="['/professor/licoes', lesson.id, 'questoes']">
+                  {{ lesson.questionCount }}
+                </a>
+              </td>
+              <td>{{ lesson.assignmentCount }}</td>
+              <td>{{ lesson.updatedAt | ccRelativeTime }}</td>
+              <td>
+                <p-button
+                  icon="pi pi-ellipsis-v"
+                  severity="secondary"
+                  [text]="true"
+                  [rounded]="true"
+                  ariaLabel="Ações da lição"
+                  [loading]="busyId() === lesson.id"
+                  (onClick)="menu.toggle($event)"
+                />
+                <p-menu #menu [model]="menuFor(lesson)" [popup]="true" appendTo="body" />
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    }
+  }
+</div>

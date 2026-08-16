@@ -1,0 +1,43 @@
+.badge {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cc-gap-sm);
+  padding: var(--cc-gap);
+  height: 100%;
+}
+
+.badge__icon {
+  font-size: 1.5rem;
+  color: var(--cc-star);
+  flex: none;
+  margin-top: 0.1rem;
+}
+
+.badge__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.badge__title {
+  font-size: 0.9375rem;
+}
+
+.badge__description {
+  color: var(--cc-text-muted);
+}
+
+.badge__meta {
+  color: var(--cc-text-muted);
+  margin-top: 0.15rem;
+}
+
+.badge--locked {
+  opacity: 0.65;
+  border-style: dashed;
+
+  .badge__icon {
+    color: var(--cc-locked);
+  }
+}

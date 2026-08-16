@@ -1,0 +1,237 @@
+.result-page {
+  max-width: 52rem;
+}
+
+.expired {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 var(--cc-gap);
+  padding: 0.75rem var(--cc-gap);
+  border-radius: var(--cc-radius);
+  background: color-mix(in srgb, var(--cc-draft), transparent 88%);
+  color: var(--cc-draft);
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--cc-gap-lg);
+  align-items: center;
+  padding: var(--cc-gap-xl) var(--cc-gap-lg);
+  margin-bottom: var(--cc-gap);
+  border-left: 5px solid var(--cc-failed);
+}
+
+.summary--passed {
+  border-left-color: var(--cc-approved);
+}
+
+.summary__verdict {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.35rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  p {
+    margin: 0 0 0.35rem;
+  }
+}
+
+.summary__icon {
+  font-size: 3rem;
+  color: var(--cc-failed);
+}
+
+.summary--passed .summary__icon {
+  color: var(--cc-approved);
+  animation: pop 0.4s ease-out;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.summary__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cc-gap);
+  margin: 0;
+
+  dt {
+    font-size: 0.75rem;
+    color: var(--cc-text-muted);
+  }
+
+  dd {
+    margin: 0.1rem 0 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.summary__xp {
+  color: var(--cc-xp);
+}
+
+.summary__when {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: var(--cc-gap-sm);
+  border-top: 1px solid var(--cc-border);
+}
+
+.rules {
+  margin-bottom: var(--cc-gap-lg);
+  padding: var(--cc-gap);
+  border: 1px solid var(--cc-border);
+  border-radius: var(--cc-radius);
+  background: var(--cc-surface-card);
+
+  summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+
+  ul {
+    margin: var(--cc-gap-sm) 0 0;
+    padding-left: 1.25rem;
+    color: var(--cc-text-muted);
+    font-size: 0.875rem;
+  }
+
+  li + li {
+    margin-top: 0.25rem;
+  }
+}
+
+.review h2 {
+  font-size: 1.05rem;
+}
+
+.review__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.review__item {
+  padding: var(--cc-gap);
+  border-left: 4px solid var(--cc-failed);
+}
+
+.review__item.is-correct {
+  border-left-color: var(--cc-approved);
+}
+
+.review__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cc-gap-sm);
+  margin-bottom: var(--cc-gap-sm);
+}
+
+.review__index {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--cc-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.review__verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+
+  &.is-correct {
+    color: var(--cc-approved);
+  }
+  &.is-wrong {
+    color: var(--cc-failed);
+  }
+}
+
+.review__prompt {
+  display: block;
+  margin-bottom: var(--cc-gap-sm);
+}
+
+.review__answers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cc-gap) var(--cc-gap-lg);
+  margin: 0 0 var(--cc-gap-sm);
+
+  dt {
+    font-size: 0.75rem;
+    color: var(--cc-text-muted);
+  }
+
+  dd {
+    margin: 0.1rem 0 0;
+    font-weight: 600;
+
+    &.is-correct {
+      color: var(--cc-approved);
+    }
+    &.is-wrong {
+      color: var(--cc-failed);
+    }
+  }
+}
+
+.review__explanation {
+  padding: var(--cc-gap-sm) var(--cc-gap);
+  border-radius: var(--cc-radius);
+  background: var(--cc-surface-sunken);
+
+  strong {
+    display: block;
+    margin-bottom: 0.2rem;
+    color: var(--cc-text-muted);
+  }
+}
+
+.result-actions {
+  display: flex;
+  gap: var(--cc-gap-sm);
+  flex-wrap: wrap;
+  margin-top: var(--cc-gap-lg);
+}
+
+.retry-note {
+  margin-top: var(--cc-gap-sm);
+}
+
+@media (max-width: 768px) {
+  .summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

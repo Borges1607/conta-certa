@@ -1,0 +1,109 @@
+<div class="cc-page">
+  <cc-page-header title="Painel" subtitle="Um resumo das suas turmas e do seu acervo.">
+    <p-button label="Nova sala" icon="pi pi-plus" routerLink="/professor/salas" />
+  </cc-page-header>
+
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="stats" [count]="4" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as data) {
+    @if (data.roomCount === 0 && data.lessonCount === 0) {
+      <cc-empty-state
+        title="Vamos começar pela sua primeira sala"
+        message="Crie uma sala, monte a trilha com lições do seu acervo e distribua o código de ingresso para a turma."
+        actionLabel="Criar minha primeira sala"
+        icon="pi pi-users"
+        (action)="goToRooms()"
+      />
+    } @else {
+      <div class="cc-grid metrics">
+        <article class="metric cc-card">
+          <i class="pi pi-users metric__icon" aria-hidden="true"></i>
+          <strong>{{ data.activeRoomCount }}</strong>
+          <span>Salas ativas</span>
+          @if (data.archivedRoomCount > 0) {
+            <small class="cc-muted">{{ data.archivedRoomCount }} arquivadas</small>
+          }
+        </article>
+
+        <article class="metric cc-card">
+          <i class="pi pi-user metric__icon" aria-hidden="true"></i>
+          <strong>{{ data.studentCount }}</strong>
+          <span>Alunos</span>
+        </article>
+
+        <article class="metric cc-card">
+          <i class="pi pi-book metric__icon" aria-hidden="true"></i>
+          <strong>{{ data.publishedLessonCount }}</strong>
+          <span>Lições publicadas</span>
+          @if (data.draftLessonCount > 0) {
+            <small class="cc-muted">{{ data.draftLessonCount }} em rascunho</small>
+          }
+        </article>
+
+        <article class="metric cc-card">
+          <i class="pi pi-chart-line metric__icon" aria-hidden="true"></i>
+          <strong>{{ data.recentAttemptCount }}</strong>
+          <span>Tentativas em 7 dias</span>
+        </article>
+      </div>
+
+      <section class="shortcuts">
+        <h2>Atalhos</h2>
+        <div class="shortcuts__buttons">
+          <p-button
+            label="Criar lição"
+            icon="pi pi-plus"
+            [outlined]="true"
+            routerLink="/professor/licoes"
+          />
+          <p-button
+            label="Ver relatórios"
+            icon="pi pi-chart-bar"
+            [outlined]="true"
+            routerLink="/professor/relatorios"
+          />
+          <p-button
+            label="Publicar videoaula"
+            icon="pi pi-video"
+            [outlined]="true"
+            routerLink="/professor/videos"
+          />
+        </div>
+      </section>
+
+      @if (data.recentRooms.length > 0) {
+        <section class="recent">
+          <div class="recent__head">
+            <h2>Suas salas</h2>
+            <p-button label="Ver todas" severity="secondary" [text]="true" routerLink="/professor/salas" />
+          </div>
+
+          <ul class="recent__list">
+            @for (room of data.recentRooms; track room.id) {
+              <li class="cc-card">
+                <a class="recent__name" [routerLink]="['/professor/salas', room.id]">
+                  {{ room.name }}
+                </a>
+                <span class="cc-small cc-muted">{{ room.grade | ccEnumLabel: 'GradeShort' }}</span>
+                <span class="cc-small">{{ room.studentCount }} alunos</span>
+                @if (room.archived) {
+                  <p-tag value="Arquivada" severity="secondary" />
+                }
+                <span class="cc-spacer"></span>
+                <span class="cc-xs cc-muted">
+                  @if (room.lastActivityAt) {
+                    Atividade {{ room.lastActivityAt | ccRelativeTime }}
+                  } @else {
+                    Sem atividade ainda
+                  }
+                </span>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    }
+  }
+</div>

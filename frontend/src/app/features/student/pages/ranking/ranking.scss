@@ -1,0 +1,81 @@
+.me-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-gap-sm);
+  padding: 0.75rem var(--cc-gap);
+  margin-bottom: var(--cc-gap);
+  border-left: 4px solid var(--p-primary-color);
+  flex-wrap: wrap;
+
+  strong {
+    font-size: 1.05rem;
+  }
+
+  .xp {
+    color: var(--cc-xp);
+  }
+}
+
+.ranking {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--cc-surface-card);
+  border: 1px solid var(--cc-border);
+  border-radius: var(--cc-radius);
+  overflow: hidden;
+
+  th,
+  td {
+    padding: 0.7rem var(--cc-gap);
+    text-align: left;
+    border-bottom: 1px solid var(--cc-border);
+    white-space: nowrap;
+  }
+
+  th {
+    background: var(--cc-surface-sunken);
+    font-size: 0.8125rem;
+    color: var(--cc-text-muted);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  tr.is-me {
+    background: color-mix(in srgb, var(--p-primary-color), transparent 92%);
+    font-weight: 600;
+  }
+}
+
+.ranking__pos {
+  width: 4rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ranking__stars {
+  color: var(--cc-star);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ranking__xp {
+  color: var(--cc-xp);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ranking__you {
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--p-primary-color);
+  color: var(--p-primary-contrast-color, #fff);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.privacy {
+  margin-top: var(--cc-gap-sm);
+}

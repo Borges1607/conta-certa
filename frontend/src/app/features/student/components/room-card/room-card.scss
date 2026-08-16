@@ -1,0 +1,68 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.room {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
+  padding: var(--cc-gap);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.room:hover,
+.room:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: var(--cc-shadow);
+}
+
+.room__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.room__name {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.room__teacher,
+.room__grade {
+  margin: 0;
+}
+
+.room__topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.room__topics li {
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--cc-border);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: var(--cc-text-muted);
+}
+
+.room__go {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  font-weight: 600;
+  color: var(--p-primary-color, #7c3aed);
+}

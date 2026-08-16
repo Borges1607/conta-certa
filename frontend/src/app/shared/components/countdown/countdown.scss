@@ -1,0 +1,35 @@
+.countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: var(--cc-surface-sunken);
+  border: 1px solid var(--cc-border);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+}
+
+.countdown__value {
+  min-width: 3.5ch;
+}
+
+.countdown--warning {
+  background: color-mix(in srgb, var(--cc-draft), transparent 85%);
+  border-color: var(--cc-draft);
+  color: var(--cc-draft);
+}
+
+.countdown--danger {
+  background: color-mix(in srgb, var(--cc-failed), transparent 85%);
+  border-color: var(--cc-failed);
+  color: var(--cc-failed);
+  animation: countdown-pulse 1s ease-in-out infinite;
+}
+
+@keyframes countdown-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}

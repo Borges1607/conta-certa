@@ -1,0 +1,135 @@
+/**
+ * Estilos do conteúdo renderizado.
+ *
+ * Global por necessidade (ViewEncapsulation.None), namespaced sob
+ * `.cc-markdown` por disciplina.
+ */
+.cc-markdown {
+  color: var(--cc-text);
+  line-height: 1.65;
+  overflow-wrap: break-word;
+
+  > :first-child {
+    margin-top: 0;
+  }
+  > :last-child {
+    margin-bottom: 0;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    margin: 1.5em 0 0.5em;
+    line-height: 1.3;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+  h2 {
+    font-size: 1.25rem;
+  }
+  h3 {
+    font-size: 1.1rem;
+  }
+
+  p {
+    margin: 0 0 1em;
+  }
+
+  ul,
+  ol {
+    margin: 0 0 1em;
+    padding-left: 1.5rem;
+  }
+
+  li + li {
+    margin-top: 0.25em;
+  }
+
+  blockquote {
+    margin: 0 0 1em;
+    padding: 0.5rem 1rem;
+    border-left: 4px solid var(--p-primary-color);
+    background: var(--cc-surface-sunken);
+    border-radius: 0 var(--cc-radius) var(--cc-radius) 0;
+    color: var(--cc-text-muted);
+  }
+
+  code {
+    padding: 0.15em 0.35em;
+    border-radius: 4px;
+    background: var(--cc-surface-sunken);
+    font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, monospace;
+    font-size: 0.9em;
+  }
+
+  pre {
+    margin: 0 0 1em;
+    padding: 1rem;
+    border-radius: var(--cc-radius);
+    background: var(--cc-surface-sunken);
+    border: 1px solid var(--cc-border);
+    /* Bloco largo rola dentro de si; a página nunca rola na horizontal. */
+    overflow-x: auto;
+
+    code {
+      padding: 0;
+      background: none;
+    }
+  }
+
+  /* Tabelas largas também se contêm. */
+  table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    margin: 0 0 1em;
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--cc-border);
+    text-align: left;
+  }
+
+  th {
+    background: var(--cc-surface-sunken);
+    font-weight: 600;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--cc-radius);
+  }
+
+  hr {
+    margin: 1.5em 0;
+    border: 0;
+    border-top: 1px solid var(--cc-border);
+  }
+
+  a {
+    color: var(--p-primary-color);
+    text-decoration: underline;
+  }
+
+  /* Fórmula em bloco larga rola sozinha. */
+  .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.25rem 0;
+  }
+}
+
+.cc-markdown--compact {
+  font-size: 0.9375rem;
+
+  p {
+    margin-bottom: 0.5em;
+  }
+}

@@ -1,0 +1,25 @@
+:host ::ng-deep .user-menu__trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 15rem;
+}
+
+.user-menu__name {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.user-menu__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.75rem 1rem 0.25rem;
+  max-width: 16rem;
+}
+
+@media (max-width: 640px) {
+  .user-menu__name {
+    display: none;
+  }
+}

@@ -1,0 +1,28 @@
+.actions-col {
+  width: 6rem;
+}
+
+.link-cell {
+  max-width: 22rem;
+
+  a {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+    font-size: 0.8125rem;
+  }
+}
+
+.preview {
+  margin: -0.35rem 0 var(--cc-gap);
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--cc-gap-sm);
+  margin-top: var(--cc-gap);
+}

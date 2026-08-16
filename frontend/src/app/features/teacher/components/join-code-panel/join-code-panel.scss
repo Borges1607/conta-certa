@@ -1,0 +1,32 @@
+.join-code {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cc-gap);
+  padding: var(--cc-gap);
+}
+
+.join-code__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.join-code__hint {
+  margin: 0.25rem 0 0;
+}
+
+.join-code__value {
+  margin: 0;
+  font-family: ui-monospace, "SFMono-Regular", "Consolas", monospace;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  user-select: all;
+}
+
+.join-code__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cc-gap-sm);
+}

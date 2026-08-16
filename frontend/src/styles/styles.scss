@@ -1,0 +1,11 @@
+/**
+ * Folha de estilo global do Conta Certa.
+ *
+ * O tema dos componentes PrimeNG é definido em TypeScript, no preset Aura
+ * customizado (`src/app/core/theme/cc-preset.ts`), e injetado por
+ * `providePrimeNG`. Aqui ficam apenas tokens próprios, base e utilitários.
+ */
+
+@use 'tokens';
+@use 'base';
+@use 'utilities';

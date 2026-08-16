@@ -1,0 +1,60 @@
+<div class="cc-page">
+  <cc-page-header
+    title="Painel"
+    subtitle="Instituições, professores e dicas financeiras da plataforma."
+  />
+
+  @if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="retry()" (back)="retry()" />
+  } @else if (state.isLoading()) {
+    <cc-loading-skeleton kind="stats" [count]="4" />
+  } @else {
+    <div class="dashboard" [attr.aria-busy]="state.isRefreshing()">
+      <section class="dashboard__section" aria-labelledby="dashboard-institutions">
+        <h2 class="dashboard__title" id="dashboard-institutions">Instituições</h2>
+        <div class="cc-grid cc-grid-3">
+          @for (card of institutionCards(); track card.key) {
+            <a
+              class="card card--{{ card.tone }}"
+              [routerLink]="card.route"
+              [queryParams]="card.queryParams"
+            >
+              <i class="card__icon {{ card.icon }}" aria-hidden="true"></i>
+              <span class="card__value">{{ card.value }}</span>
+              <span class="card__label">{{ card.label }}</span>
+            </a>
+          }
+        </div>
+      </section>
+
+      <section class="dashboard__section" aria-labelledby="dashboard-teachers">
+        <h2 class="dashboard__title" id="dashboard-teachers">Professores</h2>
+        <div class="cc-grid">
+          @for (card of teacherCards(); track card.key) {
+            <a
+              class="card card--{{ card.tone }}"
+              [routerLink]="card.route"
+              [queryParams]="card.queryParams"
+            >
+              <i class="card__icon {{ card.icon }}" aria-hidden="true"></i>
+              <span class="card__value">{{ card.value }}</span>
+              <span class="card__label">{{ card.label }}</span>
+            </a>
+          }
+        </div>
+      </section>
+
+      <section class="dashboard__section" aria-labelledby="dashboard-tips">
+        <h2 class="dashboard__title" id="dashboard-tips">Dicas financeiras</h2>
+        <p class="cc-muted cc-small dashboard__note">
+          As dicas aparecem no painel do aluno na data agendada. Sem dica agendada para o dia, a
+          API escolhe uma dica ativa.
+        </p>
+        <a class="dashboard__link" routerLink="/admin/dicas">
+          Gerenciar dicas
+          <i class="pi pi-arrow-right" aria-hidden="true"></i>
+        </a>
+      </section>
+    </div>
+  }
+</div>

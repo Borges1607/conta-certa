@@ -1,0 +1,69 @@
+.rule {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 var(--cc-gap);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--cc-radius);
+  background: var(--cc-surface-sunken);
+}
+
+.toolbar {
+  display: flex;
+  gap: var(--cc-gap-sm);
+  margin-bottom: var(--cc-gap);
+  flex-wrap: wrap;
+}
+
+.toolbar__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 20rem;
+  max-width: 26rem;
+
+  i {
+    position: absolute;
+    left: 0.75rem;
+    color: var(--cc-text-muted);
+    pointer-events: none;
+  }
+
+  input {
+    width: 100%;
+    padding-left: 2.25rem;
+  }
+}
+
+.badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.badge--today {
+  background: color-mix(in srgb, var(--p-primary-color), transparent 85%);
+  color: var(--p-primary-color);
+}
+
+.badge--future {
+  background: var(--cc-surface-sunken);
+  color: var(--cc-text-muted);
+}
+
+:host ::ng-deep tr.is-today {
+  background: color-mix(in srgb, var(--p-primary-color), transparent 95%);
+}
+
+.actions-col {
+  width: 9rem;
+}
+
+.actions {
+  white-space: nowrap;
+}

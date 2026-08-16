@@ -1,0 +1,49 @@
+<div class="editor">
+  <div class="editor__tabs" role="tablist" aria-label="Modo do editor">
+    <button
+      type="button"
+      role="tab"
+      class="editor__tab"
+      [class.is-active]="mode() === 'write'"
+      [attr.aria-selected]="mode() === 'write'"
+      (click)="setMode('write')"
+    >
+      <i class="pi pi-pencil" aria-hidden="true"></i>
+      Escrever
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="editor__tab"
+      [class.is-active]="mode() === 'preview'"
+      [attr.aria-selected]="mode() === 'preview'"
+      (click)="setMode('preview')"
+    >
+      <i class="pi pi-eye" aria-hidden="true"></i>
+      Pré-visualizar
+    </button>
+  </div>
+
+  @if (mode() === 'write') {
+    <textarea
+      pTextarea
+      class="editor__input"
+      [id]="inputId()"
+      [rows]="rows()"
+      [value]="value()"
+      [disabled]="isDisabled()"
+      [placeholder]="placeholder()"
+      [fluid]="true"
+      (input)="onInput($event)"
+      (blur)="onBlur()"
+    ></textarea>
+  } @else {
+    <div class="editor__preview">
+      @if (value().trim()) {
+        <cc-markdown [content]="value()" />
+      } @else {
+        <p class="cc-muted cc-small">Nada para pré-visualizar ainda.</p>
+      }
+    </div>
+  }
+</div>

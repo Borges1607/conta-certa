@@ -1,0 +1,44 @@
+<div class="cc-page">
+  <cc-page-header
+    title="Trilha de lições"
+    subtitle="Conclua uma lição para liberar a próxima."
+  />
+
+  <!-- `!== null` e não truthy: 0% de progresso precisa aparecer. -->
+  @if (progressPercent() !== null) {
+    <div class="track__progress">
+      <cc-progress-bar [value]="progressPercent() ?? 0" label="Progresso na trilha" />
+    </div>
+  }
+
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="list" [count]="4" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as items) {
+    @if (items.length === 0) {
+      <cc-empty-state
+        title="Nenhuma lição publicada ainda"
+        message="Seu professor ainda não liberou conteúdo nesta sala. Assim que liberar, ele aparece aqui."
+        actionLabel="Atualizar"
+        icon="pi pi-map"
+        actionIcon="pi pi-refresh"
+        (action)="state.retry()"
+      />
+    } @else {
+      <ol class="track">
+        @for (item of items; track item.assignmentId) {
+          <li>
+            <cc-lesson-track-card
+              [item]="item"
+              [roomId]="roomId()"
+              [starting]="starting()"
+              (startRequested)="start($event)"
+              (resumeRequested)="resume($event)"
+            />
+          </li>
+        }
+      </ol>
+    }
+  }
+</div>

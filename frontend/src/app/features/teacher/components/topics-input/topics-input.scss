@@ -1,0 +1,33 @@
+.topics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-gap-sm);
+}
+
+.topics__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cc-gap-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.topics__item {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  border: 1px solid var(--cc-border);
+  border-radius: var(--cc-radius);
+  padding: 0.125rem 0.25rem;
+}
+
+.topics__add {
+  display: flex;
+  gap: var(--cc-gap-sm);
+
+  input {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}

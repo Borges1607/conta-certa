@@ -1,0 +1,161 @@
+<div class="cc-page">
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="detail" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as data) {
+    <cc-page-header
+      [title]="data.lesson.title"
+      [subtitle]="data.lesson.summary ?? ''"
+      [crumbs]="crumbs()"
+    >
+      @if (!isLocked()) {
+        <p-button
+          [label]="data.lesson.activeAttemptId ? 'Continuar tentativa' : 'Começar exercícios'"
+          [icon]="data.lesson.activeAttemptId ? 'pi pi-play' : 'pi pi-pencil'"
+          [loading]="starting()"
+          (onClick)="start(data.lesson)"
+        />
+      }
+    </cc-page-header>
+
+    @if (isLocked()) {
+      <div class="locked cc-card">
+        <cc-lock-reason
+          [reason]="data.lesson.lockReason"
+          [availableFrom]="data.lesson.availableFrom"
+          [dueAt]="data.lesson.dueAt"
+        />
+        <p class="cc-muted cc-small">
+          Você pode ler a teoria mesmo assim — só os exercícios estão indisponíveis.
+        </p>
+      </div>
+    }
+
+    <div class="lesson">
+      <article class="lesson__theory cc-card">
+        <cc-markdown [content]="data.lesson.theoryMarkdown" />
+      </article>
+
+      <aside class="lesson__side">
+        <!-- Regras antes de começar — §5.2 da Parte 4. -->
+        <section class="cc-card panel">
+          <h2>Como funciona</h2>
+          <dl class="panel__facts">
+            <div>
+              <dt>Tempo</dt>
+              <dd>{{ timeLabel(data.lesson.rules.timeLimitMinutes) }}</dd>
+            </div>
+            <div>
+              <dt>Questões</dt>
+              <dd>{{ data.lesson.rules.questionCount }}</dd>
+            </div>
+            <div>
+              <dt>Tentativas</dt>
+              <dd>{{ attemptsLabel(data.lesson) }}</dd>
+            </div>
+            <div>
+              <dt>Nota mínima</dt>
+              <dd>{{ data.lesson.rules.passingScorePercent }}%</dd>
+            </div>
+            @if (data.lesson.bestScorePercent !== null) {
+              <div>
+                <dt>Sua melhor nota</dt>
+                <dd>
+                  {{ data.lesson.bestScorePercent }}%
+                  <cc-star-rating [value]="data.lesson.stars ?? 0" size="sm" />
+                </dd>
+              </div>
+            }
+          </dl>
+          <p class="panel__note cc-xs cc-muted">
+            Cada resposta é definitiva: depois de confirmada, não pode ser alterada.
+          </p>
+        </section>
+
+        @if (data.lesson.materials.length > 0) {
+          <section class="cc-card panel">
+            <h2>Materiais desta lição</h2>
+            <ul class="materials">
+              @for (material of data.lesson.materials; track material.id) {
+                <li>
+                  <div class="materials__info">
+                    <strong>{{ material.title }}</strong>
+                    @if (material.fileSizeBytes) {
+                      <small class="cc-muted">{{ material.fileSizeBytes | ccFileSize }}</small>
+                    }
+                  </div>
+
+                  @if (material.kind === 'FILE' && material.fileId) {
+                    <cc-secure-file-link
+                      [fileId]="material.fileId"
+                      [fileName]="material.fileName ?? material.title"
+                      label="Abrir"
+                      [text]="true"
+                      [outlined]="false"
+                    />
+                  } @else if (material.externalUrl) {
+                    <a
+                      [href]="material.externalUrl"
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      (click)="openMaterial(material.id)"
+                    >
+                      Abrir link
+                    </a>
+                  }
+                </li>
+              }
+            </ul>
+          </section>
+        }
+      </aside>
+    </div>
+
+    <section class="history">
+      <h2>Suas tentativas</h2>
+
+      @if (data.attempts.length === 0) {
+        <p class="cc-muted">Você ainda não fez nenhuma tentativa nesta lição.</p>
+      } @else {
+        <ul class="history__list">
+          @for (attempt of data.attempts; track attempt.attemptId) {
+            <li class="cc-card" [class.is-best]="attempt.best">
+              <div class="history__main">
+                <span class="history__date">{{ attempt.startedAt | ccDateTime }}</span>
+                @if (attempt.best) {
+                  <p-tag value="Melhor tentativa" severity="success" />
+                }
+                @if (attempt.status === 'EXPIRED') {
+                  <p-tag value="Expirada" severity="warn" />
+                }
+              </div>
+
+              <div class="history__score">
+                @if (attempt.scorePercent !== null) {
+                  <strong>{{ attempt.scorePercent }}%</strong>
+                  <span class="cc-muted cc-small">
+                    {{ attempt.correctAnswers }}/{{ attempt.totalQuestions }} corretas
+                  </span>
+                  <cc-star-rating [value]="attempt.stars ?? 0" size="sm" />
+                } @else {
+                  <span class="cc-muted">Em andamento</span>
+                }
+              </div>
+
+              @if (attempt.status !== 'IN_PROGRESS') {
+                <a [routerLink]="['/aluno/tentativas', attempt.attemptId, 'resultado']">
+                  Ver resultado
+                </a>
+              }
+            </li>
+          }
+        </ul>
+        <p class="cc-xs cc-muted history__note">
+          Sua melhor tentativa é a que define a aprovação e as estrelas. Todas ficam no
+          histórico.
+        </p>
+      }
+    </section>
+  }
+</div>

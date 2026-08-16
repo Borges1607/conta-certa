@@ -1,0 +1,177 @@
+<div class="cc-page">
+  <cc-page-header
+    title="Materiais"
+    subtitle="Slides, PDFs e links do seu acervo."
+  >
+    <p-button label="Novo material" icon="pi pi-plus" (onClick)="openCreate()" />
+  </cc-page-header>
+
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="table" [count]="4" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as page) {
+    @if (page.totalElements === 0) {
+      <cc-empty-state
+        title="Nenhum material no acervo"
+        message="Envie PDFs e slides ou cadastre links. Depois é só publicá-los nas suas salas."
+        actionLabel="Cadastrar material"
+        icon="pi pi-file"
+        (action)="openCreate()"
+      />
+    } @else {
+      <div class="cc-scroll-x">
+        <p-table [value]="page.content" dataKey="id" [rowHover]="true">
+          <ng-template #header>
+            <tr>
+              <th scope="col">Título</th>
+              <th scope="col">Tipo</th>
+              <th scope="col">Origem</th>
+              <th scope="col">Categoria</th>
+              <th scope="col" class="actions-col"><span class="cc-sr-only">Ações</span></th>
+            </tr>
+          </ng-template>
+
+          <ng-template #body let-material>
+            <tr>
+              <td>
+                <strong>{{ material.title }}</strong>
+                @if (material.description) {
+                  <br />
+                  <small class="cc-muted">{{ material.description }}</small>
+                }
+              </td>
+              <td>{{ material.kind === 'FILE' ? 'Arquivo' : 'Link' }}</td>
+              <td class="origin-cell">
+                @if (material.kind === 'FILE' && material.file) {
+                  <div class="origin">
+                    <span class="cc-small">{{ material.file.fileName }}</span>
+                    <small class="cc-muted">{{ material.file.sizeBytes | ccFileSize }}</small>
+                    <cc-secure-file-link
+                      [fileId]="material.file.id"
+                      [fileName]="material.file.fileName"
+                      label="Abrir"
+                      [text]="true"
+                      [outlined]="false"
+                    />
+                  </div>
+                } @else if (material.url) {
+                  <a [href]="material.url" target="_blank" rel="noopener noreferrer nofollow">
+                    {{ material.url }}
+                  </a>
+                }
+              </td>
+              <td>{{ material.category ?? '—' }}</td>
+              <td>
+                <p-button
+                  icon="pi pi-pencil"
+                  severity="secondary"
+                  [text]="true"
+                  [rounded]="true"
+                  ariaLabel="Editar material"
+                  (onClick)="openEdit(material)"
+                />
+                <p-button
+                  icon="pi pi-inbox"
+                  severity="danger"
+                  [text]="true"
+                  [rounded]="true"
+                  ariaLabel="Arquivar material"
+                  [loading]="busyId() === material.id"
+                  (onClick)="remove(material)"
+                />
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    }
+  }
+</div>
+
+<p-dialog
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [header]="editing() ? 'Editar material' : 'Novo material'"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '38rem', maxWidth: '95vw' }"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    @if (conflict()) {
+      <cc-version-conflict-notice
+        title="Este material foi alterado em outro lugar"
+        message="Recarregue a lista para ver a versão mais recente antes de editar de novo."
+        (reload)="reload()"
+      />
+    }
+
+    <cc-form-field label="Título" inputId="title" [control]="form.controls.title" [required]="true">
+      <input pInputText id="title" formControlName="title" />
+    </cc-form-field>
+
+    <div class="kind">
+      <span class="kind__label">Origem</span>
+      <p-selectbutton
+        [options]="kindOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="kind()"
+        (ngModelChange)="kind.set($event)"
+        [ngModelOptions]="{ standalone: true }"
+        [allowEmpty]="false"
+      />
+    </div>
+
+    @if (kind() === 'EXTERNAL_LINK') {
+      <cc-form-field
+        label="URL"
+        inputId="url"
+        [control]="form.controls.url"
+        [required]="true"
+        hint="Google Slides, SlideShare ou qualquer link público."
+      >
+        <input pInputText id="url" formControlName="url" placeholder="https://..." />
+      </cc-form-field>
+    } @else {
+      <div class="upload">
+        <span class="kind__label">Arquivo</span>
+        @if (uploadedFile(); as file) {
+          <p class="upload__done cc-small">
+            <i class="pi pi-check-circle" aria-hidden="true"></i>
+            {{ file.fileName }} · {{ file.sizeBytes | ccFileSize }}
+          </p>
+        }
+        <cc-file-upload
+          [accept]="accept"
+          [uploading]="uploading()"
+          [progress]="uploadPercent()"
+          (fileSelected)="onFileSelected($event)"
+        />
+      </div>
+    }
+
+    <cc-form-field label="Categoria" inputId="category" [control]="form.controls.category">
+      <input pInputText id="category" formControlName="category" placeholder="Porcentagem" />
+    </cc-form-field>
+
+    <cc-form-field label="Descrição" inputId="description" [control]="form.controls.description">
+      <textarea pTextarea id="description" formControlName="description" rows="3"></textarea>
+    </cc-form-field>
+
+    <footer class="dialog-footer">
+      <p-button
+        label="Cancelar"
+        severity="secondary"
+        [text]="true"
+        (onClick)="dialogVisible.set(false)"
+      />
+      <cc-submit-button
+        label="Salvar"
+        icon="pi pi-check"
+        [submitting]="guard.submitting()"
+        [disabled]="conflict() || uploading()"
+      />
+    </footer>
+  </form>
+</p-dialog>

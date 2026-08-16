@@ -1,0 +1,105 @@
+<div class="cc-page">
+  <cc-page-header
+    [title]="'Questões'"
+    [subtitle]="lesson.data()?.title ?? ''"
+    [crumbs]="crumbs()"
+  >
+    <p-button
+      label="Voltar à lição"
+      icon="pi pi-arrow-left"
+      severity="secondary"
+      [outlined]="true"
+      [routerLink]="['/professor/licoes', lessonId()]"
+    />
+    <p-button label="Nova questão" icon="pi pi-plus" (onClick)="openCreate()" />
+  </cc-page-header>
+
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="list" [count]="4" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as questions) {
+    @if (questions.length === 0) {
+      <cc-empty-state
+        title="Esta lição ainda não tem questões"
+        message="Uma lição só pode ser publicada quando tiver questões suficientes para a quantidade configurada nas atribuições."
+        actionLabel="Criar primeira questão"
+        icon="pi pi-list"
+        (action)="openCreate()"
+      />
+    } @else {
+      <ol class="questions">
+        @for (question of questions; track question.id; let first = $first; let last = $last) {
+          <li class="question cc-card" [class.question--archived]="question.archived">
+            <div class="question__move">
+              <p-button
+                icon="pi pi-chevron-up"
+                severity="secondary"
+                [text]="true"
+                [rounded]="true"
+                size="small"
+                ariaLabel="Mover para cima"
+                [disabled]="first"
+                (onClick)="move(question, -1)"
+              />
+              <p-button
+                icon="pi pi-chevron-down"
+                severity="secondary"
+                [text]="true"
+                [rounded]="true"
+                size="small"
+                ariaLabel="Mover para baixo"
+                [disabled]="last"
+                (onClick)="move(question, 1)"
+              />
+            </div>
+
+            <span class="question__order" aria-hidden="true">{{ question.order }}</span>
+
+            <div class="question__main">
+              <div class="question__meta">
+                <span class="question__type">{{ typeLabels[question.type] }}</span>
+                @if (question.archived) {
+                  <span class="question__archived">Arquivada</span>
+                }
+              </div>
+
+              <cc-markdown class="question__prompt" [content]="question.prompt" [compact]="true" />
+
+              <p class="question__answer cc-small">
+                <strong>Resposta:</strong> {{ answerSummary(question) }}
+              </p>
+            </div>
+
+            <div class="question__actions">
+              <p-button
+                icon="pi pi-pencil"
+                severity="secondary"
+                [text]="true"
+                [rounded]="true"
+                ariaLabel="Editar questão"
+                (onClick)="openEdit(question)"
+              />
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                [text]="true"
+                [rounded]="true"
+                ariaLabel="Excluir questão"
+                [loading]="busyId() === question.id"
+                (onClick)="remove(question)"
+              />
+            </div>
+          </li>
+        }
+      </ol>
+    }
+  }
+</div>
+
+<cc-question-editor
+  [(visible)]="editorVisible"
+  [lessonId]="lessonId()"
+  [question]="editing()"
+  (saved)="onSaved()"
+/>

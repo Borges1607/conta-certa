@@ -1,0 +1,104 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="onVisibleChange($event)"
+  [header]="header()"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '48rem', maxWidth: '95vw' }"
+>
+  <form class="form" [formGroup]="form" (ngSubmit)="submit()">
+    @if (conflict()) {
+      <cc-version-conflict-notice
+        resourceLabel="Esta dica"
+        [reloading]="reloading()"
+        (reload)="reload()"
+      />
+    }
+
+    <cc-form-field
+      label="Título"
+      inputId="tip-title"
+      [required]="true"
+      [control]="form.controls.title"
+    >
+      <input
+        pInputText
+        id="tip-title"
+        type="text"
+        autocomplete="off"
+        [fluid]="true"
+        formControlName="title"
+      />
+    </cc-form-field>
+
+    <cc-form-field
+      label="Conteúdo"
+      inputId="tip-content"
+      hint="Markdown com KaTeX. HTML bruto não é renderizado — o texto passa pela mesma
+            sanitização usada no painel do aluno."
+      [required]="true"
+      [control]="form.controls.content"
+    >
+      <cc-markdown-editor inputId="tip-content" [rows]="12" formControlName="content" />
+    </cc-form-field>
+
+    <div class="form__row">
+      <cc-form-field
+        label="Data de publicação"
+        inputId="tip-date"
+        hint="Data pura, sem horário: o dia escolhido é o dia enviado."
+        [required]="true"
+        [control]="form.controls.publicationDate"
+      >
+        <p-datepicker
+          inputId="tip-date"
+          formControlName="publicationDate"
+          dateFormat="dd/mm/yy"
+          appendTo="body"
+          [showIcon]="true"
+          [showButtonBar]="true"
+          [fluid]="true"
+        />
+      </cc-form-field>
+
+      <cc-form-field
+        label="Fonte (opcional)"
+        inputId="tip-source"
+        hint="Link para a matéria ou material de origem."
+        [control]="form.controls.sourceUrl"
+      >
+        <input
+          pInputText
+          id="tip-source"
+          type="url"
+          inputmode="url"
+          autocomplete="off"
+          placeholder="https://"
+          [fluid]="true"
+          formControlName="sourceUrl"
+        />
+      </cc-form-field>
+    </div>
+
+    @if (!isEdit()) {
+      <div class="form__toggle">
+        <p-toggleswitch inputId="tip-active" formControlName="active" />
+        <label for="tip-active">Já disponível para os alunos</label>
+      </div>
+    }
+
+    <p-message severity="info" styleClass="form__notice">
+      A dica aparece no painel do aluno no dia agendado. Sem dica agendada para o dia, a API
+      escolhe uma dica ativa.
+    </p-message>
+
+    <div class="form__actions">
+      <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="close()" />
+      <cc-submit-button
+        [label]="isEdit() ? 'Salvar alterações' : 'Criar dica'"
+        [submitting]="guard.submitting()"
+        [disabled]="conflict()"
+      />
+    </div>
+  </form>
+</p-dialog>

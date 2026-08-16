@@ -1,0 +1,98 @@
+<div class="cc-page">
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="detail" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as teacher) {
+    <cc-page-header [title]="teacher.fullName" [crumbs]="crumbs()">
+      <cc-account-status-tag [status]="teacher.status" />
+      <p-button
+        label="Editar"
+        icon="pi pi-pencil"
+        [outlined]="true"
+        (onClick)="dialogVisible.set(true)"
+      />
+      <p-button
+        label="Enviar redefinição de senha"
+        icon="pi pi-envelope"
+        severity="secondary"
+        [outlined]="true"
+        [loading]="busy()"
+        (onClick)="sendReset()"
+      />
+      <p-button
+        [label]="teacher.status === 'INACTIVE' ? 'Reativar' : 'Desativar'"
+        [icon]="teacher.status === 'INACTIVE' ? 'pi pi-check-circle' : 'pi pi-ban'"
+        [severity]="teacher.status === 'INACTIVE' ? 'success' : 'danger'"
+        [outlined]="true"
+        [loading]="busy()"
+        (onClick)="toggleActive()"
+      />
+    </cc-page-header>
+
+    @if (teacher.status === 'PENDING') {
+      <p class="pending" role="status">
+        <i class="pi pi-clock" aria-hidden="true"></i>
+        Convite enviado. O professor ainda não definiu a senha dele — quando definir, a conta
+        passa a ativa automaticamente.
+      </p>
+    }
+
+    <div class="detail">
+      <section class="cc-card panel">
+        <h2>Dados da conta</h2>
+        <dl>
+          <div>
+            <dt>E-mail</dt>
+            <dd>
+              {{ teacher.email }}
+              @if (teacher.emailVerified) {
+                <p-tag value="Verificado" severity="success" />
+              } @else {
+                <p-tag value="Não verificado" severity="warn" />
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Matrícula</dt>
+            <dd>{{ teacher.registrationNumber ?? '—' }}</dd>
+          </div>
+          <div>
+            <dt>Instituição</dt>
+            <dd>{{ teacher.institution?.name ?? '—' }}</dd>
+          </div>
+          @if (teacher.createdAt) {
+            <div>
+              <dt>Cadastrado em</dt>
+              <dd>{{ teacher.createdAt | ccDateTime }}</dd>
+            </div>
+          }
+          @if (teacher.lastLoginAt) {
+            <div>
+              <dt>Último acesso</dt>
+              <dd>{{ teacher.lastLoginAt | ccRelativeTime }}</dd>
+            </div>
+          }
+        </dl>
+      </section>
+
+      <section class="cc-card panel">
+        <h2>Sobre a senha</h2>
+        <p class="cc-small cc-muted">
+          A administração <strong>nunca</strong> define nem vê a senha de um professor. O que
+          existe é o envio de um link por e-mail para que ele mesmo escolha uma nova.
+        </p>
+        <p class="cc-small cc-muted">
+          O e-mail também não é editável por aqui: alterá-lo exige suporte administrativo.
+        </p>
+      </section>
+    </div>
+
+    <cc-teacher-form-dialog
+      [visible]="dialogVisible()"
+      [teacher]="teacher"
+      (closed)="dialogVisible.set(false)"
+      (saved)="onSaved()"
+    />
+  }
+</div>

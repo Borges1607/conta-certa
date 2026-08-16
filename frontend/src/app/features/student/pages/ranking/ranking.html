@@ -1,0 +1,91 @@
+<div class="cc-page">
+  <cc-page-header
+    title="Ranking da sala"
+    subtitle="A classificação é sempre relativa a esta sala."
+  />
+
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="table" [count]="6" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as page) {
+    @if (page.totalElements === 0) {
+      <cc-empty-state
+        title="O ranking ainda está vazio"
+        message="Assim que a turma começar a concluir lições, a classificação aparece aqui."
+        actionLabel="Atualizar"
+        icon="pi pi-chart-bar"
+        actionIcon="pi pi-refresh"
+        (action)="state.retry()"
+      />
+    } @else {
+      <!-- Posição do próprio aluno, mesmo quando fora da página visível. -->
+      @if (page.me && !meVisible()) {
+        <div class="me-banner cc-card">
+          <span class="cc-small cc-muted">Sua posição</span>
+          <strong>{{ page.me.position }}º</strong>
+          <span>{{ page.me.displayName }}</span>
+          <span class="cc-spacer"></span>
+          <strong class="xp">{{ page.me.xp }} XP</strong>
+        </div>
+      }
+
+      <div class="cc-scroll-x">
+        <table class="ranking">
+          <caption class="cc-sr-only">Classificação dos alunos desta sala</caption>
+          <thead>
+            <tr>
+              <th scope="col" class="ranking__pos">#</th>
+              <th scope="col">Aluno</th>
+              <th scope="col">XP</th>
+              <th scope="col">Estrelas</th>
+              <th scope="col">Lições aprovadas</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of page.content; track entry.studentId) {
+              <tr [class.is-me]="entry.me">
+                <td class="ranking__pos">
+                  @if (medal(entry.position); as medal) {
+                    <span aria-hidden="true">{{ medal }}</span>
+                    <span class="cc-sr-only">{{ entry.position }}º lugar</span>
+                  } @else {
+                    {{ entry.position }}º
+                  }
+                </td>
+                <td>
+                  {{ entry.displayName }}
+                  @if (entry.me) {
+                    <span class="ranking__you">você</span>
+                  }
+                </td>
+                <td class="ranking__xp">{{ entry.xp }}</td>
+                <!-- Contagem, e não 3 estrelas: aqui o total é da sala inteira,
+                     não de uma lição, então uma escala fixa enganaria. -->
+                <td class="ranking__stars">
+                  <i class="pi pi-star-fill" aria-hidden="true"></i>
+                  {{ entry.stars }}
+                </td>
+                <td>{{ entry.lessonsPassed }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (page.totalElements > page.size) {
+        <p-paginator
+          [first]="first()"
+          [rows]="page.size"
+          [totalRecords]="page.totalElements"
+          [rowsPerPageOptions]="[10, 20, 50]"
+          (onPageChange)="onPage($event)"
+        />
+      }
+
+      <p class="cc-xs cc-muted privacy">
+        Os colegas aparecem com o primeiro nome e a inicial do sobrenome.
+      </p>
+    }
+  }
+</div>

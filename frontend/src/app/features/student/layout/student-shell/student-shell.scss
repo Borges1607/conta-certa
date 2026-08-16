@@ -1,0 +1,135 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-gap-sm);
+  height: var(--cc-topbar-height);
+  padding: 0 var(--cc-gap);
+  background: var(--cc-surface-card);
+  border-bottom: 1px solid var(--cc-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar__brand {
+  display: inline-flex;
+  flex: none;
+}
+
+:host ::ng-deep .topbar__rooms {
+  min-width: 12rem;
+  max-width: 16rem;
+}
+
+.topbar__stats {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-gap-sm);
+}
+
+.tabs {
+  background: var(--cc-surface-card);
+  border-bottom: 1px solid var(--cc-border);
+  position: sticky;
+  top: var(--cc-topbar-height);
+  z-index: 99;
+
+  ul {
+    display: flex;
+    gap: 0.15rem;
+    margin: 0 auto;
+    padding: 0 var(--cc-gap);
+    max-width: var(--cc-content-max);
+    list-style: none;
+    overflow-x: auto;
+  }
+
+  a {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.75rem 0.85rem;
+    color: var(--cc-text-muted);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+
+    &:hover {
+      color: var(--cc-text);
+      text-decoration: none;
+    }
+  }
+
+  a.is-active {
+    color: var(--p-primary-color);
+    border-bottom-color: var(--p-primary-color);
+  }
+}
+
+.tabs__short {
+  display: none;
+}
+
+.content {
+  min-height: 60vh;
+}
+
+/* Abaixo de 768px a navegação da sala vira barra inferior. */
+@media (max-width: 768px) {
+  .topbar__stats {
+    display: none;
+  }
+
+  .tabs {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-bottom: 0;
+    border-top: 1px solid var(--cc-border);
+    padding-bottom: env(safe-area-inset-bottom);
+
+    ul {
+      padding: 0;
+      justify-content: space-around;
+    }
+
+    a {
+      flex-direction: column;
+      gap: 0.15rem;
+      padding: 0.5rem 0.35rem;
+      font-size: 0.6875rem;
+      border-bottom: 0;
+      border-top: 2px solid transparent;
+    }
+
+    a.is-active {
+      border-top-color: var(--p-primary-color);
+    }
+
+    i {
+      font-size: 1.1rem;
+    }
+  }
+
+  .tabs__label {
+    display: none;
+  }
+
+  .tabs__short {
+    display: inline;
+  }
+
+  .content {
+    padding-bottom: 4.5rem;
+  }
+}

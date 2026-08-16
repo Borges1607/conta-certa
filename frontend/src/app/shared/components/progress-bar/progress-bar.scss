@@ -1,0 +1,22 @@
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.progress__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cc-gap-sm);
+  font-size: 0.8125rem;
+}
+
+.progress__label {
+  color: var(--cc-text-muted);
+}
+
+.progress__value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

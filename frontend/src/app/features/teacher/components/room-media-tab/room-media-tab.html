@@ -1,0 +1,189 @@
+<div class="media-tab">
+  @if (!archived()) {
+    <div class="media-tab__toolbar">
+      <p-button label="Publicar mídia na sala" icon="pi pi-plus" (onClick)="openPublish()" />
+    </div>
+  }
+
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="list" [count]="3" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as items) {
+    @if (items.length === 0) {
+      <cc-empty-state
+        title="Nenhuma mídia publicada nesta sala"
+        message="Publique videoaulas e materiais do seu acervo. Você pode vinculá-los a uma lição da trilha ou deixá-los soltos na sala."
+        actionLabel="Publicar mídia"
+        icon="pi pi-play"
+        (action)="openPublish()"
+      />
+    } @else {
+      <section class="group">
+        <h3>Vinculadas a uma lição</h3>
+        @if (linked().length === 0) {
+          <p class="cc-muted cc-small">Nenhuma mídia vinculada a lição.</p>
+        } @else {
+          <ul class="media-list">
+            @for (item of linked(); track item.id) {
+              <li class="cc-card">
+                <i
+                  class="media-list__icon pi"
+                  [class.pi-video]="item.mediaType === 'VIDEO'"
+                  [class.pi-file]="item.mediaType === 'MATERIAL'"
+                  aria-hidden="true"
+                ></i>
+                <div class="media-list__info">
+                  <strong>{{ item.title }}</strong>
+                  <small class="cc-muted">{{ item.lessonTitle }}</small>
+                </div>
+                <p-tag [value]="item.mediaType === 'VIDEO' ? 'Videoaula' : 'Material'" severity="secondary" />
+                <p-button
+                  label="Visualizações"
+                  icon="pi pi-eye"
+                  severity="secondary"
+                  [text]="true"
+                  size="small"
+                  (onClick)="viewsTarget.set(item)"
+                />
+                @if (!archived()) {
+                  <p-button
+                    icon="pi pi-times"
+                    severity="danger"
+                    [text]="true"
+                    [rounded]="true"
+                    ariaLabel="Retirar da sala"
+                    [loading]="busyId() === item.id"
+                    (onClick)="remove(item)"
+                  />
+                }
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <section class="group">
+        <h3>Gerais da sala</h3>
+        @if (loose().length === 0) {
+          <p class="cc-muted cc-small">Nenhuma mídia geral.</p>
+        } @else {
+          <ul class="media-list">
+            @for (item of loose(); track item.id) {
+              <li class="cc-card">
+                <i
+                  class="media-list__icon pi"
+                  [class.pi-video]="item.mediaType === 'VIDEO'"
+                  [class.pi-file]="item.mediaType === 'MATERIAL'"
+                  aria-hidden="true"
+                ></i>
+                <div class="media-list__info">
+                  <strong>{{ item.title }}</strong>
+                </div>
+                <p-tag [value]="item.mediaType === 'VIDEO' ? 'Videoaula' : 'Material'" severity="secondary" />
+                <p-button
+                  label="Visualizações"
+                  icon="pi pi-eye"
+                  severity="secondary"
+                  [text]="true"
+                  size="small"
+                  (onClick)="viewsTarget.set(item)"
+                />
+                @if (!archived()) {
+                  <p-button
+                    icon="pi pi-times"
+                    severity="danger"
+                    [text]="true"
+                    [rounded]="true"
+                    ariaLabel="Retirar da sala"
+                    [loading]="busyId() === item.id"
+                    (onClick)="remove(item)"
+                  />
+                }
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+  }
+</div>
+
+<p-dialog
+  [visible]="publishVisible()"
+  (visibleChange)="publishVisible.set($event)"
+  header="Publicar mídia na sala"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '30rem', maxWidth: '95vw' }"
+>
+  <div class="publish">
+    <label class="publish__label" for="mediaType">Tipo</label>
+    <p-select
+      inputId="mediaType"
+      [options]="typeOptions"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="mediaType()"
+      (ngModelChange)="onTypeChange($event)"
+      [fluid]="true"
+    />
+
+    <label class="publish__label" for="mediaId">
+      {{ mediaType() === 'VIDEO' ? 'Videoaula' : 'Material' }}
+    </label>
+    <p-select
+      inputId="mediaId"
+      [options]="mediaOptions()"
+      optionLabel="title"
+      optionValue="id"
+      [ngModel]="selectedMediaId()"
+      (ngModelChange)="selectedMediaId.set($event)"
+      [loading]="optionsLoading()"
+      [filter]="true"
+      filterBy="title"
+      placeholder="Escolha do seu acervo"
+      emptyMessage="Nada publicado no seu acervo ainda"
+      [fluid]="true"
+    />
+
+    <label class="publish__label" for="lessonAssignmentId">Vincular a uma lição (opcional)</label>
+    <p-select
+      inputId="lessonAssignmentId"
+      [options]="lessonOptions()"
+      optionLabel="title"
+      optionValue="id"
+      [ngModel]="selectedLessonAssignmentId()"
+      (ngModelChange)="selectedLessonAssignmentId.set($event)"
+      [showClear]="true"
+      placeholder="Sem vínculo — fica geral na sala"
+      emptyMessage="A trilha desta sala está vazia"
+      [fluid]="true"
+    />
+
+    <footer class="publish__footer">
+      <p-button
+        label="Cancelar"
+        severity="secondary"
+        [text]="true"
+        (onClick)="publishVisible.set(false)"
+      />
+      <p-button
+        label="Publicar"
+        icon="pi pi-check"
+        [loading]="guard.submitting()"
+        [disabled]="selectedMediaId() === null"
+        (onClick)="publish()"
+      />
+    </footer>
+  </div>
+</p-dialog>
+
+@if (viewsTarget(); as target) {
+  <cc-media-views-dialog
+    [mediaType]="target.mediaType"
+    [mediaId]="target.mediaId"
+    [title]="target.title"
+    (closed)="viewsTarget.set(null)"
+  />
+}

@@ -1,0 +1,111 @@
+/**
+ * Utilitários de layout.
+ *
+ * Deliberadamente pequeno: só o que aparece em várias telas. Estilo específico
+ * de componente mora no `.scss` do próprio componente.
+ */
+
+.cc-page {
+  width: 100%;
+  max-width: var(--cc-content-max);
+  margin: 0 auto;
+  padding: var(--cc-gap-lg) var(--cc-gap);
+}
+
+.cc-page--wide {
+  max-width: none;
+}
+
+/* Pilhas e linhas */
+.cc-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-gap);
+}
+.cc-stack-sm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-gap-sm);
+}
+.cc-row {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-gap);
+}
+.cc-row-sm {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-gap-sm);
+}
+.cc-row-wrap {
+  flex-wrap: wrap;
+}
+.cc-spacer {
+  flex: 1 1 auto;
+}
+
+/* Grades que colapsam nos pontos de quebra da Parte 2, §7 */
+.cc-grid {
+  display: grid;
+  gap: var(--cc-gap);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.cc-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.cc-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 1024px) {
+  .cc-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .cc-grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .cc-grid,
+  .cc-grid-3,
+  .cc-grid-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Texto */
+.cc-muted {
+  color: var(--cc-text-muted);
+}
+.cc-small {
+  font-size: 0.875rem;
+}
+.cc-xs {
+  font-size: 0.75rem;
+}
+.cc-strong {
+  font-weight: 600;
+}
+.cc-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Superfícies */
+.cc-card {
+  background: var(--cc-surface-card);
+  border: 1px solid var(--cc-border);
+  border-radius: var(--cc-radius);
+  box-shadow: var(--cc-shadow-sm);
+}
+.cc-card-lg {
+  border-radius: var(--cc-radius-lg);
+}
+
+/* Rolagem horizontal contida — tabelas largas nunca rolam o body */
+.cc-scroll-x {
+  overflow-x: auto;
+  max-width: 100%;
+}

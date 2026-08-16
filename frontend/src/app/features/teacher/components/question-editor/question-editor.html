@@ -1,0 +1,108 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [header]="isEdit() ? 'Editar questão' : 'Nova questão'"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '62rem', maxWidth: '96vw' }"
+>
+  <div class="question-editor cc-stack">
+    @if (conflict()) {
+      <cc-version-conflict-notice
+        title="Esta questão foi alterada em outro lugar"
+        message="Existe uma versão mais nova no servidor. Recarregue para ver o conteúdo atual antes de editar de novo."
+        [reloading]="reloading()"
+        (reload)="reload()"
+      />
+    }
+
+    @if (serverErrors().length > 0) {
+      <div class="question-editor__errors" role="alert">
+        <strong>O servidor recusou o envio</strong>
+        <ul>
+          @for (message of serverErrors(); track message) {
+            <li>{{ message }}</li>
+          }
+        </ul>
+      </div>
+    }
+
+    <div class="question-editor__type">
+      <label for="question-type">Tipo</label>
+      <p-select
+        inputId="question-type"
+        [options]="typeOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="type()"
+        [ngModelOptions]="{ standalone: true }"
+        [disabled]="readOnly()"
+        (ngModelChange)="onTypeChange($event)"
+      />
+    </div>
+
+    <section class="cc-stack-sm">
+      <h3 class="question-editor__section">Enunciado</h3>
+      <cc-markdown-editor
+        editorId="question-prompt"
+        [rows]="8"
+        [lessonId]="lessonId()"
+        [disabled]="readOnly()"
+        [value]="prompt()"
+        (valueChange)="prompt.set($event)"
+      />
+    </section>
+
+    <section class="cc-stack-sm">
+      <h3 class="question-editor__section">Gabarito</h3>
+      <cc-question-type-fields
+        [type]="type()"
+        [disabled]="readOnly()"
+        [options]="options()"
+        (optionsChange)="options.set($event)"
+        [correctBoolean]="correctBoolean()"
+        (correctBooleanChange)="correctBoolean.set($event)"
+        [numeric]="numeric()"
+        (numericChange)="numeric.set($event)"
+      />
+    </section>
+
+    <section class="cc-stack-sm">
+      <h3 class="question-editor__section">Explicação</h3>
+      <p class="cc-xs cc-muted">
+        Mostrada ao aluno somente depois que a tentativa termina.
+      </p>
+      <cc-markdown-editor
+        editorId="question-explanation"
+        [rows]="6"
+        [lessonId]="lessonId()"
+        [disabled]="readOnly()"
+        [value]="explanation()"
+        (valueChange)="explanation.set($event)"
+      />
+    </section>
+
+    @if (showLocalErrors() && localErrors().length > 0) {
+      <div class="question-editor__errors" role="alert">
+        <strong>Ajuste antes de salvar</strong>
+        <ul>
+          @for (message of localErrors(); track message) {
+            <li>{{ message }}</li>
+          }
+        </ul>
+      </div>
+    }
+
+    <div class="question-editor__actions">
+      <p-button label="Cancelar" severity="secondary" [text]="true" type="button" (onClick)="close()" />
+      <cc-submit-button
+        [label]="isEdit() ? 'Salvar questão' : 'Criar questão'"
+        icon="pi pi-check"
+        type="button"
+        [submitting]="guard.submitting()"
+        [disabled]="conflict() || readOnly()"
+        (clicked)="submit()"
+      />
+    </div>
+  </div>
+</p-dialog>

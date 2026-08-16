@@ -1,0 +1,36 @@
+@let currentRoom = room();
+
+<a class="room cc-card cc-card-lg" [routerLink]="['/aluno/salas', currentRoom.id]">
+  <div class="room__head">
+    <h3 class="room__name">{{ currentRoom.name }}</h3>
+    @if (currentRoom.archived) {
+      <p-tag value="Arquivada" severity="secondary" [rounded]="true" />
+    }
+  </div>
+
+  <p class="room__teacher cc-small cc-muted">
+    <i class="pi pi-user" aria-hidden="true"></i>
+    {{ currentRoom.teacher.fullName }}
+  </p>
+
+  <p class="room__grade cc-small cc-muted">
+    {{ currentRoom.grade | ccEnumLabel: 'Grade' }}
+  </p>
+
+  @if (currentRoom.contentTopics.length > 0) {
+    <ul class="room__topics" aria-label="Temas da sala">
+      @for (topic of currentRoom.contentTopics; track topic) {
+        <li>{{ topic }}</li>
+      }
+    </ul>
+  }
+
+  @if (currentRoom.progressPercent !== undefined) {
+    <cc-progress-bar [value]="currentRoom.progressPercent" label="Seu progresso" />
+  }
+
+  <span class="room__go cc-small">
+    Entrar na sala
+    <i class="pi pi-arrow-right" aria-hidden="true"></i>
+  </span>
+</a>

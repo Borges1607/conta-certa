@@ -1,0 +1,71 @@
+<cc-auth-card heading="Entrar" description="Use o e-mail cadastrado na sua instituição.">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (formError()) {
+      <p-message severity="error" styleClass="login__alert">{{ formError() }}</p-message>
+    }
+
+    @if (blocker() === 'unverified') {
+      <p-message severity="warn" styleClass="login__alert">
+        <div class="login__blocker">
+          <span>Confirme seu e-mail antes de entrar.</span>
+          @if (resendSent()) {
+            <small>Se este e-mail estiver cadastrado, enviamos um novo link de confirmação.</small>
+          } @else {
+            <p-button
+              label="Reenviar confirmação"
+              size="small"
+              [text]="true"
+              [loading]="resendGuard.submitting()"
+              (onClick)="resendVerification()"
+            />
+          }
+        </div>
+      </p-message>
+    }
+
+    @if (blocker() === 'inactive') {
+      <p-message severity="warn" styleClass="login__alert">
+        Sua conta está desativada. Procure a coordenação da sua instituição.
+      </p-message>
+    }
+
+    <cc-form-field label="E-mail" inputId="email" [control]="form.controls.email" [required]="true">
+      <input
+        pInputText
+        id="email"
+        type="email"
+        formControlName="email"
+        autocomplete="email"
+        placeholder="voce@exemplo.com"
+      />
+    </cc-form-field>
+
+    <cc-form-field label="Senha" inputId="password" [control]="form.controls.password" [required]="true">
+      <p-password
+        inputId="password"
+        formControlName="password"
+        [feedback]="false"
+        [toggleMask]="true"
+        autocomplete="current-password"
+        [fluid]="true"
+      />
+    </cc-form-field>
+
+    <cc-submit-button
+      label="Entrar"
+      icon="pi pi-sign-in"
+      [submitting]="guard.submitting()"
+      [fluid]="true"
+    />
+  </form>
+
+  <div class="login__links">
+    <a routerLink="/esqueci-senha">Esqueci minha senha</a>
+    <span class="cc-muted">·</span>
+    <a routerLink="/cadastro">Criar conta de aluno</a>
+  </div>
+
+  <p class="login__note cc-xs cc-muted">
+    Professores recebem um convite por e-mail da coordenação.
+  </p>
+</cc-auth-card>

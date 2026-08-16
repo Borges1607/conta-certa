@@ -1,0 +1,151 @@
+<div class="cc-page">
+  <cc-page-header
+    title="Instituições"
+    subtitle="Escolas e institutos que usam o Conta Certa."
+  >
+    <p-button label="Nova instituição" icon="pi pi-plus" (onClick)="openCreate()" />
+  </cc-page-header>
+
+  <div class="toolbar">
+    <span class="toolbar__search">
+      <i class="pi pi-search" aria-hidden="true"></i>
+      <input
+        pInputText
+        type="search"
+        placeholder="Buscar por nome ou CNPJ"
+        aria-label="Buscar instituição"
+        [ngModel]="search()"
+        (ngModelChange)="onSearch($event)"
+      />
+    </span>
+
+    <p-select
+      [options]="activeOptions"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="currentActiveOption()"
+      (ngModelChange)="onActiveChange($event)"
+      ariaLabel="Filtrar por situação"
+    />
+  </div>
+
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="table" [count]="5" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as page) {
+    @if (page.totalElements === 0) {
+      <cc-empty-state
+        title="Nenhuma instituição encontrada"
+        [message]="
+          search() || active() !== undefined
+            ? 'Nenhuma instituição corresponde aos filtros.'
+            : 'Cadastre a primeira instituição para começar a convidar professores.'
+        "
+        actionLabel="Cadastrar instituição"
+        icon="pi pi-building"
+        (action)="openCreate()"
+      />
+    } @else {
+      <div class="cc-scroll-x">
+        <p-table [value]="page.content" dataKey="id" [rowHover]="true">
+          <ng-template #header>
+            <tr>
+              <th scope="col">Instituição</th>
+              <th scope="col">CNPJ</th>
+              <th scope="col">Contato</th>
+              <th scope="col">Situação</th>
+              <th scope="col" class="actions-col"><span class="cc-sr-only">Ações</span></th>
+            </tr>
+          </ng-template>
+
+          <ng-template #body let-institution>
+            <tr>
+              <td>
+                <a
+                  class="institution__name"
+                  [routerLink]="['/admin/instituicoes', institution.id]"
+                >
+                  {{ institution.name }}
+                </a>
+                @if (institution.teacherCount !== null && institution.teacherCount !== undefined) {
+                  <br />
+                  <small class="cc-muted">
+                    {{ institution.teacherCount }} professores
+                    @if (institution.studentCount !== null && institution.studentCount !== undefined) {
+                      · {{ institution.studentCount }} alunos
+                    }
+                  </small>
+                }
+              </td>
+              <td><code>{{ institution.cnpj | ccCnpj }}</code></td>
+              <td>
+                {{ institution.contactEmail }}
+                <br />
+                <small class="cc-muted">{{ institution.contactPhone | ccPhone }}</small>
+              </td>
+              <td><cc-active-tag [active]="institution.active" /></td>
+              <td class="actions">
+                <p-button
+                  icon="pi pi-pencil"
+                  severity="secondary"
+                  [text]="true"
+                  [rounded]="true"
+                  ariaLabel="Editar instituição"
+                  (onClick)="openEdit(institution)"
+                />
+                @if (institution.active) {
+                  <p-button
+                    icon="pi pi-ban"
+                    severity="warn"
+                    [text]="true"
+                    [rounded]="true"
+                    ariaLabel="Desativar instituição"
+                    [loading]="busyId() === institution.id"
+                    (onClick)="deactivate(institution)"
+                  />
+                } @else {
+                  <p-button
+                    icon="pi pi-check-circle"
+                    severity="success"
+                    [text]="true"
+                    [rounded]="true"
+                    ariaLabel="Ativar instituição"
+                    [loading]="busyId() === institution.id"
+                    (onClick)="activate(institution)"
+                  />
+                }
+                <p-button
+                  icon="pi pi-trash"
+                  severity="danger"
+                  [text]="true"
+                  [rounded]="true"
+                  ariaLabel="Excluir instituição"
+                  [loading]="busyId() === institution.id"
+                  (onClick)="remove(institution)"
+                />
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      @if (page.totalElements > page.size) {
+        <p-paginator
+          [first]="first()"
+          [rows]="page.size"
+          [totalRecords]="page.totalElements"
+          [rowsPerPageOptions]="[10, 20, 50]"
+          (onPageChange)="onPage($event)"
+        />
+      }
+    }
+  }
+</div>
+
+<cc-institution-form-dialog
+  [visible]="dialogVisible()"
+  [institution]="editing()"
+  (closed)="dialogVisible.set(false)"
+  (saved)="onSaved()"
+/>

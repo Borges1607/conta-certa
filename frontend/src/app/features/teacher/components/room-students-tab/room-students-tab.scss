@@ -1,0 +1,46 @@
+.students__toolbar {
+  display: flex;
+  gap: var(--cc-gap-sm);
+  margin-bottom: var(--cc-gap);
+  flex-wrap: wrap;
+}
+
+.students__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 22rem;
+  max-width: 28rem;
+
+  i {
+    position: absolute;
+    left: 0.75rem;
+    color: var(--cc-text-muted);
+    pointer-events: none;
+  }
+
+  input {
+    width: 100%;
+    padding-left: 2.25rem;
+  }
+}
+
+.students__xp {
+  color: var(--cc-xp);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.students__stars {
+  color: var(--cc-star);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.students__actions-col {
+  width: 3.5rem;
+}
+
+.students__note {
+  margin-top: var(--cc-gap-sm);
+}

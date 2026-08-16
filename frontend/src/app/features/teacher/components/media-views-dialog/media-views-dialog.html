@@ -1,0 +1,60 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="onVisibleChange($event)"
+  [header]="'Visualizações — ' + title()"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '42rem', maxWidth: '95vw' }"
+>
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="table" [count]="4" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as page) {
+    @if (page.totalElements === 0) {
+      <cc-empty-state
+        title="Ninguém abriu ainda"
+        message="Assim que um aluno abrir esta mídia, o registro aparece aqui."
+        actionLabel="Atualizar"
+        icon="pi pi-eye-slash"
+        actionIcon="pi pi-refresh"
+        (action)="state.retry()"
+      />
+    } @else {
+      <p class="summary">
+        <strong>{{ page.totalViewers }}</strong>
+        {{ page.totalViewers === 1 ? 'aluno abriu' : 'alunos abriram' }} esta mídia.
+      </p>
+
+      <div class="cc-scroll-x">
+        <p-table [value]="page.content" dataKey="studentId">
+          <ng-template #header>
+            <tr>
+              <th scope="col">Aluno</th>
+              <th scope="col">Matrícula</th>
+              <th scope="col">Primeira vez</th>
+              <th scope="col">Última vez</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-view>
+            <tr>
+              <td>{{ view.fullName }}</td>
+              <td>{{ view.registrationNumber ?? '—' }}</td>
+              <td>{{ view.firstViewedAt | ccDateTime }}</td>
+              <td>{{ view.lastViewedAt | ccDateTime }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      @if (page.totalElements > page.size) {
+        <p-paginator
+          [first]="first()"
+          [rows]="page.size"
+          [totalRecords]="page.totalElements"
+          (onPageChange)="onPage($event)"
+        />
+      }
+    }
+  }
+</p-dialog>

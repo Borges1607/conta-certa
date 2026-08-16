@@ -1,0 +1,32 @@
+.question-editor__section {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.question-editor__type {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-gap-sm);
+
+  label {
+    font-weight: 600;
+  }
+}
+
+.question-editor__errors {
+  border: 1px solid var(--cc-danger, #b3261e);
+  border-radius: var(--cc-radius);
+  padding: var(--cc-gap-sm);
+  font-size: 0.875rem;
+
+  ul {
+    margin: 0.25rem 0 0;
+    padding-left: 1.25rem;
+  }
+}
+
+.question-editor__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--cc-gap-sm);
+}

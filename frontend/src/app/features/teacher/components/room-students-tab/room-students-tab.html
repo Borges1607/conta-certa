@@ -1,0 +1,96 @@
+<div class="students">
+  <div class="students__toolbar">
+    <span class="students__search">
+      <i class="pi pi-search" aria-hidden="true"></i>
+      <input
+        pInputText
+        type="search"
+        placeholder="Buscar por nome, matrícula ou e-mail"
+        aria-label="Buscar aluno"
+        [ngModel]="search()"
+        (ngModelChange)="applySearch($event)"
+      />
+    </span>
+  </div>
+
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="table" [count]="5" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as page) {
+    @if (page.totalElements === 0) {
+      <cc-empty-state
+        title="Nenhum aluno nesta sala ainda"
+        [message]="
+          search()
+            ? 'Nenhum aluno corresponde à sua busca.'
+            : 'Distribua o código de ingresso da sala para a turma entrar.'
+        "
+        actionLabel="Atualizar"
+        icon="pi pi-users"
+        actionIcon="pi pi-refresh"
+        (action)="state.retry()"
+      />
+    } @else {
+      <div class="cc-scroll-x">
+        <p-table [value]="page.content" dataKey="studentId" [rowHover]="true">
+          <ng-template #header>
+            <tr>
+              <th scope="col">Aluno</th>
+              <th scope="col">Matrícula</th>
+              <th scope="col">XP na sala</th>
+              <th scope="col">Lições</th>
+              <th scope="col">Estrelas</th>
+              <th scope="col">Última atividade</th>
+              <th scope="col">Situação</th>
+              <th scope="col" class="students__actions-col"><span class="cc-sr-only">Ações</span></th>
+            </tr>
+          </ng-template>
+
+          <ng-template #body let-student>
+            <tr>
+              <td>
+                <strong>{{ student.fullName }}</strong>
+                <br />
+                <small class="cc-muted">{{ student.email }}</small>
+              </td>
+              <td>{{ student.registrationNumber ?? '—' }}</td>
+              <td class="students__xp">{{ student.xp }}</td>
+              <td>{{ student.completedLessons }}/{{ student.totalLessons }}</td>
+              <td class="students__stars">
+                <i class="pi pi-star-fill" aria-hidden="true"></i> {{ student.stars }}
+              </td>
+              <td>
+                @if (student.lastActivityAt) {
+                  {{ student.lastActivityAt | ccRelativeTime }}
+                } @else {
+                  <span class="cc-muted">—</span>
+                }
+              </td>
+              <td>
+                <cc-status-tag [value]="student.membershipStatus" kind="MembershipStatus" />
+              </td>
+              <td>
+                @if (!archived() && student.membershipStatus === 'ACTIVE') {
+                  <p-button
+                    icon="pi pi-user-minus"
+                    severity="danger"
+                    [text]="true"
+                    [rounded]="true"
+                    ariaLabel="Remover aluno da sala"
+                    [loading]="busyId() === student.studentId"
+                    (onClick)="remove(student)"
+                  />
+                }
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      <p class="cc-xs cc-muted students__note">
+        XP, estrelas e lições concluídas são relativos a <strong>esta</strong> sala.
+      </p>
+    }
+  }
+</div>

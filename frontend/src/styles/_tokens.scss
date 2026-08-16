@@ -1,0 +1,73 @@
+/**
+ * Tokens de identidade do Conta Certa.
+ *
+ * As cores de componente vêm do preset Aura customizado em
+ * `src/app/core/theme/cc-preset.ts`. Aqui ficam apenas os tokens próprios da
+ * aplicação — os que o PrimeNG não conhece — expostos como custom properties
+ * para funcionarem igual em tema claro e escuro.
+ */
+
+:root {
+  /* Gamificação (Parte 2, §2) */
+  --cc-xp: #0891b2;
+  --cc-xp-soft: #cffafe;
+  --cc-star: #eab308;
+  --cc-star-empty: #d4d4d8;
+
+  /* Estados de conteúdo e avaliação */
+  --cc-approved: #16a34a;
+  --cc-failed: #dc2626;
+  --cc-draft: #d97706;
+  --cc-locked: #71717a;
+  --cc-locked-bg: #f4f4f5;
+
+  /* Superfícies próprias */
+  --cc-surface-page: #f8fafc;
+  --cc-surface-card: #ffffff;
+  --cc-surface-sunken: #f1f5f9;
+  --cc-border: #e2e8f0;
+
+  /* Texto */
+  --cc-text: #0f172a;
+  --cc-text-muted: #64748b;
+
+  /* Raios — cards do aluno são mais arredondados que os do professor */
+  --cc-radius: 12px;
+  --cc-radius-lg: 20px;
+
+  /* Espaçamento */
+  --cc-gap-xs: 0.25rem;
+  --cc-gap-sm: 0.5rem;
+  --cc-gap: 1rem;
+  --cc-gap-lg: 1.5rem;
+  --cc-gap-xl: 2.5rem;
+
+  /* Elevação */
+  --cc-shadow-sm: 0 1px 2px rgb(15 23 42 / 6%);
+  --cc-shadow: 0 4px 12px rgb(15 23 42 / 8%);
+  --cc-shadow-lg: 0 12px 32px rgb(15 23 42 / 12%);
+
+  /* Layout */
+  --cc-content-max: 1280px;
+  --cc-topbar-height: 60px;
+}
+
+.cc-dark {
+  --cc-xp-soft: #164e63;
+  --cc-star-empty: #3f3f46;
+
+  --cc-locked: #a1a1aa;
+  --cc-locked-bg: #27272a;
+
+  --cc-surface-page: #0b1120;
+  --cc-surface-card: #111827;
+  --cc-surface-sunken: #0f172a;
+  --cc-border: #1f2937;
+
+  --cc-text: #e2e8f0;
+  --cc-text-muted: #94a3b8;
+
+  --cc-shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+  --cc-shadow: 0 4px 12px rgb(0 0 0 / 45%);
+  --cc-shadow-lg: 0 12px 32px rgb(0 0 0 / 55%);
+}

@@ -1,0 +1,17 @@
+.section {
+  margin-bottom: var(--cc-gap-xl);
+
+  h2 {
+    display: flex;
+    align-items: baseline;
+    gap: var(--cc-gap-sm);
+    font-size: 1.05rem;
+    margin-bottom: var(--cc-gap-sm);
+  }
+}
+
+.count {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--cc-text-muted);
+}

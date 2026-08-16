@@ -1,0 +1,20 @@
+:host {
+  display: block;
+}
+
+.lock {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--cc-radius);
+  background: var(--cc-locked-bg);
+  color: var(--cc-locked);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.lock i {
+  margin-top: 0.15rem;
+}

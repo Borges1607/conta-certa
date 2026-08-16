@@ -1,0 +1,16 @@
+.track__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-gap);
+  margin-bottom: var(--cc-gap);
+  flex-wrap: wrap;
+}
+
+.track__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-gap-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

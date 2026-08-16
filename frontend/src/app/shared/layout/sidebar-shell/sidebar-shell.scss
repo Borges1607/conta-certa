@@ -1,0 +1,117 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.shell__sidebar {
+  flex: none;
+  width: 240px;
+  border-right: 1px solid var(--cc-border);
+  background: var(--cc-surface-card);
+  display: flex;
+  flex-direction: column;
+}
+
+.shell__brand {
+  display: flex;
+  align-items: center;
+  height: var(--cc-topbar-height);
+  padding: 0 var(--cc-gap);
+  border-bottom: 1px solid var(--cc-border);
+}
+
+.shell__nav {
+  padding: var(--cc-gap-sm);
+  overflow-y: auto;
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  a {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--cc-radius);
+    color: var(--cc-text);
+    font-size: 0.9375rem;
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background: var(--cc-surface-sunken);
+      text-decoration: none;
+    }
+
+    i {
+      width: 1.1rem;
+      text-align: center;
+      color: var(--cc-text-muted);
+    }
+  }
+
+  a.is-active {
+    background: color-mix(in srgb, var(--p-primary-color), transparent 88%);
+    color: var(--p-primary-color);
+    font-weight: 600;
+
+    i {
+      color: inherit;
+    }
+  }
+}
+
+.shell__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell__topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-gap-sm);
+  height: var(--cc-topbar-height);
+  padding: 0 var(--cc-gap);
+  border-bottom: 1px solid var(--cc-border);
+  background: var(--cc-surface-card);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.shell__area {
+  font-weight: 600;
+  color: var(--cc-text-muted);
+  font-size: 0.9375rem;
+}
+
+.shell__content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+:host ::ng-deep .shell__menu-button {
+  display: none;
+}
+
+.shell__nav--drawer {
+  padding: 0;
+}
+
+@media (max-width: 1024px) {
+  .shell__sidebar {
+    display: none;
+  }
+
+  :host ::ng-deep .shell__menu-button {
+    display: inline-flex;
+  }
+}

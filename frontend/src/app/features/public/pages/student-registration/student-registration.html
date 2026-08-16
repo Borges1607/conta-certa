@@ -1,0 +1,123 @@
+@if (registeredEmail(); as email) {
+  <cc-auth-card heading="Confirme seu e-mail">
+    <div class="done">
+      <i class="pi pi-envelope done__icon" aria-hidden="true"></i>
+      <p>Enviamos um link de confirmação para <strong>{{ email }}</strong>.</p>
+      <p class="cc-muted cc-small">
+        Você só consegue entrar depois de confirmar. Verifique também a caixa de spam.
+      </p>
+
+      @if (resendSent()) {
+        <p-message severity="success">Link reenviado.</p-message>
+      } @else {
+        <p-button
+          label="Reenviar link"
+          icon="pi pi-refresh"
+          [outlined]="true"
+          [loading]="resendGuard.submitting()"
+          (onClick)="resend()"
+        />
+      }
+
+      <a routerLink="/login">Ir para o login</a>
+    </div>
+  </cc-auth-card>
+} @else {
+  <cc-auth-card heading="Criar conta de aluno" description="Professores recebem convite da coordenação.">
+    @if (options.isLoading()) {
+      <cc-loading-skeleton kind="form" [count]="4" />
+    } @else if (options.error(); as loadError) {
+      <p-message severity="error" styleClass="reg__alert">
+        Não foi possível carregar as instituições. {{ loadError.detail }}
+      </p-message>
+      <p-button label="Tentar novamente" icon="pi pi-refresh" [outlined]="true" (onClick)="options.retry()" />
+    } @else if (options.data(); as institutions) {
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        @if (formError()) {
+          <p-message severity="error" styleClass="reg__alert">{{ formError() }}</p-message>
+        }
+        @for (message of orphanErrors(); track message) {
+          <p-message severity="error" styleClass="reg__alert">{{ message }}</p-message>
+        }
+
+        <cc-form-field label="Nome completo" inputId="fullName" [control]="form.controls.fullName" [required]="true">
+          <input pInputText id="fullName" formControlName="fullName" autocomplete="name" />
+        </cc-form-field>
+
+        <cc-form-field label="E-mail" inputId="email" [control]="form.controls.email" [required]="true">
+          <input pInputText id="email" type="email" formControlName="email" autocomplete="email" />
+        </cc-form-field>
+
+        <cc-form-field
+          label="Matrícula"
+          inputId="registrationNumber"
+          [control]="form.controls.registrationNumber"
+          [required]="true"
+          hint="O número que sua instituição usa para te identificar."
+        >
+          <input pInputText id="registrationNumber" formControlName="registrationNumber" />
+        </cc-form-field>
+
+        <cc-form-field
+          label="Instituição"
+          inputId="institutionId"
+          [control]="form.controls.institutionId"
+          [required]="true"
+        >
+          <p-select
+            inputId="institutionId"
+            formControlName="institutionId"
+            [options]="institutions"
+            optionLabel="name"
+            optionValue="id"
+            [filter]="true"
+            filterBy="name,cnpj"
+            placeholder="Selecione sua instituição"
+            emptyMessage="Nenhuma instituição ativa"
+            [fluid]="true"
+          />
+        </cc-form-field>
+
+        <cc-form-field label="Senha" inputId="password" [control]="form.controls.password" [required]="true">
+          <p-password
+            inputId="password"
+            formControlName="password"
+            [feedback]="false"
+            [toggleMask]="true"
+            autocomplete="new-password"
+            [fluid]="true"
+          />
+        </cc-form-field>
+
+        <cc-password-requirements [password]="form.controls.password.value" />
+
+        <cc-form-field
+          label="Confirmar senha"
+          inputId="passwordConfirm"
+          [control]="form.controls.passwordConfirm"
+          [required]="true"
+        >
+          <p-password
+            inputId="passwordConfirm"
+            formControlName="passwordConfirm"
+            [feedback]="false"
+            [toggleMask]="true"
+            autocomplete="new-password"
+            [fluid]="true"
+          />
+        </cc-form-field>
+
+        <cc-submit-button
+          label="Criar conta"
+          icon="pi pi-user-plus"
+          [submitting]="guard.submitting()"
+          [fluid]="true"
+        />
+      </form>
+
+      <p class="reg__links">
+        Já tem conta? <a routerLink="/login">Entrar</a>
+      </p>
+    }
+  </cc-auth-card>
+}

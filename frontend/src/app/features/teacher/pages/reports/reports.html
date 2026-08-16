@@ -1,0 +1,273 @@
+<div class="cc-page cc-page--wide">
+  <cc-page-header title="Relatórios" subtitle="Acompanhe o desempenho das suas turmas.">
+    <p-button
+      label="Exportar CSV"
+      icon="pi pi-download"
+      severity="secondary"
+      [outlined]="true"
+      [loading]="exportGuard.submitting()"
+      (onClick)="exportCsv()"
+    />
+    <p-button
+      label="Imprimir"
+      icon="pi pi-print"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="print()"
+    />
+  </cc-page-header>
+
+  <section class="filters cc-card cc-no-print">
+    <div class="filters__field">
+      <label for="roomFilter">Sala</label>
+      <p-select
+        inputId="roomFilter"
+        [options]="roomOptions.data() ?? []"
+        optionLabel="name"
+        optionValue="id"
+        [ngModel]="roomId()"
+        (ngModelChange)="roomId.set($event)"
+        [showClear]="true"
+        [loading]="roomOptions.isLoading()"
+        placeholder="Todas as salas"
+        emptyMessage="Você ainda não tem salas"
+      />
+    </div>
+
+    <div class="filters__field">
+      <label for="periodFilter">Período</label>
+      <p-selectbutton
+        [options]="periodOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="period()"
+        (ngModelChange)="period.set($event)"
+        [allowEmpty]="false"
+        ariaLabelledBy="periodFilter"
+      />
+    </div>
+
+    @if (period() === 'CUSTOM') {
+      <div class="filters__field">
+        <label for="rangeFilter">Intervalo</label>
+        <p-datepicker
+          inputId="rangeFilter"
+          selectionMode="range"
+          dateFormat="dd/mm/yy"
+          [showIcon]="true"
+          [ngModel]="customRange()"
+          (ngModelChange)="customRange.set($event)"
+        />
+      </div>
+    }
+  </section>
+
+  <!-- O recorte é dito, não presumido. Vale também na impressão. -->
+  <p class="period-note cc-small">
+    <i class="pi pi-calendar" aria-hidden="true"></i>
+    {{ periodLabel() }}
+    @if (overview.data(); as data) {
+      · gerado em {{ data.generatedAt | ccDateTime }}
+    }
+  </p>
+
+  <nav class="tabs cc-no-print" aria-label="Seções do relatório">
+    <ul>
+      <li>
+        <button type="button" [class.is-active]="activeTab() === 'visao-geral'" (click)="selectTab('visao-geral')">
+          Visão geral
+        </button>
+      </li>
+      <li>
+        <button type="button" [class.is-active]="activeTab() === 'alunos'" (click)="selectTab('alunos')">
+          Alunos
+        </button>
+      </li>
+      <li>
+        <button type="button" [class.is-active]="activeTab() === 'ranking'" (click)="selectTab('ranking')">
+          Ranking
+        </button>
+      </li>
+    </ul>
+  </nav>
+
+  @if (activeTab() === 'visao-geral') {
+    @if (overview.isLoading()) {
+      <cc-loading-skeleton kind="stats" [count]="4" />
+    } @else if (overview.error(); as error) {
+      <cc-error-state [error]="error" (retry)="overview.retry()" (back)="overview.retry()" />
+    } @else if (overview.data(); as data) {
+      <div class="cc-grid metrics">
+        <article class="metric cc-card">
+          <strong>{{ data.metrics.studentCount }}</strong>
+          <span>Alunos</span>
+          <small class="cc-muted">{{ data.metrics.activeStudentCount }} ativos</small>
+        </article>
+        <article class="metric cc-card">
+          <strong>{{ data.metrics.submittedAttemptCount }}</strong>
+          <span>Tentativas finalizadas</span>
+          <small class="cc-muted">de {{ data.metrics.attemptCount }} iniciadas</small>
+        </article>
+        <article class="metric cc-card">
+          <strong>
+            @if (data.metrics.averageScorePercent !== null) {
+              {{ data.metrics.averageScorePercent }}%
+            } @else {
+              —
+            }
+          </strong>
+          <span>Nota média</span>
+        </article>
+        <article class="metric cc-card">
+          <strong>
+            @if (data.metrics.passRatePercent !== null) {
+              {{ data.metrics.passRatePercent }}%
+            } @else {
+              —
+            }
+          </strong>
+          <span>Taxa de aprovação</span>
+        </article>
+      </div>
+
+      <div class="charts">
+        <section class="cc-card chart">
+          <h2>Tentativas ao longo do tempo</h2>
+          @if (attemptsChart(); as chart) {
+            <div class="chart__canvas">
+              <p-chart type="line" [data]="chart" [options]="chartOptions" />
+            </div>
+          }
+        </section>
+
+        <section class="cc-card chart">
+          <h2>Distribuição de notas</h2>
+          @if (scoreChart(); as chart) {
+            <div class="chart__canvas">
+              <p-chart type="bar" [data]="chart" [options]="chartOptions" />
+            </div>
+          }
+        </section>
+      </div>
+
+      <section class="cc-card completion">
+        <h2>Conclusão por lição</h2>
+        @if (data.lessonCompletion.length === 0) {
+          <p class="cc-muted">Nenhuma lição com atividade no período.</p>
+        } @else {
+          <ul>
+            @for (lesson of data.lessonCompletion; track lesson.lessonId) {
+              <li>
+                <div class="completion__head">
+                  <strong>{{ lesson.lessonTitle }}</strong>
+                  <span class="cc-small cc-muted">
+                    {{ lesson.completedStudents }}/{{ lesson.totalStudents }} concluíram
+                    @if (lesson.averageScorePercent !== null) {
+                      · média {{ lesson.averageScorePercent }}%
+                    }
+                  </span>
+                </div>
+                <cc-progress-bar [value]="lesson.completionPercent" />
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+  } @else if (activeTab() === 'alunos') {
+    @if (students.isLoading()) {
+      <cc-loading-skeleton kind="table" [count]="6" />
+    } @else if (students.error(); as error) {
+      <cc-error-state [error]="error" (retry)="students.retry()" (back)="students.retry()" />
+    } @else if (students.data(); as page) {
+      @if (page.totalElements === 0) {
+        <cc-empty-state
+          title="Nenhum aluno no recorte selecionado"
+          message="Ajuste a sala ou o período para ver resultados."
+          actionLabel="Atualizar"
+          icon="pi pi-users"
+          actionIcon="pi pi-refresh"
+          (action)="students.retry()"
+        />
+      } @else {
+        <div class="cc-scroll-x">
+          <p-table [value]="page.content" dataKey="studentId">
+            <ng-template #header>
+              <tr>
+                <th scope="col">Aluno</th>
+                <th scope="col">Matrícula</th>
+                <th scope="col">Tentativas</th>
+                <th scope="col">Média</th>
+                <th scope="col">Melhor</th>
+                <th scope="col">Lições</th>
+                <th scope="col">XP</th>
+                <th scope="col">Última atividade</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-row>
+              <tr>
+                <td>{{ row.fullName }}</td>
+                <td>{{ row.registrationNumber ?? '—' }}</td>
+                <td>{{ row.attemptCount }}</td>
+                <td>{{ row.averageScorePercent !== null ? row.averageScorePercent + '%' : '—' }}</td>
+                <td>{{ row.bestScorePercent !== null ? row.bestScorePercent + '%' : '—' }}</td>
+                <td>{{ row.completedLessons }}/{{ row.totalLessons }}</td>
+                <td class="xp">{{ row.xp }}</td>
+                <td>
+                  @if (row.lastActivityAt) {
+                    {{ row.lastActivityAt | ccRelativeTime }}
+                  } @else {
+                    <span class="cc-muted">—</span>
+                  }
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      }
+    }
+  } @else {
+    @if (ranking.isLoading()) {
+      <cc-loading-skeleton kind="table" [count]="6" />
+    } @else if (ranking.error(); as error) {
+      <cc-error-state [error]="error" (retry)="ranking.retry()" (back)="ranking.retry()" />
+    } @else if (ranking.data(); as page) {
+      @if (page.totalElements === 0) {
+        <cc-empty-state
+          title="Ranking vazio"
+          message="Assim que a turma concluir lições, a classificação aparece aqui."
+          actionLabel="Atualizar"
+          icon="pi pi-chart-bar"
+          actionIcon="pi pi-refresh"
+          (action)="ranking.retry()"
+        />
+      } @else {
+        <!-- O professor vê nomes completos das próprias salas — §10 da spec. -->
+        <div class="cc-scroll-x">
+          <p-table [value]="page.content" dataKey="studentId">
+            <ng-template #header>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Aluno</th>
+                <th scope="col">Matrícula</th>
+                <th scope="col">XP</th>
+                <th scope="col">Estrelas</th>
+                <th scope="col">Lições concluídas</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-row>
+              <tr>
+                <td>{{ row.position }}º</td>
+                <td>{{ row.fullName }}</td>
+                <td>{{ row.registrationNumber ?? '—' }}</td>
+                <td class="xp">{{ row.xp }}</td>
+                <td class="stars"><i class="pi pi-star-fill" aria-hidden="true"></i> {{ row.stars }}</td>
+                <td>{{ row.completedLessons }}</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      }
+    }
+  }
+</div>

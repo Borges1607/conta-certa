@@ -1,0 +1,136 @@
+.level {
+  padding: var(--cc-gap-lg);
+  margin-bottom: var(--cc-gap);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--p-primary-color), transparent 90%),
+    var(--cc-surface-card) 60%
+  );
+}
+
+.level__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--cc-gap-sm);
+  margin-bottom: var(--cc-gap-sm);
+}
+
+.level__label {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--cc-text-muted);
+}
+
+.level__value {
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--p-primary-color);
+}
+
+.level__xp {
+  font-size: 0.9375rem;
+
+  strong {
+    color: var(--cc-xp);
+  }
+}
+
+.metrics {
+  margin-bottom: var(--cc-gap-lg);
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: var(--cc-gap);
+  text-align: center;
+}
+
+.metric__icon {
+  font-size: 1.35rem;
+  color: var(--cc-text-muted);
+  margin-bottom: 0.15rem;
+}
+
+.metric__icon--ok {
+  color: var(--cc-approved);
+}
+.metric__icon--star {
+  color: var(--cc-star);
+}
+
+.metric__value {
+  font-size: 1.5rem;
+  line-height: 1.1;
+}
+
+.metric__label {
+  font-size: 0.8125rem;
+  color: var(--cc-text-muted);
+}
+
+.panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cc-gap);
+  margin-bottom: var(--cc-gap-lg);
+  align-items: start;
+}
+
+.panel {
+  padding: var(--cc-gap-lg);
+
+  h2 {
+    margin-top: 0;
+    font-size: 1.05rem;
+  }
+}
+
+.panel__lead {
+  margin-bottom: var(--cc-gap);
+  font-size: 1.05rem;
+}
+
+.panel__actions {
+  display: flex;
+  gap: var(--cc-gap-sm);
+  flex-wrap: wrap;
+}
+
+.tip__title {
+  margin: 0 0 var(--cc-gap-sm);
+  font-size: 1rem;
+  color: var(--p-primary-color);
+}
+
+.tip__foot {
+  margin-top: var(--cc-gap-sm);
+  padding-top: var(--cc-gap-sm);
+  border-top: 1px solid var(--cc-border);
+}
+
+.achievements__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cc-gap-sm);
+
+  h2 {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+}
+
+.achievements {
+  margin-bottom: var(--cc-gap-lg);
+}
+
+@media (max-width: 900px) {
+  .panels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

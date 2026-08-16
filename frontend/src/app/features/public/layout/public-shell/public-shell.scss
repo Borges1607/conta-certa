@@ -1,0 +1,38 @@
+.public {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: var(--cc-gap-xl) var(--cc-gap);
+  gap: var(--cc-gap-lg);
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--p-primary-color), transparent 92%),
+    var(--cc-surface-page) 45%
+  );
+}
+
+.public__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  text-align: center;
+}
+
+.public__tagline {
+  margin: 0;
+  color: var(--cc-text-muted);
+  font-size: 0.9375rem;
+}
+
+.public__content {
+  width: 100%;
+  max-width: 440px;
+}
+
+@media (max-width: 640px) {
+  .public {
+    padding: var(--cc-gap-lg) var(--cc-gap-sm);
+  }
+}

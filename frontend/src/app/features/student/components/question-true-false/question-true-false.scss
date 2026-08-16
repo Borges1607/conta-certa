@@ -1,0 +1,61 @@
+.tf {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cc-gap);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.tf__option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: var(--cc-gap-lg) var(--cc-gap);
+  border: 2px solid var(--cc-border);
+  border-radius: var(--cc-radius-lg);
+  background: var(--cc-surface-card);
+  cursor: pointer;
+  font-weight: 600;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+
+  i {
+    font-size: 1.75rem;
+    color: var(--cc-text-muted);
+  }
+
+  &:hover:not(.is-locked) {
+    border-color: var(--p-primary-color);
+  }
+
+  &:has(input:focus-visible) {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
+  }
+}
+
+.tf__option.is-locked {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.tf__option--true.is-selected {
+  border-color: var(--cc-approved);
+  background: color-mix(in srgb, var(--cc-approved), transparent 92%);
+
+  i {
+    color: var(--cc-approved);
+  }
+}
+
+.tf__option--false.is-selected {
+  border-color: var(--cc-failed);
+  background: color-mix(in srgb, var(--cc-failed), transparent 92%);
+
+  i {
+    color: var(--cc-failed);
+  }
+}

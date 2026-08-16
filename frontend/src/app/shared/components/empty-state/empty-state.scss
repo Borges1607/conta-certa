@@ -1,0 +1,28 @@
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--cc-gap-sm);
+  padding: var(--cc-gap-xl) var(--cc-gap);
+  border: 1px dashed var(--cc-border);
+  border-radius: var(--cc-radius-lg);
+  background: var(--cc-surface-card);
+}
+
+.empty__icon {
+  font-size: 2.5rem;
+  color: var(--cc-text-muted);
+  opacity: 0.7;
+}
+
+.empty__title {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.empty__message {
+  margin: 0 0 var(--cc-gap-sm);
+  max-width: 42ch;
+  color: var(--cc-text-muted);
+}

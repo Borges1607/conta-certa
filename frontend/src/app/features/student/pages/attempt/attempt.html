@@ -1,0 +1,153 @@
+@if (store.isLoading()) {
+  <div class="cc-page">
+    <cc-loading-skeleton kind="detail" />
+  </div>
+} @else if (store.error(); as error) {
+  <div class="cc-page">
+    <cc-error-state [error]="error" (retry)="store.page.retry()" (back)="store.page.retry()" />
+  </div>
+} @else if (store.attempt(); as attempt) {
+  <!-- Barra fixa: cronômetro e progresso acompanham a rolagem. Não há menu
+       nesta tela — sair é uma decisão explícita, com confirmação. -->
+  <header class="bar">
+    <div class="bar__inner">
+      <div class="bar__title">
+        <span class="cc-xs cc-muted">Tentativa</span>
+        <strong class="cc-truncate">{{ attempt.lessonTitle }}</strong>
+      </div>
+
+      <span class="bar__progress">
+        Questão {{ store.currentIndex() + 1 }} de {{ store.total() }}
+        <span class="cc-muted">· {{ store.answeredCount() }} respondidas</span>
+      </span>
+
+      <span class="cc-spacer"></span>
+
+      @if (store.expiresAt(); as expiresAt) {
+        <cc-countdown [expiresAt]="expiresAt" (expired)="store.expire()" />
+      } @else {
+        <span class="bar__notime cc-small cc-muted">
+          <i class="pi pi-infinity" aria-hidden="true"></i> Sem tempo limite
+        </span>
+      }
+    </div>
+  </header>
+
+  @if (!connection.isOnline()) {
+    <p class="offline" role="status">
+      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+      Você está sem conexão. Não é possível registrar respostas agora — o tempo continua
+      correndo no servidor.
+    </p>
+  }
+
+  <div class="cc-page attempt">
+    <cc-question-navigator
+      [questions]="store.questions()"
+      [currentIndex]="store.currentIndex()"
+      [answeredIds]="answeredIds()"
+      (questionSelected)="store.goTo($event)"
+    />
+
+    @if (store.currentQuestion(); as question) {
+      <article class="question cc-card cc-card-lg">
+        <header class="question__head">
+          <span class="question__index">Questão {{ store.currentIndex() + 1 }}</span>
+          @if (store.currentIsAnswered()) {
+            <span class="question__locked">
+              <i class="pi pi-lock" aria-hidden="true"></i>
+              Resposta registrada
+            </span>
+          }
+        </header>
+
+        <cc-markdown class="question__prompt" [content]="question.prompt" />
+
+        <!-- Cada tipo tem seu componente. Todos recebem `disabled` quando a
+             questão já foi respondida: a resposta é imutável dentro da
+             tentativa (§6.3 da spec). -->
+        @switch (question.type) {
+          @case ('SINGLE_CHOICE') {
+            <cc-question-single-choice
+              [question]="question"
+              [disabled]="store.currentIsAnswered()"
+              [initial]="store.currentRecorded()?.answer ?? null"
+              (valueChange)="onDraft($event)"
+            />
+          }
+          @case ('MULTIPLE_CHOICE') {
+            <cc-question-multiple-choice
+              [question]="question"
+              [disabled]="store.currentIsAnswered()"
+              [initial]="store.currentRecorded()?.answer ?? null"
+              (valueChange)="onDraft($event)"
+            />
+          }
+          @case ('TRUE_FALSE') {
+            <cc-question-true-false
+              [question]="question"
+              [disabled]="store.currentIsAnswered()"
+              [initial]="store.currentRecorded()?.answer ?? null"
+              (valueChange)="onDraft($event)"
+            />
+          }
+          @case ('NUMERIC') {
+            <cc-question-numeric
+              [question]="question"
+              [disabled]="store.currentIsAnswered()"
+              [initial]="store.currentRecorded()?.answer ?? null"
+              (valueChange)="onDraft($event)"
+            />
+          }
+        }
+
+        <footer class="question__actions">
+          <p-button
+            label="Anterior"
+            icon="pi pi-chevron-left"
+            severity="secondary"
+            [text]="true"
+            [disabled]="store.currentIndex() === 0"
+            (onClick)="store.previous()"
+          />
+
+          @if (store.currentIsAnswered()) {
+            <p class="question__hint cc-small cc-muted">
+              Esta resposta já foi registrada e não pode ser alterada.
+            </p>
+          }
+
+          <span class="cc-spacer"></span>
+
+          @if (!store.currentIsAnswered()) {
+            <p-button
+              label="Confirmar resposta"
+              icon="pi pi-check"
+              [loading]="store.answering()"
+              [disabled]="!canConfirm()"
+              (onClick)="confirm()"
+            />
+          } @else if (store.currentIndex() < store.total() - 1) {
+            <p-button label="Próxima" icon="pi pi-chevron-right" iconPos="right" (onClick)="store.next()" />
+          }
+        </footer>
+      </article>
+    }
+
+    <footer class="finish">
+      @if (!store.allAnswered()) {
+        <p class="cc-small cc-muted">
+          Questões sem resposta contam como incorretas.
+        </p>
+      }
+      <p-button
+        label="Finalizar tentativa"
+        icon="pi pi-flag"
+        [severity]="store.allAnswered() ? 'primary' : 'secondary'"
+        [outlined]="!store.allAnswered()"
+        [loading]="store.submitting()"
+        (onClick)="store.submit()"
+      />
+    </footer>
+  </div>
+}

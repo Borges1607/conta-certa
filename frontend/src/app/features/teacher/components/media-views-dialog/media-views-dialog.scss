@@ -1,0 +1,10 @@
+.summary {
+  margin: 0 0 var(--cc-gap);
+  color: var(--cc-text-muted);
+  font-size: 0.9375rem;
+
+  strong {
+    color: var(--cc-text);
+    font-size: 1.05rem;
+  }
+}

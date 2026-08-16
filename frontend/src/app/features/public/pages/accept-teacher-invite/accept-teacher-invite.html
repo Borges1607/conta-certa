@@ -1,0 +1,66 @@
+@if (!token) {
+  <cc-auth-card heading="Link incompleto">
+    <div class="invite__notice">
+      <i class="pi pi-link" aria-hidden="true"></i>
+      <p>Este endereço não tem o código do convite. Peça um novo à coordenação.</p>
+      <p-button label="Ir para o login" icon="pi pi-sign-in" routerLink="/login" [outlined]="true" />
+    </div>
+  </cc-auth-card>
+} @else if (tokenGone()) {
+  <cc-auth-card heading="Convite expirado">
+    <div class="invite__notice">
+      <i class="pi pi-clock" aria-hidden="true"></i>
+      <p>
+        Este convite não vale mais. Peça à administração da sua instituição para enviar um novo.
+      </p>
+      <p-button label="Ir para o login" icon="pi pi-sign-in" routerLink="/login" [outlined]="true" />
+    </div>
+  </cc-auth-card>
+} @else {
+  <cc-auth-card
+    heading="Bem-vindo ao Conta Certa"
+    description="Defina a senha da sua conta de professor para começar."
+  >
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      @if (formError()) {
+        <p-message severity="error" styleClass="invite__alert">{{ formError() }}</p-message>
+      }
+
+      <cc-form-field label="Senha" inputId="password" [control]="form.controls.password" [required]="true">
+        <p-password
+          inputId="password"
+          formControlName="password"
+          [feedback]="false"
+          [toggleMask]="true"
+          autocomplete="new-password"
+          [fluid]="true"
+        />
+      </cc-form-field>
+
+      <cc-password-requirements [password]="form.controls.password.value" />
+
+      <cc-form-field
+        label="Confirmar senha"
+        inputId="passwordConfirm"
+        [control]="form.controls.passwordConfirm"
+        [required]="true"
+      >
+        <p-password
+          inputId="passwordConfirm"
+          formControlName="passwordConfirm"
+          [feedback]="false"
+          [toggleMask]="true"
+          autocomplete="new-password"
+          [fluid]="true"
+        />
+      </cc-form-field>
+
+      <cc-submit-button
+        label="Ativar minha conta"
+        icon="pi pi-check"
+        [submitting]="guard.submitting()"
+        [fluid]="true"
+      />
+    </form>
+  </cc-auth-card>
+}

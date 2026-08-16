@@ -1,0 +1,150 @@
+<div class="cc-page">
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="stats" [count]="4" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as data) {
+    <cc-page-header
+      [title]="data.room.name"
+      [subtitle]="data.room.description ?? 'Continue de onde você parou.'"
+    />
+
+    <!-- Faixa de nível. `levelProgressPercent` vem pronto da API justamente
+         para a barra não precisar de aritmética aqui. -->
+    <section class="level cc-card cc-card-lg">
+      <div class="level__head">
+        <div>
+          <span class="level__label">Nível</span>
+          <strong class="level__value">{{ data.level }}</strong>
+        </div>
+        <div class="level__xp">
+          <strong>{{ data.xpTotal }}</strong> XP nesta sala
+          @if (data.xpToNextLevel !== null) {
+            <span class="cc-muted cc-small">· faltam {{ data.xpToNextLevel }} XP para o próximo</span>
+          }
+        </div>
+      </div>
+      <cc-progress-bar [value]="data.levelProgressPercent" height="0.75rem" />
+    </section>
+
+    <div class="cc-grid metrics">
+      <article class="metric cc-card">
+        <i class="pi pi-check-circle metric__icon metric__icon--ok" aria-hidden="true"></i>
+        <strong class="metric__value">{{ data.lessonsCompleted }}/{{ data.lessonsTotal }}</strong>
+        <span class="metric__label">Lições concluídas</span>
+      </article>
+
+      <article class="metric cc-card">
+        <i class="pi pi-star-fill metric__icon metric__icon--star" aria-hidden="true"></i>
+        <strong class="metric__value">{{ data.starsTotal }}/{{ data.starsPossible }}</strong>
+        <span class="metric__label">Estrelas</span>
+      </article>
+
+      <article class="metric cc-card">
+        <i class="pi pi-chart-line metric__icon" aria-hidden="true"></i>
+        <strong class="metric__value">{{ data.progressPercent }}%</strong>
+        <span class="metric__label">Progresso na trilha</span>
+      </article>
+
+      <article class="metric cc-card">
+        <i class="pi pi-chart-bar metric__icon" aria-hidden="true"></i>
+        <strong class="metric__value">
+          @if (data.rankingPosition !== null) {
+            {{ data.rankingPosition }}º
+          } @else {
+            —
+          }
+        </strong>
+        <span class="metric__label">
+          @if (data.rankingPosition !== null) {
+            de {{ data.rankingParticipants }} na sala
+          } @else {
+            Sem posição ainda
+          }
+        </span>
+      </article>
+    </div>
+
+    <div class="panels">
+      <section class="panel cc-card">
+        <h2>Continuar</h2>
+        @if (data.nextLesson; as next) {
+          <p class="panel__lead">
+            <span class="cc-muted cc-small">Lição {{ next.order }}</span><br />
+            <strong>{{ next.title }}</strong>
+          </p>
+          <div class="panel__actions">
+            @if (next.activeAttemptId) {
+              <p-button
+                label="Retomar tentativa"
+                icon="pi pi-play"
+                [loading]="starting()"
+                (onClick)="resume(next.activeAttemptId)"
+              />
+            } @else {
+              <p-button
+                label="Ver lição"
+                icon="pi pi-arrow-right"
+                [routerLink]="['/aluno/salas', data.room.id, 'licoes', next.lessonId]"
+              />
+            }
+            <p-button
+              label="Ver trilha"
+              severity="secondary"
+              [text]="true"
+              [routerLink]="['/aluno/salas', data.room.id, 'trilha']"
+            />
+          </div>
+        } @else {
+          <p class="cc-muted">
+            Você concluiu tudo o que está disponível por aqui. Bom trabalho!
+          </p>
+          <p-button
+            label="Rever a trilha"
+            severity="secondary"
+            [outlined]="true"
+            [routerLink]="['/aluno/salas', data.room.id, 'trilha']"
+          />
+        }
+      </section>
+
+      @if (data.tipOfDay; as tip) {
+        <section class="panel cc-card tip">
+          <h2>💡 Dica do dia</h2>
+          <h3 class="tip__title">{{ tip.title }}</h3>
+          <cc-markdown [content]="tip.content" [compact]="true" />
+          <footer class="tip__foot cc-xs cc-muted">
+            {{ tip.publicationDate | ccLocalDate }}
+            @if (tip.sourceUrl) {
+              · <a [href]="tip.sourceUrl" target="_blank" rel="noopener noreferrer nofollow">Fonte</a>
+            }
+          </footer>
+        </section>
+      }
+    </div>
+
+    <section class="achievements">
+      <div class="achievements__head">
+        <h2>Conquistas recentes</h2>
+        <p-button
+          label="Ver todas"
+          severity="secondary"
+          [text]="true"
+          [routerLink]="['/aluno/salas', data.room.id, 'conquistas']"
+        />
+      </div>
+
+      @if (data.recentAchievements.length === 0) {
+        <p class="cc-muted">
+          Suas primeiras conquistas aparecem aqui assim que você concluir uma lição.
+        </p>
+      } @else {
+        <div class="cc-grid-3">
+          @for (achievement of data.recentAchievements; track achievement.code) {
+            <cc-achievement-card [achievement]="achievement" />
+          }
+        </div>
+      }
+    </section>
+  }
+</div>

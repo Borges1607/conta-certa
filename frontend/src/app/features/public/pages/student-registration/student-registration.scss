@@ -1,0 +1,28 @@
+:host ::ng-deep .reg__alert {
+  display: block;
+  margin-bottom: var(--cc-gap);
+}
+
+.reg__links {
+  margin: var(--cc-gap) 0 0;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--cc-gap-sm);
+
+  p {
+    margin: 0;
+  }
+}
+
+.done__icon {
+  font-size: 2.5rem;
+  color: var(--p-primary-color);
+  margin-bottom: 0.25rem;
+}

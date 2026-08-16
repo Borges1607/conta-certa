@@ -1,0 +1,67 @@
+/** Estilos compartilhados por escolha única e múltipla escolha. */
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-gap-sm);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cc-gap-sm);
+  padding: var(--cc-gap);
+  border: 2px solid var(--cc-border);
+  border-radius: var(--cc-radius);
+  background: var(--cc-surface-card);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+
+  &:hover:not(.is-locked) {
+    border-color: var(--p-primary-color);
+  }
+
+  /* O input real está visualmente escondido, então o foco precisa aparecer
+     no rótulo — sem isso a navegação por teclado ficaria invisível. */
+  &:has(input:focus-visible) {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
+  }
+}
+
+.option.is-selected {
+  border-color: var(--p-primary-color);
+  background: color-mix(in srgb, var(--p-primary-color), transparent 94%);
+}
+
+.option.is-locked {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.option__marker {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--cc-surface-sunken);
+  font-weight: 700;
+  font-size: 0.8125rem;
+}
+
+.option.is-selected .option__marker {
+  background: var(--p-primary-color);
+  color: var(--p-primary-contrast-color, #fff);
+}
+
+.option__text {
+  min-width: 0;
+  flex: 1 1 auto;
+}

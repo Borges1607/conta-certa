@@ -1,0 +1,13 @@
+.track__progress {
+  margin-bottom: var(--cc-gap-lg);
+  max-width: 32rem;
+}
+
+.track {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

@@ -1,0 +1,53 @@
+<div class="cc-page">
+  <cc-page-header
+    title="Conquistas"
+    subtitle="Cada sala tem as suas — o progresso de uma turma não conta para a outra."
+  />
+
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="card-grid" [count]="6" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as achievements) {
+    @if (achievements.length === 0) {
+      <cc-empty-state
+        title="Nenhuma conquista disponível"
+        message="As conquistas desta sala aparecem aqui assim que houver conteúdo publicado."
+        actionLabel="Atualizar"
+        icon="pi pi-star"
+        actionIcon="pi pi-refresh"
+        (action)="state.retry()"
+      />
+    } @else {
+      <section class="section">
+        <h2>
+          Desbloqueadas
+          <span class="count">{{ unlocked().length }} de {{ achievements.length }}</span>
+        </h2>
+
+        @if (unlocked().length === 0) {
+          <p class="cc-muted">
+            Você ainda não desbloqueou nenhuma. Conclua sua primeira lição para começar.
+          </p>
+        } @else {
+          <div class="cc-grid-3">
+            @for (achievement of unlocked(); track achievement.code) {
+              <cc-achievement-card [achievement]="achievement" />
+            }
+          </div>
+        }
+      </section>
+
+      @if (locked().length > 0) {
+        <section class="section">
+          <h2>Ainda por conquistar</h2>
+          <div class="cc-grid-3">
+            @for (achievement of locked(); track achievement.code) {
+              <cc-achievement-card [achievement]="achievement" />
+            }
+          </div>
+        </section>
+      }
+    }
+  }
+</div>

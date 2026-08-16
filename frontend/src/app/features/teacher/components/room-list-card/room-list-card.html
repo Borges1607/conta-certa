@@ -1,0 +1,54 @@
+<article class="room cc-card" [class.room--archived]="room().archived">
+  <header class="room__head">
+    <div class="room__title">
+      <a [routerLink]="['/professor/salas', room().id]">{{ room().name }}</a>
+      <span class="cc-small cc-muted">{{ room().grade | ccEnumLabel: 'GradeShort' }}</span>
+    </div>
+
+    @if (room().archived) {
+      <p-tag value="Arquivada" severity="secondary" />
+    } @else {
+      <p-button
+        icon="pi pi-ellipsis-v"
+        severity="secondary"
+        [text]="true"
+        [rounded]="true"
+        ariaLabel="Ações da sala"
+        [loading]="busy()"
+        (onClick)="menu.toggle($event)"
+      />
+      <p-menu #menu [model]="menuItems()" [popup]="true" appendTo="body" />
+    }
+  </header>
+
+  @if (room().description) {
+    <p class="room__description cc-small cc-muted">{{ room().description }}</p>
+  }
+
+  @if (room().contentTopics.length > 0) {
+    <ul class="room__topics">
+      @for (topic of room().contentTopics; track topic) {
+        <li>{{ topic }}</li>
+      }
+    </ul>
+  }
+
+  <dl class="room__facts">
+    <div>
+      <dt>Alunos</dt>
+      <dd>{{ room().studentCount }}</dd>
+    </div>
+    <div>
+      <dt>Lições</dt>
+      <dd>{{ room().lessonCount }}</dd>
+    </div>
+    <div>
+      <dt>Nota mínima</dt>
+      <dd>{{ room().passingScorePercent }}%</dd>
+    </div>
+    <div>
+      <dt>Código</dt>
+      <dd><code>{{ room().joinCode }}</code></dd>
+    </div>
+  </dl>
+</article>

@@ -1,0 +1,56 @@
+<cc-global-progress />
+<cc-offline-banner />
+
+<header class="topbar">
+  <a routerLink="/aluno/salas" class="topbar__brand" aria-label="Minhas salas">
+    <cc-logo size="sm" [showName]="false" />
+  </a>
+
+  @if (roomOptions().length > 0) {
+    <p-select
+      [options]="roomOptions()"
+      [ngModel]="roomId()"
+      (ngModelChange)="onRoomChange($event)"
+      optionLabel="name"
+      optionValue="id"
+      placeholder="Escolha uma sala"
+      styleClass="topbar__rooms"
+      [ngModelOptions]="{ standalone: true }"
+    />
+  }
+
+  <span class="cc-spacer"></span>
+
+  @if (stats(); as data) {
+    <div class="topbar__stats">
+      <cc-xp-badge [xp]="data.xpTotal" [level]="data.level" [compact]="true" />
+      <cc-star-rating [value]="data.starsTotal" [max]="data.starsPossible" size="sm" />
+    </div>
+  }
+
+  <cc-user-menu />
+</header>
+
+@if (navItems().length > 0) {
+  <nav class="tabs" aria-label="Navegação da sala">
+    <ul>
+      @for (item of navItems(); track item.path) {
+        <li>
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="is-active"
+            [routerLinkActiveOptions]="{ exact: item.exact }"
+          >
+            <i class="{{ item.icon }}" aria-hidden="true"></i>
+            <span class="tabs__label">{{ item.label }}</span>
+            <span class="tabs__short">{{ item.shortLabel }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+}
+
+<main class="content">
+  <router-outlet />
+</main>

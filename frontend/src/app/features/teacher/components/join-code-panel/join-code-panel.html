@@ -1,0 +1,31 @@
+<section class="join-code cc-card" aria-labelledby="join-code-title">
+  <div class="join-code__text">
+    <h3 class="join-code__title" id="join-code-title">Código de ingresso</h3>
+    <p class="join-code__hint cc-small cc-muted">
+      Os alunos da mesma instituição entram na sala com este código.
+    </p>
+  </div>
+
+  <p class="join-code__value" #codeText>{{ code() }}</p>
+
+  <div class="join-code__actions">
+    <p-button
+      [label]="copied() ? 'Copiado' : 'Copiar código'"
+      [icon]="copied() ? 'pi pi-check' : 'pi pi-copy'"
+      [outlined]="true"
+      (onClick)="copy()"
+    />
+
+    @if (!readOnly()) {
+      <p-button
+        label="Regenerar"
+        icon="pi pi-refresh"
+        severity="secondary"
+        [text]="true"
+        [loading]="regenerating()"
+        [disabled]="regenerating()"
+        (onClick)="regenerate.emit()"
+      />
+    }
+  </div>
+</section>

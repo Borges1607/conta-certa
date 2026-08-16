@@ -1,0 +1,32 @@
+.verify {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--cc-gap-sm);
+
+  p {
+    margin: 0 0 var(--cc-gap-sm);
+    color: var(--cc-text-muted);
+  }
+}
+
+.verify__icon {
+  font-size: 2.75rem;
+  color: var(--cc-text-muted);
+}
+
+.verify--ok .verify__icon {
+  color: var(--cc-approved);
+}
+
+:host ::ng-deep .verify__alert {
+  display: block;
+  margin-bottom: var(--cc-gap);
+}
+
+.verify__links {
+  margin: var(--cc-gap) 0 0;
+  text-align: center;
+  font-size: 0.875rem;
+}

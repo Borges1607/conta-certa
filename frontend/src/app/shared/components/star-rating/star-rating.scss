@@ -1,0 +1,27 @@
+.stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  color: var(--cc-star-empty);
+}
+
+.stars__filled {
+  color: var(--cc-star);
+}
+
+.stars__label {
+  margin-left: 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--cc-text-muted);
+}
+
+.stars--sm {
+  font-size: 0.8rem;
+}
+.stars--md {
+  font-size: 1rem;
+}
+.stars--lg {
+  font-size: 1.4rem;
+}

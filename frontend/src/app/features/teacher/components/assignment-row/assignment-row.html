@@ -1,0 +1,105 @@
+<article class="row cc-card">
+  @if (!readOnly()) {
+    <div class="row__move">
+      <p-button
+        icon="pi pi-chevron-up"
+        severity="secondary"
+        [text]="true"
+        [rounded]="true"
+        size="small"
+        ariaLabel="Mover para cima"
+        [disabled]="isFirst() || busy()"
+        (onClick)="moveUpRequested.emit(assignment())"
+      />
+      <p-button
+        icon="pi pi-chevron-down"
+        severity="secondary"
+        [text]="true"
+        [rounded]="true"
+        size="small"
+        ariaLabel="Mover para baixo"
+        [disabled]="isLast() || busy()"
+        (onClick)="moveDownRequested.emit(assignment())"
+      />
+    </div>
+  }
+
+  <span class="row__position" aria-hidden="true">{{ assignment().position }}</span>
+
+  <div class="row__main">
+    <div class="row__title">
+      <strong>{{ assignment().lesson.title }}</strong>
+      <cc-status-tag [value]="assignment().status" kind="ContentStatus" />
+    </div>
+
+    <dl class="row__facts">
+      <div>
+        <dt>Disponível</dt>
+        <dd>
+          @if (assignment().availableFrom; as from) {
+            {{ from | ccDateTime }}
+          } @else {
+            <span class="cc-muted">imediatamente</span>
+          }
+        </dd>
+      </div>
+      <div>
+        <dt>Prazo</dt>
+        <dd>
+          @if (assignment().dueAt; as due) {
+            {{ due | ccDateTime }}
+          } @else {
+            <span class="cc-muted">sem prazo</span>
+          }
+        </dd>
+      </div>
+      <div>
+        <dt>Tempo</dt>
+        <dd>{{ timeLabel() }}</dd>
+      </div>
+      <div>
+        <dt>Tentativas</dt>
+        <dd>{{ attemptsLabel() }}</dd>
+      </div>
+      <div>
+        <dt>Questões</dt>
+        <dd>{{ questionsLabel() }}</dd>
+      </div>
+    </dl>
+
+    <p class="row__shuffle cc-xs cc-muted">
+      Horários em {{ timeZoneLabel }}.
+      @if (assignment().shuffleQuestions) {
+        Questões embaralhadas.
+      }
+      @if (assignment().shuffleOptions) {
+        Alternativas embaralhadas.
+      }
+    </p>
+  </div>
+
+  @if (!readOnly()) {
+    <div class="row__actions">
+      <p-button
+        icon="pi pi-cog"
+        severity="secondary"
+        [text]="true"
+        [rounded]="true"
+        ariaLabel="Configurar atribuição"
+        [loading]="busy()"
+        (onClick)="editRequested.emit(assignment())"
+      />
+      @if (assignment().removable) {
+        <p-button
+          icon="pi pi-times"
+          severity="danger"
+          [text]="true"
+          [rounded]="true"
+          ariaLabel="Retirar da trilha"
+          [loading]="busy()"
+          (onClick)="removeRequested.emit(assignment())"
+        />
+      }
+    </div>
+  }
+</article>

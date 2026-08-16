@@ -1,0 +1,53 @@
+.profile {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cc-gap);
+  align-items: start;
+}
+
+.profile__card {
+  padding: var(--cc-gap-lg);
+
+  h2 {
+    margin-top: 0;
+    font-size: 1.05rem;
+  }
+}
+
+:host ::ng-deep .profile__alert {
+  display: block;
+  margin-bottom: var(--cc-gap);
+}
+
+.profile__list {
+  margin: var(--cc-gap) 0 0;
+
+  > div {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--cc-border);
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  dt {
+    font-size: 0.8125rem;
+    color: var(--cc-text-muted);
+    margin-bottom: 0.15rem;
+  }
+
+  dd {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 900px) {
+  .profile {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

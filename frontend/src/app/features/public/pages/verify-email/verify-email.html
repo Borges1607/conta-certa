@@ -1,0 +1,50 @@
+@if (state() === 'checking') {
+  <cc-auth-card heading="Confirmando seu e-mail">
+    <cc-loading-skeleton kind="detail" />
+  </cc-auth-card>
+} @else if (state() === 'confirmed') {
+  <cc-auth-card heading="E-mail confirmado">
+    <div class="verify verify--ok">
+      <i class="pi pi-check-circle verify__icon" aria-hidden="true"></i>
+      <p>Sua conta está pronta. Você já pode entrar.</p>
+      <p-button label="Entrar" icon="pi pi-sign-in" routerLink="/login" />
+    </div>
+  </cc-auth-card>
+} @else if (state() === 'used') {
+  <cc-auth-card heading="E-mail já confirmado">
+    <div class="verify">
+      <i class="pi pi-info-circle verify__icon" aria-hidden="true"></i>
+      <p>Este link já tinha sido usado. Não é preciso fazer nada.</p>
+      <p-button label="Entrar" icon="pi pi-sign-in" routerLink="/login" />
+    </div>
+  </cc-auth-card>
+} @else {
+  <cc-auth-card [heading]="heading()" [description]="description()">
+    @if (resendSent()) {
+      <p-message severity="success" styleClass="verify__alert">
+        Se este e-mail estiver cadastrado, enviamos um novo link de confirmação.
+      </p-message>
+      <p class="verify__links"><a routerLink="/login">Ir para o login</a></p>
+    } @else {
+      <form [formGroup]="resendForm" (ngSubmit)="resend()" novalidate>
+        <cc-form-field
+          label="E-mail"
+          inputId="resendEmail"
+          [control]="resendForm.controls.email"
+          [required]="true"
+        >
+          <input pInputText id="resendEmail" type="email" formControlName="email" autocomplete="email" />
+        </cc-form-field>
+
+        <cc-submit-button
+          label="Reenviar confirmação"
+          icon="pi pi-envelope"
+          [submitting]="resendGuard.submitting()"
+          [fluid]="true"
+        />
+      </form>
+
+      <p class="verify__links"><a routerLink="/login">Voltar ao login</a></p>
+    }
+  </cc-auth-card>
+}

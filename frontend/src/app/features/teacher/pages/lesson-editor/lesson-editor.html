@@ -1,0 +1,88 @@
+<div class="cc-page cc-page--wide">
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="detail" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as lesson) {
+    <cc-page-header [title]="lesson.title" [crumbs]="crumbs()">
+      <cc-lesson-status-tag [status]="lesson.status" [showExplanation]="true" />
+      <p-button
+        label="Questões"
+        icon="pi pi-list"
+        severity="secondary"
+        [outlined]="true"
+        [badge]="lesson.questionCount.toString()"
+        (onClick)="goToQuestions()"
+      />
+      @if (lesson.status === 'DRAFT') {
+        <p-button
+          label="Publicar"
+          icon="pi pi-send"
+          [loading]="publishGuard.submitting()"
+          (onClick)="publish()"
+        />
+      }
+    </cc-page-header>
+
+    @if (conflict()) {
+      <cc-version-conflict-notice
+        title="Esta lição foi alterada em outro lugar"
+        message="Alguém — ou você, em outra aba — salvou uma versão mais nova. Recarregue para ver o conteúdo atual antes de editar de novo."
+        [reloading]="reloading()"
+        (reload)="reload()"
+      />
+    }
+
+    <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <div class="meta">
+        <cc-form-field
+          label="Título"
+          inputId="title"
+          [control]="form.controls.title"
+          [required]="true"
+        >
+          <input pInputText id="title" formControlName="title" />
+        </cc-form-field>
+
+        <cc-form-field
+          label="Resumo"
+          inputId="summary"
+          [control]="form.controls.summary"
+          hint="Uma frase que aparece na trilha do aluno."
+        >
+          <input pInputText id="summary" formControlName="summary" />
+        </cc-form-field>
+      </div>
+
+      <label class="theory__label" for="markdown-source">Teoria</label>
+      <cc-markdown-editor
+        [value]="theory()"
+        (valueChange)="onTheoryChange($event)"
+        [lessonId]="lesson.id"
+        editorId="markdown-source"
+      />
+
+      <footer class="editor-actions">
+        @if (dirty()) {
+          <span class="editor-actions__dirty cc-small">
+            <i class="pi pi-circle-fill" aria-hidden="true"></i>
+            Alterações não salvas
+          </span>
+        }
+        <span class="cc-spacer"></span>
+        <p-button
+          label="Voltar ao acervo"
+          severity="secondary"
+          [text]="true"
+          routerLink="/professor/licoes"
+        />
+        <cc-submit-button
+          label="Salvar"
+          icon="pi pi-check"
+          [submitting]="guard.submitting()"
+          [disabled]="conflict()"
+        />
+      </footer>
+    </form>
+  }
+</div>

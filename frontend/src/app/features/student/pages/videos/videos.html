@@ -1,0 +1,77 @@
+<div class="cc-page">
+  <cc-page-header title="Videoaulas" subtitle="Conteúdo em vídeo publicado pelo seu professor.">
+    @if (state.data(); as data) {
+      <span class="progress cc-small">
+        <i class="pi pi-eye" aria-hidden="true"></i>
+        {{ data.viewedCount }} de {{ data.totalCount }} assistidas
+      </span>
+    }
+  </cc-page-header>
+
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="card-grid" [count]="4" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as data) {
+    @if (data.items.length === 0) {
+      <cc-empty-state
+        title="Nenhuma videoaula ainda"
+        message="Quando seu professor publicar vídeos nesta sala, eles aparecem aqui."
+        actionLabel="Atualizar"
+        icon="pi pi-video"
+        actionIcon="pi pi-refresh"
+        (action)="state.retry()"
+      />
+    } @else {
+      @for (group of groups(); track group.key) {
+        <section class="group">
+          <h2>{{ group.title }}</h2>
+          <div class="cc-grid-3">
+            @for (video of group.items; track video.id) {
+              <article class="media cc-card">
+                <header class="media__head">
+                  <i class="pi pi-play-circle media__icon" aria-hidden="true"></i>
+                  @if (video.viewed) {
+                    <p-tag value="Assistida" severity="success" />
+                  }
+                </header>
+
+                <h3 class="media__title">{{ video.title }}</h3>
+                @if (video.description) {
+                  <p class="media__description cc-small cc-muted">{{ video.description }}</p>
+                }
+                @if (video.durationMinutes) {
+                  <span class="cc-xs cc-muted">{{ video.durationMinutes }} min</span>
+                }
+
+                <p-button
+                  label="Assistir"
+                  icon="pi pi-play"
+                  [outlined]="true"
+                  styleClass="media__action"
+                  (onClick)="open(video)"
+                />
+              </article>
+            }
+          </div>
+        </section>
+      }
+    }
+  }
+</div>
+
+<p-dialog
+  [visible]="playing() !== null"
+  (visibleChange)="playing.set(null)"
+  [header]="playing()?.title ?? ''"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '56rem', maxWidth: '95vw' }"
+>
+  @if (playing(); as video) {
+    <cc-video-embed [url]="video.url" [title]="video.title" />
+    @if (video.description) {
+      <p class="cc-small cc-muted">{{ video.description }}</p>
+    }
+  }
+</p-dialog>

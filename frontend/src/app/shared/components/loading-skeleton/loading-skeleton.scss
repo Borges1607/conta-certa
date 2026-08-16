@@ -1,0 +1,11 @@
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-gap);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}

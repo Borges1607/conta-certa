@@ -1,0 +1,34 @@
+.toolbar {
+  display: flex;
+  gap: var(--cc-gap-sm);
+  margin-bottom: var(--cc-gap);
+  flex-wrap: wrap;
+}
+
+.toolbar__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 20rem;
+  max-width: 26rem;
+
+  i {
+    position: absolute;
+    left: 0.75rem;
+    color: var(--cc-text-muted);
+    pointer-events: none;
+  }
+
+  input {
+    width: 100%;
+    padding-left: 2.25rem;
+  }
+}
+
+.lesson__title {
+  font-weight: 600;
+}
+
+.actions-col {
+  width: 3.5rem;
+}

@@ -1,0 +1,42 @@
+<div class="cc-page">
+  <cc-page-header title="Salas" subtitle="Suas turmas e os códigos de ingresso.">
+    <p-button label="Nova sala" icon="pi pi-plus" (onClick)="openCreate()" />
+  </cc-page-header>
+
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="card-grid" [count]="3" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as page) {
+    @if (page.totalElements === 0) {
+      <cc-empty-state
+        title="Você ainda não tem salas"
+        message="Crie uma sala, monte a trilha com lições do seu acervo e distribua o código de ingresso para a turma."
+        actionLabel="Criar sala"
+        icon="pi pi-users"
+        (action)="openCreate()"
+      />
+    } @else {
+      <div class="cc-grid-3">
+        @for (room of page.content; track room.id) {
+          <cc-room-list-card
+            [room]="room"
+            [busy]="busyRoomId() === room.id"
+            [deletable]="room.studentCount === 0 && room.lessonCount === 0"
+            (editRequested)="openEdit($event)"
+            (archiveRequested)="archive($event)"
+            (duplicateRequested)="duplicate($event)"
+            (regenerateRequested)="regenerateCode($event)"
+            (deleteRequested)="remove($event)"
+          />
+        }
+      </div>
+    }
+  }
+</div>
+
+<cc-room-form-dialog
+  [(visible)]="formVisible"
+  [room]="editing()"
+  (saved)="onSaved()"
+/>

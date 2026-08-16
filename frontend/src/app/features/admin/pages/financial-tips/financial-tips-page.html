@@ -1,0 +1,157 @@
+<div class="cc-page">
+  <cc-page-header
+    title="Dicas financeiras"
+    subtitle="A dica agendada para o dia aparece no painel de todos os alunos."
+  >
+    <p-button label="Nova dica" icon="pi pi-plus" (onClick)="openCreate()" />
+  </cc-page-header>
+
+  <p class="rule cc-small cc-muted">
+    <i class="pi pi-info-circle" aria-hidden="true"></i>
+    Se não houver dica agendada para o dia, o sistema escolhe automaticamente uma dica ativa.
+  </p>
+
+  <div class="toolbar">
+    <span class="toolbar__search">
+      <i class="pi pi-search" aria-hidden="true"></i>
+      <input
+        pInputText
+        type="search"
+        placeholder="Buscar por título"
+        aria-label="Buscar dica"
+        [ngModel]="search()"
+        (ngModelChange)="onSearch($event)"
+      />
+    </span>
+
+    <p-select
+      [options]="activeOptions"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="currentActiveOption()"
+      (ngModelChange)="onActiveChange($event)"
+      ariaLabel="Filtrar por situação"
+    />
+  </div>
+
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="table" [count]="5" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as page) {
+    @if (page.totalElements === 0) {
+      <cc-empty-state
+        title="Nenhuma dica cadastrada"
+        [message]="
+          search() || active() !== undefined
+            ? 'Nenhuma dica corresponde aos filtros.'
+            : 'Cadastre dicas curtas de educação financeira. Elas aparecem no painel dos alunos.'
+        "
+        actionLabel="Criar dica"
+        icon="pi pi-lightbulb"
+        (action)="openCreate()"
+      />
+    } @else {
+      <div class="cc-scroll-x">
+        <p-table [value]="page.content" dataKey="id" [rowHover]="true">
+          <ng-template #header>
+            <tr>
+              <th scope="col">Dica</th>
+              <th scope="col">Agendamento</th>
+              <th scope="col">Situação</th>
+              <th scope="col" class="actions-col"><span class="cc-sr-only">Ações</span></th>
+            </tr>
+          </ng-template>
+
+          <ng-template #body let-tip>
+            <tr [class.is-today]="relation(tip) === 'today'">
+              <td>
+                <strong>{{ tip.title }}</strong>
+                @if (tip.sourceUrl) {
+                  <br />
+                  <a
+                    class="cc-xs"
+                    [href]="tip.sourceUrl"
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                  >
+                    Fonte
+                  </a>
+                }
+              </td>
+              <td>
+                {{ tip.publicationDate | ccLocalDate }}
+                @switch (relation(tip)) {
+                  @case ('today') {
+                    <span class="badge badge--today">dica de hoje</span>
+                  }
+                  @case ('future') {
+                    <span class="badge badge--future">agendada</span>
+                  }
+                }
+              </td>
+              <td><cc-active-tag [active]="tip.active" /></td>
+              <td class="actions">
+                <p-button
+                  icon="pi pi-pencil"
+                  severity="secondary"
+                  [text]="true"
+                  [rounded]="true"
+                  ariaLabel="Editar dica"
+                  (onClick)="openEdit(tip)"
+                />
+                @if (tip.active) {
+                  <p-button
+                    icon="pi pi-ban"
+                    severity="warn"
+                    [text]="true"
+                    [rounded]="true"
+                    ariaLabel="Desativar dica"
+                    [loading]="busyId() === tip.id"
+                    (onClick)="toggleActive(tip)"
+                  />
+                } @else {
+                  <p-button
+                    icon="pi pi-check-circle"
+                    severity="success"
+                    [text]="true"
+                    [rounded]="true"
+                    ariaLabel="Ativar dica"
+                    [loading]="busyId() === tip.id"
+                    (onClick)="toggleActive(tip)"
+                  />
+                }
+                <p-button
+                  icon="pi pi-trash"
+                  severity="danger"
+                  [text]="true"
+                  [rounded]="true"
+                  ariaLabel="Excluir dica"
+                  [loading]="busyId() === tip.id"
+                  (onClick)="remove(tip)"
+                />
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      @if (page.totalElements > page.size) {
+        <p-paginator
+          [first]="first()"
+          [rows]="page.size"
+          [totalRecords]="page.totalElements"
+          [rowsPerPageOptions]="[10, 20, 50]"
+          (onPageChange)="onPage($event)"
+        />
+      }
+    }
+  }
+</div>
+
+<cc-tip-form-dialog
+  [visible]="dialogVisible()"
+  [tip]="editing()"
+  (closed)="dialogVisible.set(false)"
+  (saved)="onSaved()"
+/>

@@ -1,0 +1,72 @@
+<div class="cc-page">
+  <cc-page-header title="Minhas salas" subtitle="Escolha uma sala para continuar seus estudos.">
+    <p-button label="Entrar em uma sala" icon="pi pi-plus" (onClick)="openJoin()" />
+  </cc-page-header>
+
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="card-grid" [count]="3" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as rooms) {
+    @if (rooms.length === 0) {
+      <cc-empty-state
+        title="Você ainda não está em nenhuma sala"
+        message="Peça o código de 6 caracteres ao seu professor e entre na turma para começar."
+        actionLabel="Entrar em uma sala"
+        icon="pi pi-users"
+        (action)="openJoin()"
+      />
+    } @else {
+      <div class="cc-grid-3">
+        @for (room of rooms; track room.id) {
+          <cc-room-card [room]="room" />
+        }
+      </div>
+    }
+  }
+</div>
+
+<p-dialog
+  [visible]="joinVisible()"
+  (visibleChange)="joinVisible.set($event)"
+  header="Entrar em uma sala"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '26rem', maxWidth: '95vw' }"
+>
+  <form [formGroup]="form" (ngSubmit)="join()" novalidate>
+    @if (joinError()) {
+      <p-message severity="error" styleClass="join__alert">{{ joinError() }}</p-message>
+    }
+
+    <cc-form-field
+      label="Código da sala"
+      inputId="code"
+      [control]="form.controls.code"
+      [required]="true"
+      hint="São 6 caracteres, fornecidos pelo seu professor."
+    >
+      <input
+        pInputText
+        id="code"
+        formControlName="code"
+        maxlength="6"
+        autocomplete="off"
+        autocapitalize="characters"
+        spellcheck="false"
+        class="join__code"
+        (input)="onCodeInput($any($event.target).value)"
+      />
+    </cc-form-field>
+
+    <footer class="join__footer">
+      <p-button
+        label="Cancelar"
+        severity="secondary"
+        [text]="true"
+        (onClick)="joinVisible.set(false)"
+      />
+      <cc-submit-button label="Entrar" icon="pi pi-sign-in" [submitting]="guard.submitting()" />
+    </footer>
+  </form>
+</p-dialog>

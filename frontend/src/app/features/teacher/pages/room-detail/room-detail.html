@@ -1,0 +1,111 @@
+<div class="cc-page">
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="detail" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as room) {
+    <cc-page-header [title]="room.name" [subtitle]="room.description ?? ''" [crumbs]="crumbs()">
+      @if (!archived()) {
+        <p-button
+          label="Editar"
+          icon="pi pi-pencil"
+          [outlined]="true"
+          (onClick)="formVisible.set(true)"
+        />
+        <p-button
+          label="Arquivar"
+          icon="pi pi-inbox"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="archive()"
+        />
+      }
+    </cc-page-header>
+
+    @if (archived()) {
+      <cc-archived-banner />
+    }
+
+    <nav class="tabs" aria-label="Seções da sala">
+      <ul>
+        @for (tab of tabs; track tab.id) {
+          <li>
+            <button
+              type="button"
+              [class.is-active]="activeTab() === tab.id"
+              [attr.aria-current]="activeTab() === tab.id ? 'page' : null"
+              (click)="selectTab(tab.id)"
+            >
+              <i class="{{ tab.icon }}" aria-hidden="true"></i>
+              {{ tab.label }}
+            </button>
+          </li>
+        }
+      </ul>
+    </nav>
+
+    @switch (activeTab()) {
+      @case ('visao-geral') {
+        <div class="overview">
+          <cc-join-code-panel
+            [code]="room.joinCode"
+            [readOnly]="archived()"
+            [regenerating]="regenerating()"
+            (regenerate)="regenerateCode()"
+          />
+
+          <section class="cc-card overview__facts">
+            <h2>Configuração</h2>
+            <dl>
+              <div>
+                <dt>Série</dt>
+                <dd>{{ room.grade }}</dd>
+              </div>
+              <div>
+                <dt>Nota mínima para aprovação</dt>
+                <dd>{{ room.passingScorePercent }}%</dd>
+              </div>
+              <div>
+                <dt>Instituição</dt>
+                <dd>{{ room.institution.name }}</dd>
+              </div>
+              <div>
+                <dt>Alunos</dt>
+                <dd>{{ room.studentCount }}</dd>
+              </div>
+              <div>
+                <dt>Lições na trilha</dt>
+                <dd>{{ room.lessonCount }}</dd>
+              </div>
+            </dl>
+
+            @if (room.contentTopics.length > 0) {
+              <div class="overview__topics">
+                <h3>Temas</h3>
+                <ul>
+                  @for (topic of room.contentTopics; track topic) {
+                    <li>{{ topic }}</li>
+                  }
+                </ul>
+              </div>
+            }
+          </section>
+        </div>
+      }
+
+      @case ('alunos') {
+        <cc-room-students-tab [roomId]="room.id" [archived]="archived()" />
+      }
+
+      @case ('trilha') {
+        <cc-room-track-tab [roomId]="room.id" [archived]="archived()" (changed)="onSaved()" />
+      }
+
+      @case ('midias') {
+        <cc-room-media-tab [roomId]="room.id" [archived]="archived()" />
+      }
+    }
+
+    <cc-room-form-dialog [(visible)]="formVisible" [room]="room" (saved)="onSaved()" />
+  }
+</div>

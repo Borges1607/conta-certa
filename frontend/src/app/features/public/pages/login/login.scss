@@ -1,0 +1,26 @@
+:host ::ng-deep .login__alert {
+  display: block;
+  margin-bottom: var(--cc-gap);
+}
+
+.login__blocker {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.login__links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: var(--cc-gap);
+  font-size: 0.875rem;
+}
+
+.login__note {
+  margin: var(--cc-gap-sm) 0 0;
+  text-align: center;
+}

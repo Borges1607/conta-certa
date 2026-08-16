@@ -1,0 +1,206 @@
+@switch (type()) {
+  @case ('TRUE_FALSE') {
+    <fieldset class="qtf__fieldset">
+      <legend class="qtf__legend">Resposta correta</legend>
+      <div class="cc-row">
+        <div class="cc-row-sm">
+          <p-radiobutton
+            inputId="tf-true"
+            name="correct-boolean"
+            [value]="true"
+            [ngModel]="correctBoolean()"
+            [ngModelOptions]="{ standalone: true }"
+            [disabled]="disabled()"
+            (ngModelChange)="correctBoolean.set($event)"
+          />
+          <label for="tf-true">Verdadeiro</label>
+        </div>
+        <div class="cc-row-sm">
+          <p-radiobutton
+            inputId="tf-false"
+            name="correct-boolean"
+            [value]="false"
+            [ngModel]="correctBoolean()"
+            [ngModelOptions]="{ standalone: true }"
+            [disabled]="disabled()"
+            (ngModelChange)="correctBoolean.set($event)"
+          />
+          <label for="tf-false">Falso</label>
+        </div>
+      </div>
+      @if (correctBoolean() === null) {
+        <p-message severity="warn" text="Escolha verdadeiro ou falso para poder salvar." />
+      }
+    </fieldset>
+  }
+
+  @case ('NUMERIC') {
+    <div class="qtf__numeric">
+      <div class="qtf__field">
+        <label for="numeric-value">Valor correto</label>
+        <input
+          pInputText
+          id="numeric-value"
+          type="text"
+          inputmode="decimal"
+          [value]="numeric().correctNumericValue"
+          [disabled]="disabled()"
+          (input)="onNumericText('correctNumericValue', $event)"
+        />
+        <small class="cc-muted">
+          Enviado como texto decimal, com ponto: <code>1250.50</code>. Nunca como número quebrado.
+        </small>
+      </div>
+
+      <div class="qtf__field">
+        <label for="numeric-tolerance">Tolerância absoluta</label>
+        <input
+          pInputText
+          id="numeric-tolerance"
+          type="text"
+          inputmode="decimal"
+          [value]="numeric().absoluteTolerance"
+          [disabled]="disabled()"
+          (input)="onNumericText('absoluteTolerance', $event)"
+        />
+        <small class="cc-muted">Margem aceita para mais e para menos. Use 0 para exigir exatidão.</small>
+      </div>
+
+      <div class="qtf__field">
+        <label for="numeric-unit">Unidade</label>
+        <p-select
+          inputId="numeric-unit"
+          [options]="unitOptions"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="numeric().unit"
+          [ngModelOptions]="{ standalone: true }"
+          [disabled]="disabled()"
+          [fluid]="true"
+          (ngModelChange)="setNumeric('unit', $event)"
+        />
+      </div>
+
+      <div class="qtf__field">
+        <label for="numeric-decimals">Casas decimais</label>
+        <p-inputnumber
+          inputId="numeric-decimals"
+          [min]="0"
+          [max]="6"
+          [showButtons]="true"
+          [allowEmpty]="true"
+          [fluid]="true"
+          [ngModel]="numeric().decimalPlaces"
+          [ngModelOptions]="{ standalone: true }"
+          [disabled]="disabled()"
+          (ngModelChange)="setNumeric('decimalPlaces', $event)"
+        />
+        <small class="cc-muted">Vazio deixa a critério do servidor.</small>
+      </div>
+    </div>
+  }
+
+  @default {
+    <fieldset class="qtf__fieldset">
+      <legend class="qtf__legend">Opções</legend>
+
+      @if (type() === 'MULTIPLE_CHOICE') {
+        <p-message
+          severity="info"
+          text="Múltipla escolha: só a seleção exata do aluno pontua. Acertar parte não vale nota."
+        />
+      }
+
+      @if (options().length === 0) {
+        <p class="cc-muted cc-small">Nenhuma opção ainda. Adicione pelo menos duas.</p>
+      }
+
+      <ul class="qtf__options">
+        @for (option of options(); track $index; let i = $index; let first = $first; let last = $last) {
+          <li class="qtf__option">
+            @if (type() === 'SINGLE_CHOICE') {
+              <p-radiobutton
+                [inputId]="'option-correct-' + i"
+                name="correct-option"
+                [value]="i"
+                [ngModel]="correctIndex()"
+                [ngModelOptions]="{ standalone: true }"
+                [disabled]="disabled()"
+                (ngModelChange)="setSingleCorrect($event)"
+              />
+            } @else {
+              <p-checkbox
+                [inputId]="'option-correct-' + i"
+                [binary]="true"
+                [ngModel]="option.correct"
+                [ngModelOptions]="{ standalone: true }"
+                [disabled]="disabled()"
+                (ngModelChange)="toggleCorrect(i, $event)"
+              />
+            }
+            <label class="cc-sr-only" [attr.for]="'option-correct-' + i">
+              Marcar opção {{ i + 1 }} como correta
+            </label>
+
+            <input
+              pInputText
+              type="text"
+              [id]="'option-text-' + i"
+              [value]="option.text"
+              [disabled]="disabled()"
+              [attr.aria-label]="'Texto da opção ' + (i + 1)"
+              placeholder="Texto da opção"
+              (input)="setOptionText(i, $event)"
+            />
+
+            <p-button
+              icon="pi pi-arrow-up"
+              severity="secondary"
+              [text]="true"
+              size="small"
+              type="button"
+              [disabled]="disabled() || first"
+              [ariaLabel]="'Mover opção ' + (i + 1) + ' para cima'"
+              (onClick)="moveOption(i, -1)"
+            />
+            <p-button
+              icon="pi pi-arrow-down"
+              severity="secondary"
+              [text]="true"
+              size="small"
+              type="button"
+              [disabled]="disabled() || last"
+              [ariaLabel]="'Mover opção ' + (i + 1) + ' para baixo'"
+              (onClick)="moveOption(i, 1)"
+            />
+            <p-button
+              icon="pi pi-trash"
+              severity="danger"
+              [text]="true"
+              size="small"
+              type="button"
+              [disabled]="disabled()"
+              [ariaLabel]="'Remover opção ' + (i + 1)"
+              (onClick)="removeOption(i)"
+            />
+          </li>
+        }
+      </ul>
+
+      <div class="cc-row-sm">
+        <p-button
+          label="Adicionar opção"
+          icon="pi pi-plus"
+          [outlined]="true"
+          size="small"
+          type="button"
+          [disabled]="disabled()"
+          (onClick)="addOption()"
+        />
+        <small class="cc-muted">
+          {{ correctCount() }} de {{ options().length }} marcadas como corretas.
+        </small>
+      </div>
+    </fieldset>
+  }
+}

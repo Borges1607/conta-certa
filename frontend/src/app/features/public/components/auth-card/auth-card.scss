@@ -1,0 +1,21 @@
+.card {
+  padding: var(--cc-gap-lg);
+  box-shadow: var(--cc-shadow);
+}
+
+.card__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.375rem;
+}
+
+.card__description {
+  margin: 0 0 var(--cc-gap-lg);
+  color: var(--cc-text-muted);
+  font-size: 0.9375rem;
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: var(--cc-gap);
+  }
+}

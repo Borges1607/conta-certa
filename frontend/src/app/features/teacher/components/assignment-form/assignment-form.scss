@@ -1,0 +1,87 @@
+.assignment {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.assignment__dates,
+.assignment__limits {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cc-gap);
+}
+
+.assignment__limit {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-gap-sm);
+}
+
+.assignment__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8125rem;
+  color: var(--cc-text-muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.assignment__switches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cc-gap-lg);
+  margin-bottom: var(--cc-gap);
+}
+
+/* O instante em UTC que será enviado, ao lado do horário local. */
+.assignment__utc {
+  margin: -0.35rem 0 var(--cc-gap);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--cc-radius);
+  background: var(--cc-surface-sunken);
+  font-size: 0.75rem;
+
+  > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  dt {
+    color: var(--cc-text-muted);
+
+    &::after {
+      content: ':';
+    }
+  }
+
+  dd {
+    margin: 0;
+  }
+
+  code {
+    font-size: 0.7rem;
+  }
+}
+
+.assignment__error {
+  margin: 0 0 var(--cc-gap-sm);
+  color: var(--cc-failed);
+  font-size: 0.8125rem;
+}
+
+.assignment__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--cc-gap-sm);
+  padding-top: var(--cc-gap-sm);
+  border-top: 1px solid var(--cc-border);
+}
+
+@media (max-width: 640px) {
+  .assignment__dates,
+  .assignment__limits {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,0 +1,45 @@
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-gap-sm);
+}
+
+.editor__tabs {
+  display: flex;
+  gap: var(--cc-gap-xs);
+}
+
+.editor__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--cc-text-muted);
+  background: transparent;
+  border: 1px solid var(--cc-border);
+  border-radius: var(--cc-radius);
+  cursor: pointer;
+
+  &.is-active {
+    color: var(--cc-text);
+    background: var(--cc-surface-sunken);
+    font-weight: 600;
+  }
+}
+
+.editor__input {
+  width: 100%;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+  font-size: 0.9rem;
+}
+
+.editor__preview {
+  min-height: 12rem;
+  padding: var(--cc-gap-sm);
+  background: var(--cc-surface-sunken);
+  border: 1px solid var(--cc-border);
+  border-radius: var(--cc-radius);
+  overflow-x: auto;
+}

@@ -1,0 +1,136 @@
+<div class="cc-page">
+  <cc-page-header
+    title="Videoaulas"
+    subtitle="Seu acervo de vídeos. Publique-os nas salas pela aba de mídias."
+  >
+    <p-button label="Nova videoaula" icon="pi pi-plus" (onClick)="openCreate()" />
+  </cc-page-header>
+
+  @if (state.isLoading()) {
+    <cc-loading-skeleton kind="table" [count]="4" />
+  } @else if (state.error(); as error) {
+    <cc-error-state [error]="error" (retry)="state.retry()" (back)="state.retry()" />
+  } @else if (state.data(); as page) {
+    @if (page.totalElements === 0) {
+      <cc-empty-state
+        title="Nenhuma videoaula no acervo"
+        message="Cadastre links do YouTube ou Vimeo. Depois é só publicá-los nas suas salas."
+        actionLabel="Cadastrar videoaula"
+        icon="pi pi-video"
+        (action)="openCreate()"
+      />
+    } @else {
+      <div class="cc-scroll-x">
+        <p-table [value]="page.content" dataKey="id" [rowHover]="true">
+          <ng-template #header>
+            <tr>
+              <th scope="col">Título</th>
+              <th scope="col">Categoria</th>
+              <th scope="col">Link</th>
+              <th scope="col" class="actions-col"><span class="cc-sr-only">Ações</span></th>
+            </tr>
+          </ng-template>
+
+          <ng-template #body let-video>
+            <tr>
+              <td>
+                <strong>{{ video.title }}</strong>
+                @if (video.description) {
+                  <br />
+                  <small class="cc-muted">{{ video.description }}</small>
+                }
+              </td>
+              <td>{{ video.category ?? '—' }}</td>
+              <td class="link-cell">
+                <a [href]="video.url" target="_blank" rel="noopener noreferrer nofollow">
+                  {{ video.url }}
+                </a>
+              </td>
+              <td>
+                <p-button
+                  icon="pi pi-pencil"
+                  severity="secondary"
+                  [text]="true"
+                  [rounded]="true"
+                  ariaLabel="Editar videoaula"
+                  (onClick)="openEdit(video)"
+                />
+                <p-button
+                  icon="pi pi-inbox"
+                  severity="danger"
+                  [text]="true"
+                  [rounded]="true"
+                  ariaLabel="Arquivar videoaula"
+                  [loading]="busyId() === video.id"
+                  (onClick)="remove(video)"
+                />
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    }
+  }
+</div>
+
+<p-dialog
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [header]="editing() ? 'Editar videoaula' : 'Nova videoaula'"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '40rem', maxWidth: '95vw' }"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    @if (conflict()) {
+      <cc-version-conflict-notice
+        title="Esta videoaula foi alterada em outro lugar"
+        message="Recarregue a lista para ver a versão mais recente antes de editar de novo."
+        (reload)="reload()"
+      />
+    }
+
+    <cc-form-field label="Título" inputId="title" [control]="form.controls.title" [required]="true">
+      <input pInputText id="title" formControlName="title" />
+    </cc-form-field>
+
+    <cc-form-field
+      label="URL do vídeo"
+      inputId="url"
+      [control]="form.controls.url"
+      [required]="true"
+      hint="YouTube ou Vimeo. A pré-visualização abaixo mostra o que o aluno verá."
+    >
+      <input pInputText id="url" formControlName="url" placeholder="https://..." />
+    </cc-form-field>
+
+    @if (previewUrl()) {
+      <div class="preview">
+        <cc-video-embed [url]="previewUrl()" title="Pré-visualização" />
+      </div>
+    }
+
+    <cc-form-field label="Categoria" inputId="category" [control]="form.controls.category">
+      <input pInputText id="category" formControlName="category" placeholder="Juros compostos" />
+    </cc-form-field>
+
+    <cc-form-field label="Descrição" inputId="description" [control]="form.controls.description">
+      <textarea pTextarea id="description" formControlName="description" rows="3"></textarea>
+    </cc-form-field>
+
+    <footer class="dialog-footer">
+      <p-button
+        label="Cancelar"
+        severity="secondary"
+        [text]="true"
+        (onClick)="dialogVisible.set(false)"
+      />
+      <cc-submit-button
+        label="Salvar"
+        icon="pi pi-check"
+        [submitting]="guard.submitting()"
+        [disabled]="conflict()"
+      />
+    </footer>
+  </form>
+</p-dialog>
