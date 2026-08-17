@@ -1,11 +1,11 @@
 # Conta Certa — Frontend
 
-Angular 21 + PrimeNG 21. Implementa a [spec de integração](../docs/frontend-integration-spec.md)
+Angular 22 + PrimeNG 21. Implementa a [spec de integração](../docs/frontend-integration-spec.md)
 segundo o plano em [`docs/frontend/`](../docs/frontend/).
 
 ## Pré-requisitos
 
-- Node.js ≥ 22.12 (testado em 24.19 LTS)
+- Node.js ^22.22.3, ^24.15.0 ou ≥ 26 (testado em 26.1)
 - npm ≥ 10
 
 ## Executar
@@ -58,6 +58,27 @@ do zero, limpe o storage da aba ou abra uma aba anônima.
 | `npm run check:rules` | Varreduras arquiteturais (ver abaixo) |
 | `npm run verify` | **Portão completo**: lint + regras + testes + build |
 | `npm run format` | Prettier |
+
+## Por que o `.npmrc` existe
+
+Duas coisas não óbvias vivem lá, e as duas são necessárias:
+
+**`node-options=--no-experimental-webstorage`.** A partir do Node 26 existe um
+`localStorage` nativo em `globalThis`, e o ambiente jsdom do Vitest só instala
+globais que ainda não existem — sem a flag, os 55 testes que tocam em storage
+quebram com `Cannot read properties of undefined`. Rode os testes pelos scripts
+do npm, não chamando o `ng` direto, ou a flag não é aplicada.
+
+**`legacy-peer-deps=true`.** O PrimeNG está deliberadamente na 21 sobre o
+Angular 22. A partir da 22 o PrimeNG exige chave de licença: sem ela, o
+`providePrimeNG` injeta um banner vermelho "Invalid PrimeUI License" em toda
+página — e o caminho não tem guard de dev, então vale para produção também. O
+PrimeNG 21 declara peer de `@angular/*` ^21, daí o flag. A combinação foi
+validada em build, nos 153 testes e navegando o app.
+
+Se um dia houver licença do PrimeNG, dá para subir para a 22: passe a chave em
+`providePrimeNG({ license: ... })` e mova o `borderRadius` do `ccPreset` de
+`semantic` para `primitive` (mudou no `@primeuix/themes` v3).
 
 ## Como o projeto está organizado
 
