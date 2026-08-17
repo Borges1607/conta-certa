@@ -138,8 +138,8 @@ export class ReportsPage {
         {
           label: 'Tentativas iniciadas',
           data: data.attemptsOverTime.map((point) => point.attempts),
-          borderColor: '#7c3aed',
-          backgroundColor: 'rgba(124, 58, 237, 0.15)',
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37, 99, 235, 0.15)',
           tension: 0.3,
           fill: true,
         },

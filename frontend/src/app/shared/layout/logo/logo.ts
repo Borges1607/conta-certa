@@ -17,8 +17,8 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         />
         <defs>
           <linearGradient id="ccGradient" x1="0" y1="0" x2="32" y2="32">
-            <stop offset="0%" stop-color="#7c3aed" />
-            <stop offset="100%" stop-color="#2563eb" />
+            <stop offset="0%" stop-color="#3b82f6" />
+            <stop offset="100%" stop-color="#1d4ed8" />
           </linearGradient>
         </defs>
       </svg>

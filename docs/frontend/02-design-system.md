@@ -19,8 +19,8 @@ Tema PrimeNG: preset **Aura** customizado via `definePreset`, em `styles/_theme.
 
 | Token | Valor | Uso |
 |---|---|---|
-| `primary` | Roxo `#7c3aed` | Ações principais, marca |
-| `secondary` | Azul `#2563eb` | Ações de apoio, links |
+| `primary` | Azul `#2563eb` | Ações principais, marca |
+| `secondary` | Cinza do Aura (`severity="secondary"`) | Ações de apoio, cancelar |
 | `success` | Verde `#16a34a` | Aprovado, publicado, ativo |
 | `warn` | Âmbar `#d97706` | Rascunho, prazo próximo, pendente |
 | `danger` | Vermelho `#dc2626` | Reprovado, erro, destrutivo |

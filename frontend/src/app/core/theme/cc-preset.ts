@@ -5,24 +5,30 @@ import Aura from '@primeuix/themes/aura';
  * Preset Aura customizado com a identidade do Conta Certa.
  * Ver Parte 2, §2 das specs de frontend.
  *
- * A escala primária é roxa (#7c3aed em `600`), a secundária azul. Os tokens
- * próprios da aplicação — XP, estrelas, estados de avaliação — não passam por
- * aqui: eles vivem em `src/styles/_tokens.scss`, porque o PrimeNG não os conhece.
+ * A escala primária é azul (#2563eb em `600`). O azul foi escolhido pela
+ * associação com matemática e por já ser o tom dos gráficos de relatório; a
+ * escala é a `blue` do Tailwind, que passa AA em todos os pares usados abaixo.
+ * Fica deliberadamente longe do ciano do XP (#0891b2), para os dois não se
+ * confundirem na barra superior.
+ *
+ * Os tokens próprios da aplicação — XP, estrelas, estados de avaliação — não
+ * passam por aqui: eles vivem em `src/styles/_tokens.scss`, porque o PrimeNG
+ * não os conhece.
  */
 export const ccPreset = definePreset(Aura, {
   semantic: {
     primary: {
-      50: '#f5f3ff',
-      100: '#ede9fe',
-      200: '#ddd6fe',
-      300: '#c4b5fd',
-      400: '#a78bfa',
-      500: '#8b5cf6',
-      600: '#7c3aed',
-      700: '#6d28d9',
-      800: '#5b21b6',
-      900: '#4c1d95',
-      950: '#2e1065',
+      50: '#eff6ff',
+      100: '#dbeafe',
+      200: '#bfdbfe',
+      300: '#93c5fd',
+      400: '#60a5fa',
+      500: '#3b82f6',
+      600: '#2563eb',
+      700: '#1d4ed8',
+      800: '#1e40af',
+      900: '#1e3a8a',
+      950: '#172554',
     },
     borderRadius: {
       none: '0',
