@@ -18,10 +18,10 @@ política de autorização.
 
 | Camada | Escolha |
 |---|---|
-| Framework | Angular 21 (standalone components, sem NgModules) |
+| Framework | Angular 22 (standalone components, sem NgModules) |
 | Linguagem | TypeScript em `strict`, `strictTemplates` ligado |
 | Estado | Signals + `computed`; RxJS apenas na borda HTTP |
-| UI | PrimeNG 21 com tema Aura, PrimeIcons |
+| UI | PrimeNG 21 com tema Aura, PrimeIcons (a 22 exige licença paga — ver README do frontend) |
 | Layout | PrimeFlex-like via utilitários próprios + CSS Grid/Flex nativo |
 | Gráficos | `primeng/chart` (Chart.js) |
 | Markdown | `marked` + `DOMPurify` + `katex` |
