@@ -16,12 +16,24 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--cc-gap-sm);
+
+  /* O popup é montado no `body` (`appendTo`), então o host aqui é só um âncora
+     vazio. Sem isto ele continua contando como item do flex e consome um `gap`,
+     afastando o botão de ações do canto. */
+  p-menu {
+    display: contents;
+  }
 }
 
 .room__title {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  /* Absorve a sobra do header. Sem isto o `space-between` tinha espaço para
+     distribuir e jogava o botão de ações para o meio, porque o `<p-menu>`
+     popup deixa um host de largura zero como último item do flex e era ele que
+     ficava com o canto direito. */
+  flex: 1 1 auto;
 
   a {
     font-weight: 600;

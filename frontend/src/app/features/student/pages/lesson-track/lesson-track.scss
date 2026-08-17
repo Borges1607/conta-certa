@@ -1,13 +1,81 @@
 .track__progress {
-  margin-bottom: var(--cc-gap-lg);
+  margin-bottom: var(--cc-gap-xl);
   max-width: 32rem;
 }
 
-.track {
+/* Caminho da trilha: uma coluna central por onde a linha passa, com as
+   estações alternando à direita e à esquerda dela. O deslocamento é menor que
+   o raio do disco (2,75rem), então a linha continua passando por baixo de cada
+   estação — é isso que faz o conjunto ler como um caminho contínuo, e não como
+   blocos soltos. */
+.path {
+  /* Mesmo valor serve de vão entre estações e de comprimento do trecho de
+     caminho — os dois têm de bater, senão sobra ou falta traço. */
+  --path-gap: 4rem;
+
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--cc-gap);
+  align-items: center;
+  gap: var(--path-gap);
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.path__step {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* O trecho de caminho vive no vão entre duas estações, não atrás delas: um
+   traço de altura fixa ocupando exatamente o `gap`. Assim ele nunca cruza o
+   texto, e continua funcionando com estações de alturas diferentes. */
+.path__step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 6px;
+  height: var(--path-gap);
+  margin-left: -3px;
+  border-radius: 999px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--cc-border) 0 12px,
+    transparent 12px 24px
+  );
+}
+
+.path__step:nth-child(4n + 2) {
+  transform: translateX(2.5rem);
+}
+
+.path__step:nth-child(4n + 4) {
+  transform: translateX(-2.5rem);
+}
+
+/* A estação está deslocada, o traço não: as compensações devolvem o trecho ao
+   eixo central da página. */
+.path__step:nth-child(4n + 2)::after {
+  margin-left: calc(-3px - 2.5rem);
+}
+
+.path__step:nth-child(4n + 4)::after {
+  margin-left: calc(-3px + 2.5rem);
+}
+
+/* Em telas estreitas o balanço come a largura útil do texto. */
+@media (max-width: 640px) {
+  .path__step:nth-child(4n + 2),
+  .path__step:nth-child(4n + 4) {
+    transform: none;
+  }
+
+  .path__step:nth-child(4n + 2)::after,
+  .path__step:nth-child(4n + 4)::after {
+    margin-left: -3px;
+  }
 }

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, input, signal } from '@angular/core';
 import { AbstractControl } from '@angular/forms';
 
 import { SERVER_ERROR_KEY } from '../../forms/apply-field-errors';
@@ -52,7 +52,29 @@ export class FormFieldComponent {
   readonly hint = input('');
   readonly required = input(false);
 
-  protected showError(): boolean {
+  /**
+   * `touched`, `dirty` e `errors` não são signals. Sem zone.js — o app é
+   * zoneless — nada avisa a view que eles mudaram, e `markAllAsTouched()` no
+   * envio não pintava erro nenhum: o formulário falhava calado. Este contador
+   * acompanha os eventos do próprio controle e torna a leitura reativa.
+   */
+  private readonly revision = signal(0);
+
+  constructor() {
+    effect((onCleanup) => {
+      const control = this.control();
+      if (!control) {
+        return;
+      }
+      const subscription = control.events.subscribe(() =>
+        this.revision.update((value) => value + 1),
+      );
+      onCleanup(() => subscription.unsubscribe());
+    });
+  }
+
+  protected readonly showError = computed<boolean>(() => {
+    this.revision();
     const control = this.control();
     if (!control) {
       return false;
@@ -61,9 +83,10 @@ export class FormFieldComponent {
     // usuário interagir, para o formulário não nascer vermelho.
     const hasServerError = Boolean(control.errors?.[SERVER_ERROR_KEY]);
     return hasServerError || (control.invalid && (control.touched || control.dirty));
-  }
+  });
 
-  protected errorMessage(): string {
+  protected readonly errorMessage = computed<string>(() => {
+    this.revision();
     const errors = this.control()?.errors;
     if (!errors) {
       return '';
@@ -82,5 +105,5 @@ export class FormFieldComponent {
     }
 
     return 'Valor inválido.';
-  }
+  });
 }

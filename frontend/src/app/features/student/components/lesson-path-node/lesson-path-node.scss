@@ -1,0 +1,259 @@
+/* A estação inteira — disco e placa — é um alvo de clique só. */
+.node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+/* O disco da trilha, com o ícone do estado dentro. */
+.node__disc {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: 50%;
+  /* A borda na cor do fundo abre um respiro entre o disco e a linha do
+     caminho, que passa por trás dele. */
+  border: 4px solid var(--cc-surface-page);
+  background: var(--cc-surface-sunken);
+  color: var(--cc-text-muted);
+  font-size: 1.75rem;
+  /* A sombra inferior dá o relevo de "pedra" do caminho. */
+  box-shadow: 0 6px 0 color-mix(in srgb, var(--cc-border), transparent 30%);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+/* A placa com o nome da lição. */
+.node__plate {
+  max-width: 11rem;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--cc-border);
+  border-radius: var(--cc-radius);
+  background: var(--cc-surface-card);
+  color: var(--cc-text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.node:hover .node__disc {
+  transform: translateY(-2px);
+}
+
+/* Afunda como um botão físico. */
+.node:active .node__disc {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--cc-border), transparent 30%);
+}
+
+.node:focus-visible {
+  outline: none;
+
+  .node__plate {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
+  }
+}
+
+/* Cada estado tem cor própria — o rótulo textual que a acompanha está no
+   modal, junto do mesmo ícone. */
+.node--passed {
+  .node__disc {
+    background: var(--cc-approved);
+    color: #fff;
+    box-shadow: 0 6px 0 color-mix(in srgb, var(--cc-approved), #000 25%);
+  }
+
+  .node__plate {
+    border-color: color-mix(in srgb, var(--cc-approved), transparent 60%);
+  }
+}
+
+.node--available {
+  .node__disc {
+    background: var(--p-primary-color);
+    color: var(--p-primary-contrast-color);
+    box-shadow: 0 6px 0 color-mix(in srgb, var(--p-primary-color), #000 25%);
+  }
+
+  .node__plate {
+    border-color: color-mix(in srgb, var(--p-primary-color), transparent 55%);
+  }
+}
+
+.node--progress {
+  .node__disc {
+    background: var(--cc-draft);
+    color: #fff;
+    box-shadow: 0 6px 0 color-mix(in srgb, var(--cc-draft), #000 25%);
+  }
+
+  .node__plate {
+    border-color: color-mix(in srgb, var(--cc-draft), transparent 55%);
+  }
+}
+
+.node--failed {
+  .node__disc {
+    background: var(--cc-failed);
+    color: #fff;
+    box-shadow: 0 6px 0 color-mix(in srgb, var(--cc-failed), #000 25%);
+  }
+
+  .node__plate {
+    border-color: color-mix(in srgb, var(--cc-failed), transparent 55%);
+  }
+}
+
+.node--locked {
+  .node__disc {
+    background: var(--cc-locked-bg);
+    color: var(--cc-locked);
+    border-style: dashed;
+    border-color: var(--cc-border);
+    box-shadow: none;
+  }
+
+  .node__plate {
+    background: var(--cc-locked-bg);
+    color: var(--cc-text-muted);
+    border-style: dashed;
+  }
+}
+
+/* Anel pulsante no passo atual, para o olho encontrar onde continuar. */
+.node--current .node__disc::after {
+  content: '';
+  position: absolute;
+  inset: -0.6rem;
+  border-radius: 50%;
+  border: 3px solid currentColor;
+  opacity: 0.35;
+  animation: node-pulse 2s ease-out infinite;
+}
+
+@keyframes node-pulse {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.45;
+  }
+  70% {
+    transform: scale(1.12);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.12);
+    opacity: 0;
+  }
+}
+
+/* ---- Modal de detalhes ---- */
+
+.details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--cc-gap-sm);
+}
+
+.details__order {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.details__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--cc-surface-sunken);
+  color: var(--cc-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.details__state--passed {
+  background: color-mix(in srgb, var(--cc-approved), transparent 85%);
+  color: var(--cc-approved);
+}
+
+.details__state--progress {
+  background: color-mix(in srgb, var(--cc-draft), transparent 85%);
+  color: var(--cc-draft);
+}
+
+.details__state--failed {
+  background: color-mix(in srgb, var(--cc-failed), transparent 85%);
+  color: var(--cc-failed);
+}
+
+.details__summary {
+  margin: 0;
+}
+
+.details__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cc-gap-sm) var(--cc-gap-lg);
+  margin: 0;
+  width: 100%;
+
+  dt {
+    font-size: 0.75rem;
+    color: var(--cc-text-muted);
+  }
+
+  dd {
+    margin: 0.1rem 0 0;
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+}
+
+.details__timer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--cc-gap-sm);
+  margin: 0;
+}
+
+/* O botão de começar ocupa a largura toda, no rodapé: é a ação que o aluno
+   veio buscar ao abrir a lição. */
+.details__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--cc-gap-sm);
+  width: 100%;
+  margin-top: var(--cc-gap-sm);
+}
+
+.details__link {
+  align-self: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node--current .node__disc::after {
+    animation: none;
+    opacity: 0.35;
+  }
+
+  .node__disc {
+    transition: none;
+  }
+}

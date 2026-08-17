@@ -50,6 +50,14 @@
   gap: var(--cc-gap);
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
+/* Autossuficientes: usadas sozinhas em 7 telas, sem `.cc-grid` junto. Sem
+   `display: grid` o `grid-template-columns` é ignorado e o `gap` não se aplica —
+   os cartões encostavam uns nos outros. */
+.cc-grid-3,
+.cc-grid-2 {
+  display: grid;
+  gap: var(--cc-gap);
+}
 .cc-grid-3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }

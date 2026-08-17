@@ -26,10 +26,10 @@
         (action)="state.retry()"
       />
     } @else {
-      <ol class="track">
+      <ol class="path">
         @for (item of items; track item.assignmentId) {
-          <li>
-            <cc-lesson-track-card
+          <li class="path__step">
+            <cc-lesson-path-node
               [item]="item"
               [roomId]="roomId()"
               [starting]="starting()"

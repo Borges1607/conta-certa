@@ -6,7 +6,7 @@ import { LoadingSkeletonComponent } from '../../../../shared/components/loading-
 import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header';
 import { ProgressBarComponent } from '../../../../shared/components/progress-bar/progress-bar';
 import { createPageState } from '../../../../shared/forms/page-state';
-import { LessonTrackCardComponent } from '../../components/lesson-track-card/lesson-track-card';
+import { LessonPathNodeComponent } from '../../components/lesson-path-node/lesson-path-node';
 import { AttemptLauncher } from '../../data/attempt-launcher';
 import { RoomContextStore } from '../../data/room-context.store';
 import { StudentLessonService } from '../../data/student-lesson.service';
@@ -28,7 +28,7 @@ import type { LessonTrackItem } from '../../models/lesson-track';
     ErrorStateComponent,
     EmptyStateComponent,
     ProgressBarComponent,
-    LessonTrackCardComponent,
+    LessonPathNodeComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './lesson-track.html',

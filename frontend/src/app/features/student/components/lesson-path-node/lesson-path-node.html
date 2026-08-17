@@ -1,0 +1,104 @@
+<!-- Estação: só o disco de estado e o nome da lição. Tudo o mais mora no
+     modal, para o caminho continuar legível de ponta a ponta. -->
+<button
+  type="button"
+  class="node node--{{ state().modifier }}"
+  [class.node--current]="isCurrent()"
+  [attr.aria-label]="nodeLabel()"
+  (click)="open()"
+>
+  <span class="node__disc">
+    <i class="{{ state().icon }}" aria-hidden="true"></i>
+  </span>
+
+  <span class="node__plate">{{ item().title }}</span>
+</button>
+
+<!-- `appendTo="body"` é obrigatório aqui: a estação vive num `<li>` com
+     `transform` (o zigue-zague do caminho), e um ancestral transformado vira o
+     bloco de contenção de qualquer `position: fixed` descendente. Renderizado no
+     lugar, máscara e diálogo se dimensionavam pelo `<li>` em vez da viewport. -->
+<p-dialog
+  [visible]="detailsVisible()"
+  (visibleChange)="detailsVisible.set($event)"
+  [header]="item().title"
+  [modal]="true"
+  [draggable]="false"
+  [dismissableMask]="true"
+  [style]="{ width: '28rem', maxWidth: '95vw' }"
+  appendTo="body"
+>
+  <div class="details">
+    <p class="details__order cc-xs cc-muted">Lição {{ item().order }}</p>
+
+    <!-- Rótulo textual do estado: o ícone da estação nunca informa sozinho. -->
+    <p class="details__state details__state--{{ state().modifier }}">
+      <i class="{{ state().icon }}" aria-hidden="true"></i>
+      {{ state().label }}
+    </p>
+
+    @if (item().summary) {
+      <p class="details__summary cc-muted">{{ item().summary }}</p>
+    }
+
+    @if (isLocked()) {
+      <cc-lock-reason
+        [reason]="item().lockReason"
+        [availableFrom]="item().availableFrom"
+        [dueAt]="item().dueAt"
+      />
+    } @else {
+      @if (item().stars !== null) {
+        <cc-star-rating [value]="item().stars ?? 0" />
+      }
+
+      <dl class="details__facts">
+        @if (item().bestScorePercent !== null) {
+          <div>
+            <dt>Melhor nota</dt>
+            <dd>{{ item().bestScorePercent }}%</dd>
+          </div>
+        }
+        <div>
+          <dt>Tentativas</dt>
+          <dd>{{ attemptsLabel() }}</dd>
+        </div>
+        @if (item().dueAt; as due) {
+          <div>
+            <dt>Prazo</dt>
+            <dd>{{ due | ccDateTime }}</dd>
+          </div>
+        }
+      </dl>
+
+      @if (item().activeAttemptExpiresAt; as expiresAt) {
+        <p class="details__timer">
+          <span class="cc-small cc-muted">Tentativa em andamento:</span>
+          <cc-countdown [expiresAt]="expiresAt" />
+        </p>
+      }
+    }
+    <!-- Ações no fim do conteúdo, e não num template de rodapé: é assim que os
+         outros diálogos do projeto fazem, e o rodapé do `p-dialog` vazava para
+         fora da caixa. -->
+    <div class="details__actions">
+      @if (!isLocked()) {
+        <p-button
+          [label]="actionLabel()"
+          [icon]="item().activeAttemptId ? 'pi pi-play' : 'pi pi-pencil'"
+          [loading]="starting()"
+          [fluid]="true"
+          (onClick)="onPrimaryAction()"
+        />
+      }
+
+      <a
+        class="details__link cc-small"
+        [routerLink]="['/aluno/salas', roomId(), 'licoes', item().lessonId]"
+        (click)="detailsVisible.set(false)"
+      >
+        Ver conteúdo
+      </a>
+    </div>
+  </div>
+</p-dialog>

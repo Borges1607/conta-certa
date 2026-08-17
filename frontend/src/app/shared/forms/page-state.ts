@@ -1,4 +1,4 @@
-import { Signal, computed, signal } from '@angular/core';
+import { Signal, computed, signal, untracked } from '@angular/core';
 
 import { ApiError } from '../../core/api/problem-details';
 
@@ -44,7 +44,11 @@ export function createPageState<T>(loader: () => Promise<T>): PageStateHandle<T>
   const state = signal<PageState<T>>({ kind: 'loading' });
 
   const run = async (mode: 'initial' | 'background'): Promise<void> => {
-    const current = state();
+    // `untracked`: as telas chamam `load()` de dentro de um `effect` que observa
+    // a query string. Ler `state` no contexto reativo faria o effect depender do
+    // próprio signal que ele escreve na linha seguinte — loop infinito que trava
+    // a aba antes mesmo de a requisição sair.
+    const current = untracked(state);
 
     if (mode === 'background' && current.kind === 'ready') {
       state.set({ ...current, refreshing: true });
