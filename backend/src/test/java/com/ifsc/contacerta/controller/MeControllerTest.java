@@ -19,7 +19,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -66,6 +68,56 @@ class MeControllerTest extends PostgresIntegrationTest {
 	@Test
 	void deveExigirBearerParaConsultarPerfil() throws Exception {
 		mockMvc.perform(get("/me"))
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.code").value("INVALID_ACCESS_TOKEN"));
+	}
+
+	@Test
+	void deveAtualizarSomenteONomeDoUsuarioAutenticado() throws Exception {
+		User user = user();
+		AuthResponse login = login(user);
+
+		mockMvc.perform(patch("/me")
+					.header("Authorization", "Bearer " + login.accessToken())
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("""
+							{"fullName":"  Ana Lima  "}
+							"""))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.id").value(user.getId().toString()))
+				.andExpect(jsonPath("$.fullName").value("Ana Lima"))
+				.andExpect(jsonPath("$.email").value(user.getEmail()));
+
+		assertThat(userRepository.findById(user.getId())).isPresent().get()
+				.extracting(User::getFullName).isEqualTo("Ana Lima");
+	}
+
+	@Test
+	void deveRejeitarNomeCurtoAposRemoverEspacos() throws Exception {
+		User user = user();
+		AuthResponse login = login(user);
+
+		mockMvc.perform(patch("/me")
+					.header("Authorization", "Bearer " + login.accessToken())
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("""
+							{"fullName":" A "}
+							"""))
+				.andExpect(status().isUnprocessableContent())
+				.andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+				.andExpect(jsonPath("$.fieldErrors[0].field").value("fullName"));
+
+		assertThat(userRepository.findById(user.getId())).isPresent().get()
+				.extracting(User::getFullName).isEqualTo("Admin");
+	}
+
+	@Test
+	void deveExigirBearerParaAtualizarPerfil() throws Exception {
+		mockMvc.perform(patch("/me")
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("""
+							{"fullName":"Ana Lima"}
+							"""))
 				.andExpect(status().isUnauthorized())
 				.andExpect(jsonPath("$.code").value("INVALID_ACCESS_TOKEN"));
 	}

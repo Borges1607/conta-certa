@@ -100,6 +100,10 @@ public class User {
 		mustChangePassword = false;
 	}
 
+	public void updateFullName(String newFullName) {
+		fullName = newFullName;
+	}
+
 	@PrePersist
 	void onCreate() {
 		Instant now = Instant.now();

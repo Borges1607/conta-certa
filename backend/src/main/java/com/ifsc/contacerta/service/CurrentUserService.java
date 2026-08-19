@@ -2,6 +2,7 @@ package com.ifsc.contacerta.service;
 
 import com.ifsc.contacerta.dto.auth.ChangePasswordRequest;
 import com.ifsc.contacerta.dto.auth.UserResponse;
+import com.ifsc.contacerta.dto.auth.UpdateProfileRequest;
 import com.ifsc.contacerta.entity.User;
 import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.repository.AuthSessionRepository;
@@ -32,6 +33,13 @@ public class CurrentUserService {
 	@Transactional(readOnly = true)
 	public UserResponse get(CurrentUser currentUser) {
 		return userResponseMapper.toResponse(loadUser(currentUser));
+	}
+
+	@Transactional
+	public UserResponse updateProfile(CurrentUser currentUser, UpdateProfileRequest request) {
+		User user = loadUser(currentUser);
+		user.updateFullName(request.fullName());
+		return userResponseMapper.toResponse(user);
 	}
 
 	@Transactional
