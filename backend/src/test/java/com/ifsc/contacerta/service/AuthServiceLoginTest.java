@@ -50,8 +50,9 @@ class AuthServiceLoginTest extends PostgresIntegrationTest {
 
 		assertThat(response.accessToken()).isNotBlank();
 		assertThat(response.refreshToken()).isNotBlank();
-		assertThat(response.accessTokenExpiresIn()).isEqualTo(900);
-		assertThat(response.refreshTokenExpiresIn()).isEqualTo(604800);
+		assertThat(response.tokenType()).isEqualTo("Bearer");
+		assertThat(response.accessExpiresIn()).isEqualTo(900);
+		assertThat(response.refreshExpiresIn()).isEqualTo(604800);
 		assertThat(response.user().id()).isEqualTo(user.getId());
 		assertThat(response.user().mustChangePassword()).isTrue();
 		assertThat(jwtService.parse(response.accessToken()).userId()).isEqualTo(user.getId());

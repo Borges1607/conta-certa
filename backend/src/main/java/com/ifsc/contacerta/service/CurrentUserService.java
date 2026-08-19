@@ -26,11 +26,12 @@ public class CurrentUserService {
 	private final RefreshTokenRepository tokenRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final PasswordPolicy passwordPolicy;
+	private final UserResponseMapper userResponseMapper;
 	private final Clock clock;
 
 	@Transactional(readOnly = true)
 	public UserResponse get(CurrentUser currentUser) {
-		return toResponse(loadUser(currentUser));
+		return userResponseMapper.toResponse(loadUser(currentUser));
 	}
 
 	@Transactional
@@ -67,18 +68,6 @@ public class CurrentUserService {
 			throw invalidAccessToken();
 		}
 		return userRepository.findById(currentUser.userId()).orElseThrow(this::invalidAccessToken);
-	}
-
-	private UserResponse toResponse(User user) {
-		return new UserResponse(
-				user.getId(),
-				user.getFullName(),
-				user.getEmail(),
-				user.getRole(),
-				user.getStatus(),
-				user.getInstitution() == null ? null : user.getInstitution().getId(),
-				user.isMustChangePassword()
-		);
 	}
 
 	private ApiException invalidAccessToken() {

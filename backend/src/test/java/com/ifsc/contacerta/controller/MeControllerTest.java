@@ -2,10 +2,12 @@ package com.ifsc.contacerta.controller;
 
 import com.ifsc.contacerta.dto.auth.AuthResponse;
 import com.ifsc.contacerta.dto.auth.LoginRequest;
+import com.ifsc.contacerta.entity.Institution;
 import com.ifsc.contacerta.entity.User;
 import com.ifsc.contacerta.model.AccountStatus;
 import com.ifsc.contacerta.model.Role;
 import com.ifsc.contacerta.repository.UserRepository;
+import com.ifsc.contacerta.repository.InstitutionRepository;
 import com.ifsc.contacerta.service.AuthService;
 import com.ifsc.contacerta.support.PostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
@@ -32,18 +34,31 @@ class MeControllerTest extends PostgresIntegrationTest {
 	@Autowired
 	private UserRepository userRepository;
 	@Autowired
+	private InstitutionRepository institutionRepository;
+	@Autowired
 	private PasswordEncoder passwordEncoder;
 
 	@Test
 	void deveRetornarPerfilSemDadosSensiveis() throws Exception {
-		User user = user();
+		Institution institution = institutionRepository.saveAndFlush(new Institution(
+				"IFSC", "00000000000191", "contato@ifsc.edu.br", "+5548999999999", true
+		));
+		User user = user(Role.STUDENT, "2026001", institution);
 		AuthResponse login = login(user);
 
 		mockMvc.perform(get("/me").header("Authorization", "Bearer " + login.accessToken()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").value(user.getId().toString()))
 				.andExpect(jsonPath("$.email").value(user.getEmail()))
-				.andExpect(jsonPath("$.role").value("ADMIN"))
+				.andExpect(jsonPath("$.role").value("STUDENT"))
+				.andExpect(jsonPath("$.registrationNumber").value("2026001"))
+				.andExpect(jsonPath("$.institution.id").value(institution.getId().toString()))
+				.andExpect(jsonPath("$.institution.name").value("IFSC"))
+				.andExpect(jsonPath("$.institution.cnpj").value("00000000000191"))
+				.andExpect(jsonPath("$.institution.contactEmail").value("contato@ifsc.edu.br"))
+				.andExpect(jsonPath("$.institution.contactPhone").value("+5548999999999"))
+				.andExpect(jsonPath("$.institution.active").value(true))
+				.andExpect(jsonPath("$.emailVerified").value(false))
 				.andExpect(jsonPath("$.mustChangePassword").value(true))
 				.andExpect(jsonPath("$.passwordHash").doesNotExist());
 	}
@@ -90,8 +105,12 @@ class MeControllerTest extends PostgresIntegrationTest {
 	}
 
 	private User user() {
+		return user(Role.ADMIN, null, null);
+	}
+
+	private User user(Role role, String registrationNumber, Institution institution) {
 		String email = "admin-" + UUID.randomUUID() + "@contacerta.local";
-		User user = new User(Role.ADMIN, AccountStatus.ACTIVE, "Admin", email, null, null);
+		User user = new User(role, AccountStatus.ACTIVE, "Admin", email, registrationNumber, institution);
 		user.initializePassword(passwordEncoder.encode("Admin123"), true);
 		return userRepository.saveAndFlush(user);
 	}

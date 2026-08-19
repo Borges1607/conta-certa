@@ -4,7 +4,6 @@ import com.ifsc.contacerta.config.SecurityProperties;
 import com.ifsc.contacerta.dto.auth.AuthResponse;
 import com.ifsc.contacerta.dto.auth.LoginRequest;
 import com.ifsc.contacerta.dto.auth.RefreshRequest;
-import com.ifsc.contacerta.dto.auth.UserResponse;
 import com.ifsc.contacerta.entity.AuthSession;
 import com.ifsc.contacerta.entity.RefreshToken;
 import com.ifsc.contacerta.entity.User;
@@ -38,6 +37,7 @@ public class AuthService {
 	private final PasswordEncoder passwordEncoder;
 	private final JwtService jwtService;
 	private final RefreshTokenService refreshTokenService;
+	private final UserResponseMapper userResponseMapper;
 	private final SecurityProperties properties;
 	private final Clock clock;
 
@@ -58,9 +58,10 @@ public class AuthService {
 		return new AuthResponse(
 				jwtService.issue(user.getId(), user.getRole(), session.getId()),
 				generatedRefreshToken.plainText(),
+				"Bearer",
 				properties.jwt().accessTokenTtl().getSeconds(),
 				properties.session().refreshTokenTtl().getSeconds(),
-				toResponse(user)
+				userResponseMapper.toResponse(user)
 		);
 	}
 
@@ -102,9 +103,10 @@ public class AuthService {
 		return new AuthResponse(
 				jwtService.issue(user.getId(), user.getRole(), session.getId()),
 				successorValue.plainText(),
+				"Bearer",
 				properties.jwt().accessTokenTtl().getSeconds(),
 				Duration.between(now, session.getExpiresAt()).getSeconds(),
-				toResponse(user)
+				null
 		);
 	}
 
@@ -134,18 +136,6 @@ public class AuthService {
 			throw invalidCredentials();
 		}
 		return user;
-	}
-
-	private UserResponse toResponse(User user) {
-		return new UserResponse(
-				user.getId(),
-				user.getFullName(),
-				user.getEmail(),
-				user.getRole(),
-				user.getStatus(),
-				user.getInstitution() == null ? null : user.getInstitution().getId(),
-				user.isMustChangePassword()
-		);
 	}
 
 	private ApiException invalidCredentials() {

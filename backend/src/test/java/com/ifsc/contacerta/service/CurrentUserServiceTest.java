@@ -57,7 +57,9 @@ class CurrentUserServiceTest extends PostgresIntegrationTest {
 		assertThat(response.email()).isEqualTo(user.getEmail());
 		assertThat(response.role()).isEqualTo(Role.ADMIN);
 		assertThat(response.status()).isEqualTo(AccountStatus.ACTIVE);
-		assertThat(response.institutionId()).isNull();
+		assertThat(response.registrationNumber()).isNull();
+		assertThat(response.institution()).isNull();
+		assertThat(response.emailVerified()).isFalse();
 		assertThat(response.mustChangePassword()).isTrue();
 	}
 

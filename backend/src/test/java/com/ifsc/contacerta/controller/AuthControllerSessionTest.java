@@ -45,7 +45,11 @@ class AuthControllerSessionTest extends PostgresIntegrationTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.accessToken").isNotEmpty())
 				.andExpect(jsonPath("$.refreshToken").isNotEmpty())
-				.andExpect(jsonPath("$.refreshToken").value(org.hamcrest.Matchers.not(login.refreshToken())));
+				.andExpect(jsonPath("$.refreshToken").value(org.hamcrest.Matchers.not(login.refreshToken())))
+				.andExpect(jsonPath("$.tokenType").value("Bearer"))
+				.andExpect(jsonPath("$.accessExpiresIn").value(900))
+				.andExpect(jsonPath("$.refreshExpiresIn").isNumber())
+				.andExpect(jsonPath("$.user").doesNotExist());
 	}
 
 	@Test
