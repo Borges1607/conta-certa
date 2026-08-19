@@ -95,6 +95,11 @@ public class User {
 		this.mustChangePassword = mustChangePassword;
 	}
 
+	public void changePassword(String newPasswordHash) {
+		passwordHash = newPasswordHash;
+		mustChangePassword = false;
+	}
+
 	@PrePersist
 	void onCreate() {
 		Instant now = Instant.now();
