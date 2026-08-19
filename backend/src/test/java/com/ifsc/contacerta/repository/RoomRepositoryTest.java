@@ -8,9 +8,9 @@ import com.ifsc.contacerta.model.AccountStatus;
 import com.ifsc.contacerta.model.Grade;
 import com.ifsc.contacerta.model.MembershipStatus;
 import com.ifsc.contacerta.model.Role;
+import com.ifsc.contacerta.support.PostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,9 +18,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
 @Transactional
-class RoomRepositoryTest {
+class RoomRepositoryTest extends PostgresIntegrationTest {
 
 	@Autowired private InstitutionRepository institutionRepository;
 	@Autowired private UserRepository userRepository;

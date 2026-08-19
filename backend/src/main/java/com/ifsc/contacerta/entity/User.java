@@ -87,6 +87,23 @@ public class User {
 		this.institution = institution;
 	}
 
+	public void initializePassword(String hash, boolean mustChangePassword) {
+		if (passwordHash != null) {
+			throw new IllegalStateException("Password is already initialized.");
+		}
+		this.passwordHash = hash;
+		this.mustChangePassword = mustChangePassword;
+	}
+
+	public void changePassword(String newPasswordHash) {
+		passwordHash = newPasswordHash;
+		mustChangePassword = false;
+	}
+
+	public void updateFullName(String newFullName) {
+		fullName = newFullName;
+	}
+
 	@PrePersist
 	void onCreate() {
 		Instant now = Instant.now();

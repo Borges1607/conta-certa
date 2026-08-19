@@ -1,18 +1,17 @@
 package com.ifsc.contacerta.repository;
 
 import com.ifsc.contacerta.entity.Institution;
+import com.ifsc.contacerta.support.PostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
 @Transactional
-class InstitutionRepositoryTest {
+class InstitutionRepositoryTest extends PostgresIntegrationTest {
 
 	@Autowired
 	private InstitutionRepository institutionRepository;

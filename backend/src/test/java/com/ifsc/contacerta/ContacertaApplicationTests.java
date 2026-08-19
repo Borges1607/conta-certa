@@ -1,10 +1,9 @@
 package com.ifsc.contacerta;
 
+import com.ifsc.contacerta.support.PostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class ContacertaApplicationTests {
+class ContacertaApplicationTests extends PostgresIntegrationTest {
 
 	@Test
 	void contextLoads() {
