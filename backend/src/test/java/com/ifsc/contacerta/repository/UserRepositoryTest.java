@@ -4,16 +4,15 @@ import com.ifsc.contacerta.entity.Institution;
 import com.ifsc.contacerta.entity.User;
 import com.ifsc.contacerta.model.AccountStatus;
 import com.ifsc.contacerta.model.Role;
+import com.ifsc.contacerta.support.PostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
 @Transactional
-class UserRepositoryTest {
+class UserRepositoryTest extends PostgresIntegrationTest {
 
 	@Autowired
 	private UserRepository userRepository;

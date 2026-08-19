@@ -6,19 +6,18 @@ import com.ifsc.contacerta.model.MembershipStatus;
 import com.ifsc.contacerta.model.Role;
 import com.ifsc.contacerta.repository.InstitutionRepository;
 import com.ifsc.contacerta.repository.UserRepository;
+import com.ifsc.contacerta.support.PostgresIntegrationTest;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
 @Transactional
-class RoomPersistenceTest {
+class RoomPersistenceTest extends PostgresIntegrationTest {
 
 	@Autowired
 	private InstitutionRepository institutionRepository;
