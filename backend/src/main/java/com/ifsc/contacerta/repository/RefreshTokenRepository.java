@@ -15,12 +15,7 @@ import java.util.UUID;
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID> {
 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
-	@Query("""
-			select t from RefreshToken t
-			join fetch t.session s
-			join fetch s.user
-			where t.tokenHash = :hash
-			""")
+	@Query("select t from RefreshToken t where t.tokenHash = :hash")
 	Optional<RefreshToken> findForUpdateByTokenHash(@Param("hash") String hash);
 
 	@Modifying
