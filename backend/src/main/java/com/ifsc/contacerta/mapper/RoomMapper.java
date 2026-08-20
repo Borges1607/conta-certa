@@ -18,7 +18,7 @@ public final class RoomMapper {
 				room.getGrade(),
 				room.getContentTopics(),
 				room.getPassingScorePercent(),
-				room.getJoinCode(),
+				room.getJoinCodeDisplay(),
 				room.getArchivedAt(),
 				room.getCreatedAt(),
 				room.getUpdatedAt(),

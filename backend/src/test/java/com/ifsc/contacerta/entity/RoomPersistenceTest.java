@@ -6,6 +6,7 @@ import com.ifsc.contacerta.model.MembershipStatus;
 import com.ifsc.contacerta.model.Role;
 import com.ifsc.contacerta.repository.InstitutionRepository;
 import com.ifsc.contacerta.repository.UserRepository;
+import com.ifsc.contacerta.service.JoinCodeHasher;
 import com.ifsc.contacerta.support.PostgresIntegrationTest;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,7 @@ class RoomPersistenceTest extends PostgresIntegrationTest {
 				List.of("Porcentagem", "Juros compostos"),
 				50,
 				"ABC234",
+				new JoinCodeHasher().hash("ABC234"),
 				teacher,
 				institution
 		);

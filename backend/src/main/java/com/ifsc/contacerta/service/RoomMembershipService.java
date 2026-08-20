@@ -17,7 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -27,6 +26,7 @@ public class RoomMembershipService {
 	private final UserRepository userRepository;
 	private final RoomRepository roomRepository;
 	private final RoomMembershipRepository membershipRepository;
+	private final JoinCodeHasher joinCodeHasher;
 
 	@Transactional
 	public RoomMembershipResponse join(UUID studentId, String joinCode) {
@@ -41,7 +41,7 @@ public class RoomMembershipService {
 		if (student.getStatus() != AccountStatus.ACTIVE) {
 			throw new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_INACTIVE", "Student account is inactive.");
 		}
-		Room room = roomRepository.findByJoinCode(joinCode.trim().toUpperCase(Locale.ROOT)).orElseThrow(() ->
+		Room room = roomRepository.findByJoinCodeHash(joinCodeHasher.hash(joinCode)).orElseThrow(() ->
 				new ApiException(HttpStatus.NOT_FOUND, "ROOM_NOT_FOUND", "Room was not found.")
 		);
 		if (room.getArchivedAt() != null) {

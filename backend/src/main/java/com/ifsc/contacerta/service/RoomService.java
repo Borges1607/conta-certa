@@ -27,6 +27,7 @@ public class RoomService {
 	private final UserRepository userRepository;
 	private final RoomRepository roomRepository;
 	private final JoinCodeGenerator joinCodeGenerator;
+	private final JoinCodeHasher joinCodeHasher;
 
 	@Transactional
 	public RoomResponse create(UUID teacherId, CreateRoomRequest request) {
@@ -48,13 +49,15 @@ public class RoomService {
 				? DEFAULT_PASSING_SCORE_PERCENT
 				: request.passingScorePercent();
 		validatePassingScore(passingScore);
+		String joinCode = joinCodeGenerator.generateUnique();
 		Room room = new Room(
 				request.name(),
 				request.description(),
 				request.grade(),
 				request.contentTopics(),
 				passingScore,
-				joinCodeGenerator.generateUnique(),
+				joinCode,
+				joinCodeHasher.hash(joinCode),
 				teacher,
 				teacher.getInstitution()
 		);
@@ -87,14 +90,16 @@ public class RoomService {
 	public RoomResponse regenerateCode(UUID teacherId, UUID roomId) {
 		Room room = requireOwnedRoom(teacherId, roomId);
 		requireMutable(room);
-		room.changeJoinCode(joinCodeGenerator.generateUnique());
+		String joinCode = joinCodeGenerator.generateUnique();
+		room.changeJoinCode(joinCode, joinCodeHasher.hash(joinCode));
 		return RoomMapper.toResponse(room);
 	}
 
 	@Transactional
 	public RoomResponse duplicate(UUID teacherId, UUID roomId, String newName) {
 		Room source = requireOwnedRoom(teacherId, roomId);
-		Room copy = source.duplicate(newName, joinCodeGenerator.generateUnique());
+		String joinCode = joinCodeGenerator.generateUnique();
+		Room copy = source.duplicate(newName, joinCode, joinCodeHasher.hash(joinCode));
 		return RoomMapper.toResponse(roomRepository.save(copy));
 	}
 

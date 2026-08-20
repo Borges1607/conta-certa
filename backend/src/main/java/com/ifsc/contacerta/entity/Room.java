@@ -19,7 +19,9 @@ import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
 
+import java.sql.Types;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,8 +63,13 @@ public class Room {
 	@Column(name = "passing_score_percent", nullable = false)
 	private int passingScorePercent;
 
-	@Column(name = "join_code", nullable = false, unique = true, length = 6)
-	private String joinCode;
+	@Column(name = "join_code_display", nullable = false, length = 6)
+	private String joinCodeDisplay;
+
+	@Getter(AccessLevel.NONE)
+	@JdbcTypeCode(Types.CHAR)
+	@Column(name = "join_code_hash", nullable = false, unique = true, length = 64, columnDefinition = "char(64)")
+	private String joinCodeHash;
 
 	@Column(name = "archived_at")
 	private Instant archivedAt;
@@ -83,7 +90,8 @@ public class Room {
 			Grade grade,
 			List<String> contentTopics,
 			int passingScorePercent,
-			String joinCode,
+			String joinCodeDisplay,
+			String joinCodeHash,
 			User teacher,
 			Institution institution
 	) {
@@ -93,7 +101,8 @@ public class Room {
 		this.grade = grade;
 		this.contentTopics = new ArrayList<>(contentTopics);
 		this.passingScorePercent = passingScorePercent;
-		this.joinCode = joinCode;
+		this.joinCodeDisplay = joinCodeDisplay;
+		this.joinCodeHash = joinCodeHash;
 		this.teacher = teacher;
 		this.institution = institution;
 	}
@@ -130,18 +139,20 @@ public class Room {
 		}
 	}
 
-	public void changeJoinCode(String joinCode) {
-		this.joinCode = joinCode;
+	public void changeJoinCode(String joinCodeDisplay, String joinCodeHash) {
+		this.joinCodeDisplay = joinCodeDisplay;
+		this.joinCodeHash = joinCodeHash;
 	}
 
-	public Room duplicate(String newName, String newJoinCode) {
+	public Room duplicate(String newName, String newJoinCodeDisplay, String newJoinCodeHash) {
 		return new Room(
 				newName,
 				description,
 				grade,
 				contentTopics,
 				passingScorePercent,
-				newJoinCode,
+			newJoinCodeDisplay,
+			newJoinCodeHash,
 				teacher,
 				institution
 		);

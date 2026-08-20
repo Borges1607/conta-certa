@@ -24,6 +24,8 @@ import static org.mockito.Mockito.when;
 
 class RoomServiceTest {
 
+	private final JoinCodeHasher joinCodeHasher = new JoinCodeHasher();
+
 	@Test
 	void deveCriarSalaParaProfessorAtivoComNotaMinimaPadrao() {
 		UserRepository userRepository = mock(UserRepository.class);
@@ -38,7 +40,7 @@ class RoomServiceTest {
 		when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
 		when(joinCodeGenerator.generateUnique()).thenReturn("ABC234");
 		when(roomRepository.save(any(Room.class))).thenAnswer(invocation -> invocation.getArgument(0));
-		RoomService service = new RoomService(userRepository, roomRepository, joinCodeGenerator);
+		RoomService service = service(userRepository, roomRepository, joinCodeGenerator);
 
 		var response = service.create(teacher.getId(), new CreateRoomRequest(
 				"1º ano A",
@@ -62,9 +64,7 @@ class RoomServiceTest {
 				Role.STUDENT, AccountStatus.ACTIVE, "Aluno Bruno", "bruno@example.com", "ALUNO-1", institution
 		);
 		when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
-		RoomService service = new RoomService(
-				userRepository, mock(RoomRepository.class), mock(JoinCodeGenerator.class)
-		);
+		RoomService service = service(userRepository, mock(RoomRepository.class), mock(JoinCodeGenerator.class));
 
 		assertThatThrownBy(() -> service.create(student.getId(), validRequest(50)))
 				.isInstanceOfSatisfying(ApiException.class, exception -> {
@@ -80,9 +80,7 @@ class RoomServiceTest {
 				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana3@example.com", "PROF-3", institution()
 		);
 		when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
-		RoomService service = new RoomService(
-				userRepository, mock(RoomRepository.class), mock(JoinCodeGenerator.class)
-		);
+		RoomService service = service(userRepository, mock(RoomRepository.class), mock(JoinCodeGenerator.class));
 
 		assertThatThrownBy(() -> service.create(teacher.getId(), validRequest(101)))
 				.isInstanceOfSatisfying(ApiException.class, exception -> {
@@ -98,9 +96,7 @@ class RoomServiceTest {
 				Role.TEACHER, AccountStatus.INACTIVE, "Professora Ana", "ana4@example.com", "PROF-4", institution()
 		);
 		when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
-		RoomService service = new RoomService(
-				userRepository, mock(RoomRepository.class), mock(JoinCodeGenerator.class)
-		);
+		RoomService service = service(userRepository, mock(RoomRepository.class), mock(JoinCodeGenerator.class));
 
 		assertThatThrownBy(() -> service.create(teacher.getId(), validRequest(50)))
 				.isInstanceOfSatisfying(ApiException.class, exception -> {
@@ -119,9 +115,7 @@ class RoomServiceTest {
 				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana5@example.com", "PROF-5", institution
 		);
 		when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
-		RoomService service = new RoomService(
-				userRepository, mock(RoomRepository.class), mock(JoinCodeGenerator.class)
-		);
+		RoomService service = service(userRepository, mock(RoomRepository.class), mock(JoinCodeGenerator.class));
 
 		assertThatThrownBy(() -> service.create(teacher.getId(), validRequest(50)))
 				.isInstanceOfSatisfying(ApiException.class, exception -> {
@@ -138,12 +132,10 @@ class RoomServiceTest {
 		User teacher = new User(
 				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana6@example.com", "PROF-6", institution
 		);
-		Room room = new Room(
-				"Sala antiga", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC234", teacher, institution
-		);
+		Room room = room("Sala antiga", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC234", teacher, institution);
 		when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
 		when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
-		RoomService service = new RoomService(userRepository, roomRepository, mock(JoinCodeGenerator.class));
+		RoomService service = service(userRepository, roomRepository, mock(JoinCodeGenerator.class));
 
 		var response = service.update(teacher.getId(), room.getId(), new UpdateRoomRequest(
 				"Sala atualizada",
@@ -169,13 +161,9 @@ class RoomServiceTest {
 		User anotherTeacher = new User(
 				Role.TEACHER, AccountStatus.ACTIVE, "Professor Carlos", "carlos@example.com", "PROF-8", institution
 		);
-		Room room = new Room(
-				"1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC235", owner, institution
-		);
+		Room room = room("1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC235", owner, institution);
 		when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
-		RoomService service = new RoomService(
-				mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class)
-		);
+		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class));
 
 		assertThatThrownBy(() -> service.update(anotherTeacher.getId(), room.getId(), new UpdateRoomRequest(
 				"Alteração indevida", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50
@@ -193,13 +181,9 @@ class RoomServiceTest {
 		User teacher = new User(
 				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana8@example.com", "PROF-9", institution
 		);
-		Room room = new Room(
-				"1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC236", teacher, institution
-		);
+		Room room = room("1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC236", teacher, institution);
 		when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
-		RoomService service = new RoomService(
-				mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class)
-		);
+		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class));
 
 		service.archive(teacher.getId(), room.getId());
 		var firstArchivedAt = room.getArchivedAt();
@@ -223,12 +207,10 @@ class RoomServiceTest {
 		User teacher = new User(
 				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana9@example.com", "PROF-10", institution
 		);
-		Room room = new Room(
-				"1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC237", teacher, institution
-		);
+		Room room = room("1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC237", teacher, institution);
 		when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
 		when(joinCodeGenerator.generateUnique()).thenReturn("XYZ789");
-		RoomService service = new RoomService(mock(UserRepository.class), roomRepository, joinCodeGenerator);
+		RoomService service = service(mock(UserRepository.class), roomRepository, joinCodeGenerator);
 
 		var response = service.regenerateCode(teacher.getId(), room.getId());
 
@@ -242,11 +224,9 @@ class RoomServiceTest {
 		User teacher = new User(
 				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana10@example.com", "PROF-11", institution
 		);
-		Room room = new Room(
-				"1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC238", teacher, institution
-		);
+		Room room = room("1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC238", teacher, institution);
 		when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
-		RoomService service = new RoomService(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class));
+		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class));
 
 		assertThatThrownBy(() -> service.update(teacher.getId(), room.getId(), new UpdateRoomRequest(
 				"1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), -1
@@ -264,7 +244,7 @@ class RoomServiceTest {
 		User teacher = new User(
 				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana11@example.com", "PROF-12", institution
 		);
-		Room source = new Room(
+		Room source = room(
 				"Sala original",
 				"Descrição original",
 				Grade.HIGH_SCHOOL_2,
@@ -277,7 +257,7 @@ class RoomServiceTest {
 		when(roomRepository.findById(source.getId())).thenReturn(Optional.of(source));
 		when(joinCodeGenerator.generateUnique()).thenReturn("XYZ790");
 		when(roomRepository.save(any(Room.class))).thenAnswer(invocation -> invocation.getArgument(0));
-		RoomService service = new RoomService(mock(UserRepository.class), roomRepository, joinCodeGenerator);
+		RoomService service = service(mock(UserRepository.class), roomRepository, joinCodeGenerator);
 
 		var response = service.duplicate(teacher.getId(), source.getId(), "Cópia da sala");
 
@@ -304,5 +284,29 @@ class RoomServiceTest {
 		return new Institution(
 				"Instituto Exemplo", "11222333000181", "contato@example.com", "48999990000", true
 		);
+	}
+
+	private Room room(
+			String name,
+			String description,
+			Grade grade,
+			List<String> contentTopics,
+			int passingScorePercent,
+			String joinCode,
+			User teacher,
+			Institution institution
+	) {
+		return new Room(
+				name, description, grade, contentTopics, passingScorePercent,
+				joinCode, joinCodeHasher.hash(joinCode), teacher, institution
+		);
+	}
+
+	private RoomService service(
+			UserRepository userRepository,
+			RoomRepository roomRepository,
+			JoinCodeGenerator joinCodeGenerator
+	) {
+		return new RoomService(userRepository, roomRepository, joinCodeGenerator, joinCodeHasher);
 	}
 }

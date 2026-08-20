@@ -15,12 +15,13 @@ public class JoinCodeGenerator {
 
 	private final RoomRepository roomRepository;
 	private final RandomGenerator random;
+	private final JoinCodeHasher joinCodeHasher;
 
 	public String generateUnique() {
 		String code;
 		do {
 			code = generate();
-		} while (roomRepository.existsByJoinCode(code));
+		} while (roomRepository.existsByJoinCodeHash(joinCodeHasher.hash(code)));
 		return code;
 	}
 
