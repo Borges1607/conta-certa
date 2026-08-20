@@ -1,5 +1,6 @@
 package com.ifsc.contacerta.service;
 
+import com.ifsc.contacerta.dto.room.RoomStudentResponse;
 import com.ifsc.contacerta.entity.Institution;
 import com.ifsc.contacerta.entity.Room;
 import com.ifsc.contacerta.entity.RoomMembership;
@@ -13,6 +14,8 @@ import com.ifsc.contacerta.repository.RoomMembershipRepository;
 import com.ifsc.contacerta.repository.RoomRepository;
 import com.ifsc.contacerta.repository.UserRepository;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -47,9 +50,8 @@ class RoomMembershipServiceTest {
 
 		var response = service.join(student.getId(), "abc234");
 
-		assertThat(response.roomId()).isEqualTo(room.getId());
-		assertThat(response.studentId()).isEqualTo(student.getId());
-		assertThat(response.status()).isEqualTo(MembershipStatus.ACTIVE);
+		assertThat(response.id()).isEqualTo(room.getId());
+		assertThat(response.membershipStatus()).isEqualTo(MembershipStatus.ACTIVE);
 	}
 
 	@Test
@@ -104,6 +106,7 @@ class RoomMembershipServiceTest {
 		User student = user(Role.STUDENT, "bruno4@example.com", "ALUNO-4", institution);
 		Room room = room("ABC237", teacher, institution);
 		RoomMembership membership = new RoomMembership(room, student);
+		UUID membershipId = membership.getId();
 		membership.remove(teacher);
 		when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
 		when(roomRepository.findByJoinCodeHash(joinCodeHasher.hash("ABC237"))).thenReturn(Optional.of(room));
@@ -113,9 +116,104 @@ class RoomMembershipServiceTest {
 
 		var response = service.join(student.getId(), "ABC237");
 
-		assertThat(response.id()).isEqualTo(membership.getId());
-		assertThat(response.status()).isEqualTo(MembershipStatus.ACTIVE);
-		assertThat(response.removedAt()).isNull();
+		assertThat(membership.getId()).isEqualTo(membershipId);
+		assertThat(response.id()).isEqualTo(room.getId());
+		assertThat(response.membershipStatus()).isEqualTo(MembershipStatus.ACTIVE);
+		assertThat(membership.getRemovedAt()).isNull();
+	}
+
+	@Test
+	void deveManterMatriculaAtivaAoRepetirIngresso() {
+		UserRepository userRepository = mock(UserRepository.class);
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		RoomMembershipRepository membershipRepository = mock(RoomMembershipRepository.class);
+		Institution institution = institution();
+		User teacher = user(Role.TEACHER, "ana-repetido@example.com", "PROF-7", institution);
+		User student = user(Role.STUDENT, "bruno-repetido@example.com", "ALUNO-8", institution);
+		Room room = room("ABC240", teacher, institution);
+		RoomMembership membership = new RoomMembership(room, student);
+		when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
+		when(roomRepository.findByJoinCodeHash(joinCodeHasher.hash("ABC240"))).thenReturn(Optional.of(room));
+		when(membershipRepository.findByRoomIdAndStudentId(room.getId(), student.getId()))
+				.thenReturn(Optional.of(membership));
+		RoomMembershipService service = service(userRepository, roomRepository, membershipRepository);
+
+		var response = service.join(student.getId(), "abc240");
+
+		assertThat(response.id()).isEqualTo(room.getId());
+		assertThat(response.membershipStatus()).isEqualTo(MembershipStatus.ACTIVE);
+		assertThat(membership.getStatus()).isEqualTo(MembershipStatus.ACTIVE);
+	}
+
+	@Test
+	void deveListarSomenteSalasComMatriculaAtivaEmOrdemDeIngressoDecrescente() {
+		UserRepository userRepository = mock(UserRepository.class);
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		RoomMembershipRepository membershipRepository = mock(RoomMembershipRepository.class);
+		Institution institution = institution();
+		User teacher = user(Role.TEACHER, "ana-lista@example.com", "PROF-8", institution);
+		User student = user(Role.STUDENT, "bruno-lista@example.com", "ALUNO-9", institution);
+		Room newerRoom = room("ABC241", teacher, institution);
+		Room olderRoom = room("ABC242", teacher, institution);
+		RoomMembership newerMembership = new RoomMembership(newerRoom, student);
+		RoomMembership olderMembership = new RoomMembership(olderRoom, student);
+		when(membershipRepository.findByStudentIdAndStatusOrderByJoinedAtDesc(student.getId(), MembershipStatus.ACTIVE))
+				.thenReturn(List.of(newerMembership, olderMembership));
+		RoomMembershipService service = service(userRepository, roomRepository, membershipRepository);
+
+		var responses = service.listStudentRooms(student.getId());
+
+		assertThat(responses).extracting(response -> response.id())
+				.containsExactly(newerRoom.getId(), olderRoom.getId());
+		assertThat(responses).allSatisfy(response -> {
+			assertThat(response.membershipStatus()).isEqualTo(MembershipStatus.ACTIVE);
+			assertThat(response.progressPercent()).isZero();
+		});
+	}
+
+	@Test
+	void deveListarAlunosDaSalaDoProfessorComMetricasIniciais() {
+		UserRepository userRepository = mock(UserRepository.class);
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		RoomMembershipRepository membershipRepository = mock(RoomMembershipRepository.class);
+		Institution institution = institution();
+		User teacher = user(Role.TEACHER, "ana-alunos@example.com", "PROF-9", institution);
+		User student = user(Role.STUDENT, "bruno-alunos@example.com", "ALUNO-10", institution);
+		Room room = room("ABC243", teacher, institution);
+		var response = new RoomStudentResponse(
+				student.getId(), student.getFullName(), student.getRegistrationNumber(), student.getEmail(),
+				0, 0, 0, 0, null, MembershipStatus.ACTIVE
+		);
+		PageRequest pageable = PageRequest.of(0, 20);
+		when(roomRepository.findByIdAndTeacherId(room.getId(), teacher.getId())).thenReturn(Optional.of(room));
+		when(membershipRepository.findStudentResponsesByRoomIdAndStatusAndSearchOrderByJoinedAtDesc(
+				room.getId(), MembershipStatus.ACTIVE, "Bruno", pageable
+		)).thenReturn(new PageImpl<>(List.of(response), pageable, 1));
+		RoomMembershipService service = service(userRepository, roomRepository, membershipRepository);
+
+		var page = service.listRoomStudents(teacher.getId(), room.getId(), "Bruno", pageable);
+
+		assertThat(page.content()).containsExactly(response);
+		assertThat(page.content().getFirst().xp()).isZero();
+		assertThat(page.content().getFirst().completedLessons()).isZero();
+		assertThat(page.content().getFirst().totalLessons()).isZero();
+		assertThat(page.content().getFirst().stars()).isZero();
+		assertThat(page.content().getFirst().lastActivityAt()).isNull();
+	}
+
+	@Test
+	void deveOcultarListaDeAlunosQuandoSalaNaoPertencerAoProfessor() {
+		UUID teacherId = UUID.randomUUID();
+		UUID roomId = UUID.randomUUID();
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		when(roomRepository.findByIdAndTeacherId(roomId, teacherId)).thenReturn(Optional.empty());
+		RoomMembershipService service = service(mock(UserRepository.class), roomRepository, mock(RoomMembershipRepository.class));
+
+		assertThatThrownBy(() -> service.listRoomStudents(teacherId, roomId, null, PageRequest.of(0, 20)))
+				.isInstanceOfSatisfying(ApiException.class, exception -> {
+					assertThat(exception.getStatus().value()).isEqualTo(404);
+					assertThat(exception.getCode()).isEqualTo("ROOM_NOT_FOUND");
+				});
 	}
 
 	@Test
@@ -129,7 +227,7 @@ class RoomMembershipServiceTest {
 		Room room = room("ABC238", teacher, institution);
 		RoomMembership membership = new RoomMembership(room, student);
 		when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
-		when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
+		when(roomRepository.findByIdAndTeacherId(room.getId(), teacher.getId())).thenReturn(Optional.of(room));
 		when(membershipRepository.findByRoomIdAndStudentId(room.getId(), student.getId()))
 				.thenReturn(Optional.of(membership));
 		RoomMembershipService service = service(userRepository, roomRepository, membershipRepository);
@@ -139,6 +237,31 @@ class RoomMembershipServiceTest {
 		assertThat(membership.getStatus()).isEqualTo(MembershipStatus.REMOVED);
 		assertThat(membership.getRemovedBy()).isEqualTo(teacher);
 		assertThat(membership.getRemovedAt()).isNotNull();
+	}
+
+	@Test
+	void deveManterHistoricoAoRepetirRemocao() {
+		UserRepository userRepository = mock(UserRepository.class);
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		RoomMembershipRepository membershipRepository = mock(RoomMembershipRepository.class);
+		Institution institution = institution();
+		User teacher = user(Role.TEACHER, "ana-remocao@example.com", "PROF-10", institution);
+		User student = user(Role.STUDENT, "bruno-remocao@example.com", "ALUNO-11", institution);
+		Room room = room("ABC244", teacher, institution);
+		RoomMembership membership = new RoomMembership(room, student);
+		membership.remove(teacher);
+		var removedAt = membership.getRemovedAt();
+		when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
+		when(roomRepository.findByIdAndTeacherId(room.getId(), teacher.getId())).thenReturn(Optional.of(room));
+		when(membershipRepository.findByRoomIdAndStudentId(room.getId(), student.getId()))
+				.thenReturn(Optional.of(membership));
+		RoomMembershipService service = service(userRepository, roomRepository, membershipRepository);
+
+		service.remove(teacher.getId(), room.getId(), student.getId());
+
+		assertThat(membership.getStatus()).isEqualTo(MembershipStatus.REMOVED);
+		assertThat(membership.getRemovedAt()).isEqualTo(removedAt);
+		assertThat(membership.getRemovedBy()).isEqualTo(teacher);
 	}
 
 	@Test
