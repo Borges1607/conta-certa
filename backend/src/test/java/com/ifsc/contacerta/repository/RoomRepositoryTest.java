@@ -8,6 +8,7 @@ import com.ifsc.contacerta.model.AccountStatus;
 import com.ifsc.contacerta.model.Grade;
 import com.ifsc.contacerta.model.MembershipStatus;
 import com.ifsc.contacerta.model.Role;
+import com.ifsc.contacerta.service.JoinCodeHasher;
 import com.ifsc.contacerta.support.PostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,8 @@ class RoomRepositoryTest extends PostgresIntegrationTest {
 		membershipRepository.save(new RoomMembership(room, student));
 
 		assertThat(roomRepository.findByJoinCodeHash(DEF567_HASH))
+				.contains(room);
+		assertThat(roomRepository.findByJoinCodeHash(new JoinCodeHasher().hash(" def567 ")))
 				.contains(room);
 		assertThat(roomRepository.findByJoinCodeHash("DEF567")).isEmpty();
 		assertThat(roomRepository.findByTeacherIdOrderByCreatedAtDesc(

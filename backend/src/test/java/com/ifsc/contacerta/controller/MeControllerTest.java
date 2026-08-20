@@ -16,6 +16,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -41,6 +42,7 @@ class MeControllerTest extends PostgresIntegrationTest {
 	private PasswordEncoder passwordEncoder;
 
 	@Test
+	@Transactional
 	void deveRetornarPerfilSemDadosSensiveis() throws Exception {
 		Institution institution = institutionRepository.saveAndFlush(new Institution(
 				"IFSC", "00000000000191", "contato@ifsc.edu.br", "+5548999999999", true

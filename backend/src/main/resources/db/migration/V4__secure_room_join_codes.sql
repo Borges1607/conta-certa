@@ -1,7 +1,7 @@
 create extension if not exists pgcrypto;
 
 alter table rooms add column join_code_display varchar(6);
-alter table rooms add column join_code_hash char(64);
+alter table rooms add column join_code_hash varchar(64);
 
 update rooms
 set join_code_display = join_code,

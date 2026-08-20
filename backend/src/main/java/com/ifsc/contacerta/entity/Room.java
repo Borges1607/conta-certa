@@ -19,9 +19,7 @@ import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.JdbcTypeCode;
 
-import java.sql.Types;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,8 +65,7 @@ public class Room {
 	private String joinCodeDisplay;
 
 	@Getter(AccessLevel.NONE)
-	@JdbcTypeCode(Types.CHAR)
-	@Column(name = "join_code_hash", nullable = false, unique = true, length = 64, columnDefinition = "char(64)")
+	@Column(name = "join_code_hash", nullable = false, unique = true, length = 64)
 	private String joinCodeHash;
 
 	@Column(name = "archived_at")
