@@ -1,5 +1,7 @@
 package com.ifsc.contacerta.service;
 
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.StringNode;
 import com.ifsc.contacerta.dto.room.CreateRoomRequest;
 import com.ifsc.contacerta.dto.room.DuplicateRoomRequest;
 import com.ifsc.contacerta.dto.room.UpdateRoomRequest;
@@ -148,7 +150,7 @@ class RoomServiceTest {
 
 		var response = service.update(teacher.getId(), room.getId(), new UpdateRoomRequest(
 				"Sala atualizada",
-				"Novo conteúdo",
+				StringNode.valueOf("Novo conteúdo"),
 				Grade.HIGH_SCHOOL_2,
 				List.of("Juros simples", "Juros compostos"),
 				70,
@@ -338,6 +340,45 @@ class RoomServiceTest {
 	}
 
 	@Test
+	void devePreservarDescricaoQuandoPropriedadeForOmitidaNoPatchJson() throws Exception {
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		Institution institution = institution();
+		User teacher = new User(
+				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana16@example.com", "PROF-17", institution
+		);
+		Room room = room("Sala original", "Descrição existente", Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC245", teacher, institution);
+		when(roomRepository.findByIdAndTeacherId(room.getId(), teacher.getId())).thenReturn(Optional.of(room));
+		UpdateRoomRequest request = new ObjectMapper().readValue("""
+				{"name":"Sala atualizada","version":0}
+				""", UpdateRoomRequest.class);
+		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class));
+
+		var response = service.update(teacher.getId(), room.getId(), request);
+
+		assertThat(response.description()).isEqualTo("Descrição existente");
+	}
+
+	@Test
+	void deveLimparDescricaoQuandoNullForExplicitoNoPatchJson() throws Exception {
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		Institution institution = institution();
+		User teacher = new User(
+				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana17@example.com", "PROF-18", institution
+		);
+		Room room = room("Sala original", "Descrição existente", Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC246", teacher, institution);
+		when(roomRepository.findByIdAndTeacherId(room.getId(), teacher.getId())).thenReturn(Optional.of(room));
+		UpdateRoomRequest request = new ObjectMapper().readValue("""
+				{"description":null,"version":0}
+				""", UpdateRoomRequest.class);
+		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class));
+
+		var response = service.update(teacher.getId(), room.getId(), request);
+
+		assertThat(response.description()).isNull();
+		assertThat(room.getDescription()).isNull();
+	}
+
+	@Test
 	void deveExcluirSalaSemMatriculasENuncaExcluirSalaComHistorico() {
 		RoomRepository roomRepository = mock(RoomRepository.class);
 		RoomMembershipRepository membershipRepository = mock(RoomMembershipRepository.class);
@@ -361,6 +402,28 @@ class RoomServiceTest {
 					assertThat(exception.getStatus().value()).isEqualTo(409);
 					assertThat(exception.getCode()).isEqualTo("ROOM_HAS_HISTORY");
 				});
+	}
+
+	@Test
+	void deveBloquearExclusaoDeSalaArquivadaAntesDeConsultarHistorico() {
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		RoomMembershipRepository membershipRepository = mock(RoomMembershipRepository.class);
+		Institution institution = institution();
+		User teacher = new User(
+				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana18@example.com", "PROF-19", institution
+		);
+		Room room = room("Sala arquivada", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC247", teacher, institution);
+		room.archive();
+		when(roomRepository.findByIdAndTeacherId(room.getId(), teacher.getId())).thenReturn(Optional.of(room));
+		when(membershipRepository.countByRoomId(room.getId())).thenReturn(1L);
+		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class), membershipRepository);
+
+		assertThatThrownBy(() -> service.delete(teacher.getId(), room.getId()))
+				.isInstanceOfSatisfying(ApiException.class, exception -> {
+					assertThat(exception.getStatus().value()).isEqualTo(422);
+					assertThat(exception.getCode()).isEqualTo("ROOM_ARCHIVED");
+				});
+		verify(membershipRepository, org.mockito.Mockito.never()).countByRoomId(room.getId());
 	}
 
 	@Test

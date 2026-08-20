@@ -25,6 +25,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.JsonNode;
 
 import java.util.List;
 import java.util.UUID;
@@ -105,7 +106,7 @@ public class RoomService {
 		requireMutable(room);
 		requireCurrentVersion(room, request.version());
 		String name = request.name() == null ? room.getName() : request.name();
-		String description = request.description() == null ? room.getDescription() : request.description();
+		String description = resolveDescription(room, request.description());
 		Grade grade = request.grade() == null ? room.getGrade() : request.grade();
 		List<String> contentTopics = request.contentTopics() == null ? room.getContentTopics() : request.contentTopics();
 		int passingScore = request.passingScorePercent() == null
@@ -132,6 +133,7 @@ public class RoomService {
 	@Transactional
 	public void delete(UUID teacherId, UUID roomId) {
 		Room room = requireOwnedRoom(teacherId, roomId);
+		requireMutable(room);
 		if (membershipRepository.countByRoomId(roomId) > 0) {
 			throw new ApiException(
 					HttpStatus.CONFLICT,
@@ -208,6 +210,23 @@ public class RoomService {
 			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_CONTENT_TOPICS", "Content topics are invalid.");
 		}
 		validatePassingScore(passingScore);
+	}
+
+	private String resolveDescription(Room room, JsonNode description) {
+		if (description == null) {
+			return room.getDescription();
+		}
+		if (description.isNull()) {
+			return null;
+		}
+		if (!description.isString()) {
+			throw new ApiException(
+					HttpStatus.UNPROCESSABLE_CONTENT,
+					"INVALID_ROOM_DESCRIPTION",
+					"Room description must be a string or null."
+			);
+		}
+		return description.stringValue();
 	}
 
 	private String resolveDuplicateName(Room source, String requestedName) {
