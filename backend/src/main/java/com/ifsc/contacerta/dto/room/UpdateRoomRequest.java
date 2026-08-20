@@ -9,6 +9,7 @@ public record UpdateRoomRequest(
 		String description,
 		Grade grade,
 		List<String> contentTopics,
-		int passingScorePercent
+		Integer passingScorePercent,
+		Long version
 ) {
 }

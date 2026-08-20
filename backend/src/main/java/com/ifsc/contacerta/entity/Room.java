@@ -136,6 +136,10 @@ public class Room {
 		}
 	}
 
+	public boolean isArchived() {
+		return archivedAt != null;
+	}
+
 	public void changeJoinCode(String joinCodeDisplay, String joinCodeHash) {
 		this.joinCodeDisplay = joinCodeDisplay;
 		this.joinCodeHash = joinCodeHash;

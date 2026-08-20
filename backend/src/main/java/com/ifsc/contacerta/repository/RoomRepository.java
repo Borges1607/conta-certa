@@ -13,7 +13,11 @@ public interface RoomRepository extends JpaRepository<Room, UUID>, JpaSpecificat
 
 	Optional<Room> findByJoinCodeHash(String joinCodeHash);
 
+	Optional<Room> findByIdAndTeacherId(UUID id, UUID teacherId);
+
 	boolean existsByJoinCodeHash(String joinCodeHash);
+
+	boolean existsByTeacherIdAndName(UUID teacherId, String name);
 
 	Page<Room> findByTeacherIdOrderByCreatedAtDesc(UUID teacherId, Pageable pageable);
 }

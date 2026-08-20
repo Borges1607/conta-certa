@@ -1,21 +1,32 @@
 package com.ifsc.contacerta.service;
 
 import com.ifsc.contacerta.dto.room.CreateRoomRequest;
+import com.ifsc.contacerta.dto.room.DuplicateRoomRequest;
 import com.ifsc.contacerta.dto.room.RoomResponse;
+import com.ifsc.contacerta.dto.room.TeacherRoomDetailResponse;
+import com.ifsc.contacerta.dto.room.TeacherRoomSummaryResponse;
 import com.ifsc.contacerta.dto.room.UpdateRoomRequest;
+import com.ifsc.contacerta.dto.shared.PageResponse;
 import com.ifsc.contacerta.entity.Room;
 import com.ifsc.contacerta.entity.User;
 import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.mapper.RoomMapper;
 import com.ifsc.contacerta.model.AccountStatus;
+import com.ifsc.contacerta.model.Grade;
+import com.ifsc.contacerta.model.MembershipStatus;
 import com.ifsc.contacerta.model.Role;
+import com.ifsc.contacerta.repository.RoomMembershipRepository;
 import com.ifsc.contacerta.repository.RoomRepository;
 import com.ifsc.contacerta.repository.UserRepository;
+import com.ifsc.contacerta.specification.RoomSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -23,9 +34,11 @@ import java.util.UUID;
 public class RoomService {
 
 	private static final int DEFAULT_PASSING_SCORE_PERCENT = 50;
+	private static final int MAX_ROOM_NAME_LENGTH = 160;
 
 	private final UserRepository userRepository;
 	private final RoomRepository roomRepository;
+	private final RoomMembershipRepository membershipRepository;
 	private final JoinCodeGenerator joinCodeGenerator;
 	private final JoinCodeHasher joinCodeHasher;
 
@@ -66,53 +79,96 @@ public class RoomService {
 	}
 
 	@Transactional
-	public RoomResponse update(UUID teacherId, UUID roomId, UpdateRoomRequest request) {
+	public PageResponse<TeacherRoomSummaryResponse> list(
+			UUID teacherId,
+			String search,
+			Boolean archived,
+			Pageable pageable
+	) {
+		Page<TeacherRoomSummaryResponse> page = roomRepository
+				.findAll(RoomSpecification.ownedBy(teacherId, search, archived), pageable)
+				.map(room -> RoomMapper.toTeacherSummaryResponse(
+						room,
+						membershipRepository.countByRoomIdAndStatus(room.getId(), MembershipStatus.ACTIVE)
+				));
+		return PageResponse.from(page);
+	}
+
+	@Transactional(readOnly = true)
+	public TeacherRoomDetailResponse get(UUID teacherId, UUID roomId) {
+		return toTeacherDetailResponse(requireOwnedRoom(teacherId, roomId));
+	}
+
+	@Transactional
+	public TeacherRoomDetailResponse update(UUID teacherId, UUID roomId, UpdateRoomRequest request) {
 		Room room = requireOwnedRoom(teacherId, roomId);
 		requireMutable(room);
-		validatePassingScore(request.passingScorePercent());
+		requireCurrentVersion(room, request.version());
+		String name = request.name() == null ? room.getName() : request.name();
+		String description = request.description() == null ? room.getDescription() : request.description();
+		Grade grade = request.grade() == null ? room.getGrade() : request.grade();
+		List<String> contentTopics = request.contentTopics() == null ? room.getContentTopics() : request.contentTopics();
+		int passingScore = request.passingScorePercent() == null
+				? room.getPassingScorePercent()
+				: request.passingScorePercent();
+		validateConfiguration(name, grade, contentTopics, passingScore);
 		room.update(
-				request.name(),
-				request.description(),
-				request.grade(),
-				request.contentTopics(),
-				request.passingScorePercent()
+				name,
+				description,
+				grade,
+				contentTopics,
+				passingScore
 		);
-		return RoomMapper.toResponse(room);
+		return toTeacherDetailResponse(room);
 	}
 
 	@Transactional
-	public void archive(UUID teacherId, UUID roomId) {
+	public TeacherRoomDetailResponse archive(UUID teacherId, UUID roomId) {
 		Room room = requireOwnedRoom(teacherId, roomId);
 		room.archive();
+		return toTeacherDetailResponse(room);
 	}
 
 	@Transactional
-	public RoomResponse regenerateCode(UUID teacherId, UUID roomId) {
+	public void delete(UUID teacherId, UUID roomId) {
+		Room room = requireOwnedRoom(teacherId, roomId);
+		if (membershipRepository.countByRoomId(roomId) > 0) {
+			throw new ApiException(
+					HttpStatus.CONFLICT,
+					"ROOM_HAS_HISTORY",
+					"Rooms with membership history cannot be deleted."
+			);
+		}
+		roomRepository.delete(room);
+	}
+
+	@Transactional
+	public TeacherRoomDetailResponse regenerateCode(UUID teacherId, UUID roomId) {
 		Room room = requireOwnedRoom(teacherId, roomId);
 		requireMutable(room);
 		String joinCode = joinCodeGenerator.generateUnique();
 		room.changeJoinCode(joinCode, joinCodeHasher.hash(joinCode));
-		return RoomMapper.toResponse(room);
+		return toTeacherDetailResponse(room);
 	}
 
 	@Transactional
-	public RoomResponse duplicate(UUID teacherId, UUID roomId, String newName) {
+	public TeacherRoomDetailResponse duplicate(UUID teacherId, UUID roomId, DuplicateRoomRequest request) {
 		Room source = requireOwnedRoom(teacherId, roomId);
 		String joinCode = joinCodeGenerator.generateUnique();
-		Room copy = source.duplicate(newName, joinCode, joinCodeHasher.hash(joinCode));
-		return RoomMapper.toResponse(roomRepository.save(copy));
+		Room copy = source.duplicate(resolveDuplicateName(source, request.name()), joinCode, joinCodeHasher.hash(joinCode));
+		return toTeacherDetailResponse(roomRepository.save(copy));
 	}
 
 	private Room requireOwnedRoom(UUID teacherId, UUID roomId) {
-		Room room = roomRepository.findById(roomId).orElseThrow();
-		if (!room.getTeacher().getId().equals(teacherId)) {
-			throw new ApiException(HttpStatus.FORBIDDEN, "ROOM_ACCESS_DENIED", "Room belongs to another teacher.");
-		}
-		return room;
+		return roomRepository.findByIdAndTeacherId(roomId, teacherId).orElseThrow(() -> new ApiException(
+				HttpStatus.NOT_FOUND,
+				"ROOM_NOT_FOUND",
+				"Room was not found."
+		));
 	}
 
 	private void requireMutable(Room room) {
-		if (room.getArchivedAt() != null) {
+		if (room.isArchived()) {
 			throw new ApiException(
 					HttpStatus.UNPROCESSABLE_CONTENT,
 					"ROOM_ARCHIVED",
@@ -129,5 +185,53 @@ public class RoomService {
 					"Passing score must be between 0 and 100."
 			);
 		}
+	}
+
+	private void requireCurrentVersion(Room room, Long requestVersion) {
+		if (requestVersion == null || requestVersion != room.getVersion()) {
+			throw new ApiException(
+					HttpStatus.CONFLICT,
+					"VERSION_CONFLICT",
+					"The room was changed by another request."
+			);
+		}
+	}
+
+	private void validateConfiguration(String name, Grade grade, List<String> contentTopics, int passingScore) {
+		if (name == null || name.isBlank() || name.length() > MAX_ROOM_NAME_LENGTH) {
+			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_ROOM_NAME", "Room name is invalid.");
+		}
+		if (grade == null) {
+			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "GRADE_REQUIRED", "Grade is required.");
+		}
+		if (contentTopics == null || contentTopics.stream().anyMatch(topic -> topic == null || topic.isBlank())) {
+			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_CONTENT_TOPICS", "Content topics are invalid.");
+		}
+		validatePassingScore(passingScore);
+	}
+
+	private String resolveDuplicateName(Room source, String requestedName) {
+		if (requestedName != null) {
+			if (requestedName.isBlank() || requestedName.length() > MAX_ROOM_NAME_LENGTH) {
+				throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_ROOM_NAME", "Room name is invalid.");
+			}
+			return requestedName;
+		}
+
+		int copyNumber = 1;
+		String candidate;
+		do {
+			String suffix = copyNumber == 1 ? " (cópia)" : " (cópia " + copyNumber + ")";
+			String sourceName = source.getName();
+			candidate = sourceName.substring(0, Math.min(sourceName.length(), MAX_ROOM_NAME_LENGTH - suffix.length())) + suffix;
+			copyNumber++;
+		} while (roomRepository.existsByTeacherIdAndName(source.getTeacher().getId(), candidate));
+		return candidate;
+	}
+
+	private TeacherRoomDetailResponse toTeacherDetailResponse(Room room) {
+		long studentCount = membershipRepository.countByRoomIdAndStatus(room.getId(), MembershipStatus.ACTIVE);
+		long membershipCount = membershipRepository.countByRoomId(room.getId());
+		return RoomMapper.toTeacherDetailResponse(room, studentCount, membershipCount);
 	}
 }
