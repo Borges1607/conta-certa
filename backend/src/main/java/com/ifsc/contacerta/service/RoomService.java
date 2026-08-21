@@ -127,6 +127,9 @@ public class RoomService {
 	public TeacherRoomDetailResponse archive(UUID teacherId, UUID roomId, Long version) {
 		requireTeacher(teacherId);
 		Room room = requireOwnedRoom(teacherId, roomId);
+		if (room.isArchived()) {
+			return toTeacherDetailResponse(room);
+		}
 		requireCurrentVersion(room, version);
 		room.archive();
 		return toTeacherDetailResponse(room);

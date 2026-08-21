@@ -159,6 +159,13 @@ class TeacherRoomControllerTest extends PostgresIntegrationTest {
 					.content("{\"version\":" + currentVersion(room.getId()) + "}"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.archived").value(true));
+
+		mockMvc.perform(post("/teacher/rooms/{roomId}/archive", room.getId())
+					.header("Authorization", bearer(login))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"version\":" + version + "}"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.archived").value(true));
 	}
 
 	@Test
