@@ -2,6 +2,7 @@ package com.ifsc.contacerta.mapper;
 
 import com.ifsc.contacerta.dto.institution.InstitutionResponse;
 import com.ifsc.contacerta.dto.institution.InstitutionOptionResponse;
+import com.ifsc.contacerta.dto.institution.InstitutionSummaryResponse;
 import com.ifsc.contacerta.entity.Institution;
 
 public final class InstitutionMapper {
@@ -28,6 +29,17 @@ public final class InstitutionMapper {
 				institution.getId(),
 				institution.getName(),
 				institution.getCnpj()
+		);
+	}
+
+	public static InstitutionSummaryResponse toSummaryResponse(Institution institution) {
+		return new InstitutionSummaryResponse(
+				institution.getId(),
+				institution.getName(),
+				institution.getCnpj(),
+				institution.getContactEmail(),
+				institution.getContactPhone(),
+				institution.isActive()
 		);
 	}
 }

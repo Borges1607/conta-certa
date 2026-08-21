@@ -1,6 +1,9 @@
 package com.ifsc.contacerta.service;
 
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.StringNode;
 import com.ifsc.contacerta.dto.room.CreateRoomRequest;
+import com.ifsc.contacerta.dto.room.DuplicateRoomRequest;
 import com.ifsc.contacerta.dto.room.UpdateRoomRequest;
 import com.ifsc.contacerta.entity.Institution;
 import com.ifsc.contacerta.entity.Room;
@@ -8,21 +11,31 @@ import com.ifsc.contacerta.entity.User;
 import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.model.AccountStatus;
 import com.ifsc.contacerta.model.Grade;
+import com.ifsc.contacerta.model.MembershipStatus;
 import com.ifsc.contacerta.model.Role;
+import com.ifsc.contacerta.repository.RoomMembershipRepository;
 import com.ifsc.contacerta.repository.RoomRepository;
 import com.ifsc.contacerta.repository.UserRepository;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class RoomServiceTest {
+
+	private final JoinCodeHasher joinCodeHasher = new JoinCodeHasher();
 
 	@Test
 	void deveCriarSalaParaProfessorAtivoComNotaMinimaPadrao() {
@@ -38,7 +51,7 @@ class RoomServiceTest {
 		when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
 		when(joinCodeGenerator.generateUnique()).thenReturn("ABC234");
 		when(roomRepository.save(any(Room.class))).thenAnswer(invocation -> invocation.getArgument(0));
-		RoomService service = new RoomService(userRepository, roomRepository, joinCodeGenerator);
+		RoomService service = service(userRepository, roomRepository, joinCodeGenerator);
 
 		var response = service.create(teacher.getId(), new CreateRoomRequest(
 				"1º ano A",
@@ -48,8 +61,8 @@ class RoomServiceTest {
 				null
 		));
 
-		assertThat(response.teacherId()).isEqualTo(teacher.getId());
-		assertThat(response.institutionId()).isEqualTo(institution.getId());
+		assertThat(response.teacher().id()).isEqualTo(teacher.getId());
+		assertThat(response.institution().id()).isEqualTo(institution.getId());
 		assertThat(response.passingScorePercent()).isEqualTo(50);
 		assertThat(response.joinCode()).isEqualTo("ABC234");
 	}
@@ -62,9 +75,7 @@ class RoomServiceTest {
 				Role.STUDENT, AccountStatus.ACTIVE, "Aluno Bruno", "bruno@example.com", "ALUNO-1", institution
 		);
 		when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
-		RoomService service = new RoomService(
-				userRepository, mock(RoomRepository.class), mock(JoinCodeGenerator.class)
-		);
+		RoomService service = service(userRepository, mock(RoomRepository.class), mock(JoinCodeGenerator.class));
 
 		assertThatThrownBy(() -> service.create(student.getId(), validRequest(50)))
 				.isInstanceOfSatisfying(ApiException.class, exception -> {
@@ -80,9 +91,7 @@ class RoomServiceTest {
 				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana3@example.com", "PROF-3", institution()
 		);
 		when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
-		RoomService service = new RoomService(
-				userRepository, mock(RoomRepository.class), mock(JoinCodeGenerator.class)
-		);
+		RoomService service = service(userRepository, mock(RoomRepository.class), mock(JoinCodeGenerator.class));
 
 		assertThatThrownBy(() -> service.create(teacher.getId(), validRequest(101)))
 				.isInstanceOfSatisfying(ApiException.class, exception -> {
@@ -98,9 +107,7 @@ class RoomServiceTest {
 				Role.TEACHER, AccountStatus.INACTIVE, "Professora Ana", "ana4@example.com", "PROF-4", institution()
 		);
 		when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
-		RoomService service = new RoomService(
-				userRepository, mock(RoomRepository.class), mock(JoinCodeGenerator.class)
-		);
+		RoomService service = service(userRepository, mock(RoomRepository.class), mock(JoinCodeGenerator.class));
 
 		assertThatThrownBy(() -> service.create(teacher.getId(), validRequest(50)))
 				.isInstanceOfSatisfying(ApiException.class, exception -> {
@@ -119,9 +126,7 @@ class RoomServiceTest {
 				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana5@example.com", "PROF-5", institution
 		);
 		when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
-		RoomService service = new RoomService(
-				userRepository, mock(RoomRepository.class), mock(JoinCodeGenerator.class)
-		);
+		RoomService service = service(userRepository, mock(RoomRepository.class), mock(JoinCodeGenerator.class));
 
 		assertThatThrownBy(() -> service.create(teacher.getId(), validRequest(50)))
 				.isInstanceOfSatisfying(ApiException.class, exception -> {
@@ -138,19 +143,18 @@ class RoomServiceTest {
 		User teacher = new User(
 				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana6@example.com", "PROF-6", institution
 		);
-		Room room = new Room(
-				"Sala antiga", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC234", teacher, institution
-		);
+		Room room = room("Sala antiga", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC234", teacher, institution);
 		when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
-		when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
-		RoomService service = new RoomService(userRepository, roomRepository, mock(JoinCodeGenerator.class));
+		when(roomRepository.findByIdAndTeacherId(room.getId(), teacher.getId())).thenReturn(Optional.of(room));
+		RoomService service = service(userRepository, roomRepository, mock(JoinCodeGenerator.class));
 
 		var response = service.update(teacher.getId(), room.getId(), new UpdateRoomRequest(
 				"Sala atualizada",
-				"Novo conteúdo",
+				StringNode.valueOf("Novo conteúdo"),
 				Grade.HIGH_SCHOOL_2,
 				List.of("Juros simples", "Juros compostos"),
-				70
+				70,
+				room.getVersion()
 		));
 
 		assertThat(response.name()).isEqualTo("Sala atualizada");
@@ -169,20 +173,18 @@ class RoomServiceTest {
 		User anotherTeacher = new User(
 				Role.TEACHER, AccountStatus.ACTIVE, "Professor Carlos", "carlos@example.com", "PROF-8", institution
 		);
-		Room room = new Room(
-				"1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC235", owner, institution
-		);
-		when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
-		RoomService service = new RoomService(
-				mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class)
-		);
+		Room room = room("1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC235", owner, institution);
+		when(roomRepository.findByIdAndTeacherId(room.getId(), owner.getId())).thenReturn(Optional.of(room));
+		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class));
+
+		when(roomRepository.findByIdAndTeacherId(room.getId(), anotherTeacher.getId())).thenReturn(Optional.empty());
 
 		assertThatThrownBy(() -> service.update(anotherTeacher.getId(), room.getId(), new UpdateRoomRequest(
-				"Alteração indevida", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50
+				"Alteração indevida", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, room.getVersion()
 		)))
 				.isInstanceOfSatisfying(ApiException.class, exception -> {
-					assertThat(exception.getStatus().value()).isEqualTo(403);
-					assertThat(exception.getCode()).isEqualTo("ROOM_ACCESS_DENIED");
+					assertThat(exception.getStatus().value()).isEqualTo(404);
+					assertThat(exception.getCode()).isEqualTo("ROOM_NOT_FOUND");
 				});
 	}
 
@@ -193,21 +195,19 @@ class RoomServiceTest {
 		User teacher = new User(
 				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana8@example.com", "PROF-9", institution
 		);
-		Room room = new Room(
-				"1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC236", teacher, institution
-		);
-		when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
-		RoomService service = new RoomService(
-				mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class)
-		);
+		Room room = room("1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC236", teacher, institution);
+		when(roomRepository.findByIdAndTeacherId(room.getId(), teacher.getId())).thenReturn(Optional.of(room));
+		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class));
 
-		service.archive(teacher.getId(), room.getId());
+		var archived = service.archive(teacher.getId(), room.getId(), room.getVersion());
 		var firstArchivedAt = room.getArchivedAt();
-		service.archive(teacher.getId(), room.getId());
+		var archivedAgain = service.archive(teacher.getId(), room.getId(), room.getVersion());
 
+		assertThat(archived.archived()).isTrue();
+		assertThat(archivedAgain.archived()).isTrue();
 		assertThat(firstArchivedAt).isNotNull().isEqualTo(room.getArchivedAt());
 		assertThatThrownBy(() -> service.update(teacher.getId(), room.getId(), new UpdateRoomRequest(
-				"Alteração bloqueada", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50
+				"Alteração bloqueada", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, room.getVersion()
 		)))
 				.isInstanceOfSatisfying(ApiException.class, exception -> {
 					assertThat(exception.getStatus().value()).isEqualTo(422);
@@ -223,14 +223,12 @@ class RoomServiceTest {
 		User teacher = new User(
 				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana9@example.com", "PROF-10", institution
 		);
-		Room room = new Room(
-				"1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC237", teacher, institution
-		);
-		when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
+		Room room = room("1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC237", teacher, institution);
+		when(roomRepository.findByIdAndTeacherId(room.getId(), teacher.getId())).thenReturn(Optional.of(room));
 		when(joinCodeGenerator.generateUnique()).thenReturn("XYZ789");
-		RoomService service = new RoomService(mock(UserRepository.class), roomRepository, joinCodeGenerator);
+		RoomService service = service(mock(UserRepository.class), roomRepository, joinCodeGenerator);
 
-		var response = service.regenerateCode(teacher.getId(), room.getId());
+		var response = service.regenerateCode(teacher.getId(), room.getId(), room.getVersion());
 
 		assertThat(response.joinCode()).isEqualTo("XYZ789");
 	}
@@ -242,14 +240,12 @@ class RoomServiceTest {
 		User teacher = new User(
 				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana10@example.com", "PROF-11", institution
 		);
-		Room room = new Room(
-				"1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC238", teacher, institution
-		);
-		when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
-		RoomService service = new RoomService(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class));
+		Room room = room("1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC238", teacher, institution);
+		when(roomRepository.findByIdAndTeacherId(room.getId(), teacher.getId())).thenReturn(Optional.of(room));
+		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class));
 
 		assertThatThrownBy(() -> service.update(teacher.getId(), room.getId(), new UpdateRoomRequest(
-				"1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), -1
+				"1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), -1, room.getVersion()
 		)))
 				.isInstanceOfSatisfying(ApiException.class, exception ->
 						assertThat(exception.getCode()).isEqualTo("INVALID_PASSING_SCORE")
@@ -264,7 +260,7 @@ class RoomServiceTest {
 		User teacher = new User(
 				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana11@example.com", "PROF-12", institution
 		);
-		Room source = new Room(
+		Room source = room(
 				"Sala original",
 				"Descrição original",
 				Grade.HIGH_SCHOOL_2,
@@ -274,12 +270,12 @@ class RoomServiceTest {
 				teacher,
 				institution
 		);
-		when(roomRepository.findById(source.getId())).thenReturn(Optional.of(source));
+		when(roomRepository.findByIdAndTeacherId(source.getId(), teacher.getId())).thenReturn(Optional.of(source));
 		when(joinCodeGenerator.generateUnique()).thenReturn("XYZ790");
 		when(roomRepository.save(any(Room.class))).thenAnswer(invocation -> invocation.getArgument(0));
-		RoomService service = new RoomService(mock(UserRepository.class), roomRepository, joinCodeGenerator);
+		RoomService service = service(mock(UserRepository.class), roomRepository, joinCodeGenerator);
 
-		var response = service.duplicate(teacher.getId(), source.getId(), "Cópia da sala");
+		var response = service.duplicate(teacher.getId(), source.getId(), new DuplicateRoomRequest("Cópia da sala", source.getVersion()));
 
 		assertThat(response.id()).isNotEqualTo(source.getId());
 		assertThat(response.name()).isEqualTo("Cópia da sala");
@@ -288,6 +284,182 @@ class RoomServiceTest {
 		assertThat(response.contentTopics()).containsExactlyElementsOf(source.getContentTopics());
 		assertThat(response.passingScorePercent()).isEqualTo(source.getPassingScorePercent());
 		assertThat(response.joinCode()).isEqualTo("XYZ790");
+	}
+
+	@Test
+	void deveListarSomenteSalasDoProfessorComContagemDeAlunos() {
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		RoomMembershipRepository membershipRepository = mock(RoomMembershipRepository.class);
+		Institution institution = institution();
+		User teacher = new User(
+				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana12@example.com", "PROF-13", institution
+		);
+		Room room = room("1º ano A", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC240", teacher, institution);
+		PageRequest pageRequest = PageRequest.of(0, 10);
+		when(roomRepository.findAll(org.mockito.ArgumentMatchers.<Specification<Room>>any(), eq(pageRequest)))
+				.thenReturn(new PageImpl<>(List.of(room), pageRequest, 1));
+		when(membershipRepository.countByRoomIdAndStatus(eq(room.getId()), eq(MembershipStatus.ACTIVE)))
+				.thenReturn(3L);
+		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class), membershipRepository);
+
+		var response = service.list(teacher.getId(), " ano ", false, pageRequest);
+
+		assertThat(response.content()).singleElement().satisfies(summary -> {
+			assertThat(summary.id()).isEqualTo(room.getId());
+			assertThat(summary.studentCount()).isEqualTo(3);
+		});
+	}
+
+	@Test
+	void deveMesclarPatchParcialERejeitarVersaoDesatualizadaAntesDaMutacao() {
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		Institution institution = institution();
+		User teacher = new User(
+				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana13@example.com", "PROF-14", institution
+		);
+		Room room = room("Sala original", "Descrição", Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC241", teacher, institution);
+		when(roomRepository.findByIdAndTeacherId(room.getId(), teacher.getId())).thenReturn(Optional.of(room));
+		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class));
+
+		var response = service.update(teacher.getId(), room.getId(), new UpdateRoomRequest(
+				"Novo nome", null, null, null, null, room.getVersion()
+		));
+
+		assertThat(response.name()).isEqualTo("Novo nome");
+		assertThat(response.description()).isEqualTo("Descrição");
+		assertThat(response.grade()).isEqualTo(Grade.HIGH_SCHOOL_1);
+		assertThat(response.contentTopics()).containsExactly("Porcentagem");
+		assertThatThrownBy(() -> service.update(teacher.getId(), room.getId(), new UpdateRoomRequest(
+				"Não deve mudar", null, null, null, null, room.getVersion() + 1
+		)))
+				.isInstanceOfSatisfying(ApiException.class, exception -> {
+					assertThat(exception.getStatus().value()).isEqualTo(409);
+					assertThat(exception.getCode()).isEqualTo("VERSION_CONFLICT");
+				});
+		assertThat(room.getName()).isEqualTo("Novo nome");
+	}
+
+	@Test
+	void devePreservarDescricaoQuandoPropriedadeForOmitidaNoPatchJson() throws Exception {
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		Institution institution = institution();
+		User teacher = new User(
+				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana16@example.com", "PROF-17", institution
+		);
+		Room room = room("Sala original", "Descrição existente", Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC245", teacher, institution);
+		when(roomRepository.findByIdAndTeacherId(room.getId(), teacher.getId())).thenReturn(Optional.of(room));
+		UpdateRoomRequest request = new ObjectMapper().readValue("""
+				{"name":"Sala atualizada","version":0}
+				""", UpdateRoomRequest.class);
+		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class));
+
+		var response = service.update(teacher.getId(), room.getId(), request);
+
+		assertThat(response.description()).isEqualTo("Descrição existente");
+	}
+
+	@Test
+	void deveLimparDescricaoQuandoNullForExplicitoNoPatchJson() throws Exception {
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		Institution institution = institution();
+		User teacher = new User(
+				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana17@example.com", "PROF-18", institution
+		);
+		Room room = room("Sala original", "Descrição existente", Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC246", teacher, institution);
+		when(roomRepository.findByIdAndTeacherId(room.getId(), teacher.getId())).thenReturn(Optional.of(room));
+		UpdateRoomRequest request = new ObjectMapper().readValue("""
+				{"description":null,"version":0}
+				""", UpdateRoomRequest.class);
+		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class));
+
+		var response = service.update(teacher.getId(), room.getId(), request);
+
+		assertThat(response.description()).isNull();
+		assertThat(room.getDescription()).isNull();
+	}
+
+	@Test
+	void deveExcluirSalaSemMatriculasENuncaExcluirSalaComHistorico() {
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		RoomMembershipRepository membershipRepository = mock(RoomMembershipRepository.class);
+		Institution institution = institution();
+		User teacher = new User(
+				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana14@example.com", "PROF-15", institution
+		);
+		Room unused = room("Sala vazia", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC242", teacher, institution);
+		when(roomRepository.findByIdAndTeacherId(unused.getId(), teacher.getId())).thenReturn(Optional.of(unused));
+		when(membershipRepository.countByRoomId(unused.getId())).thenReturn(0L);
+		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class), membershipRepository);
+
+		service.delete(teacher.getId(), unused.getId(), unused.getVersion());
+
+		verify(roomRepository).delete(unused);
+		Room used = room("Sala histórica", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC243", teacher, institution);
+		when(roomRepository.findByIdAndTeacherId(used.getId(), teacher.getId())).thenReturn(Optional.of(used));
+		when(membershipRepository.countByRoomId(used.getId())).thenReturn(1L);
+		assertThatThrownBy(() -> service.delete(teacher.getId(), used.getId(), used.getVersion()))
+				.isInstanceOfSatisfying(ApiException.class, exception -> {
+					assertThat(exception.getStatus().value()).isEqualTo(409);
+					assertThat(exception.getCode()).isEqualTo("ROOM_HAS_HISTORY");
+				});
+	}
+
+	@Test
+	void deveBloquearExclusaoDeSalaArquivadaAntesDeConsultarHistorico() {
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		RoomMembershipRepository membershipRepository = mock(RoomMembershipRepository.class);
+		Institution institution = institution();
+		User teacher = new User(
+				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana18@example.com", "PROF-19", institution
+		);
+		Room room = room("Sala arquivada", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC247", teacher, institution);
+		room.archive();
+		when(roomRepository.findByIdAndTeacherId(room.getId(), teacher.getId())).thenReturn(Optional.of(room));
+		when(membershipRepository.countByRoomId(room.getId())).thenReturn(1L);
+		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class), membershipRepository);
+
+		assertThatThrownBy(() -> service.delete(teacher.getId(), room.getId(), room.getVersion()))
+				.isInstanceOfSatisfying(ApiException.class, exception -> {
+					assertThat(exception.getStatus().value()).isEqualTo(422);
+					assertThat(exception.getCode()).isEqualTo("ROOM_ARCHIVED");
+				});
+		verify(membershipRepository, org.mockito.Mockito.never()).countByRoomId(room.getId());
+	}
+
+	@Test
+	void deveGerarNomeDeCopiaAutomaticoSemColisaoNoEscopoDoProfessor() {
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		JoinCodeGenerator joinCodeGenerator = mock(JoinCodeGenerator.class);
+		Institution institution = institution();
+		User teacher = new User(
+				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana15@example.com", "PROF-16", institution
+		);
+		Room source = room("Sala original", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC244", teacher, institution);
+		when(roomRepository.findByIdAndTeacherId(source.getId(), teacher.getId())).thenReturn(Optional.of(source));
+		when(roomRepository.existsByTeacherIdAndName(teacher.getId(), "Sala original (cópia)")).thenReturn(true);
+		when(roomRepository.existsByTeacherIdAndName(teacher.getId(), "Sala original (cópia 2)")).thenReturn(false);
+		when(joinCodeGenerator.generateUnique()).thenReturn("XYZ791");
+		when(roomRepository.save(any(Room.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		RoomService service = service(mock(UserRepository.class), roomRepository, joinCodeGenerator);
+
+		var response = service.duplicate(teacher.getId(), source.getId(), new DuplicateRoomRequest(null, source.getVersion()));
+
+		assertThat(response.name()).isEqualTo("Sala original (cópia 2)");
+	}
+
+	@Test
+	void deveNaoEnumerarDetalheDeSalaDeOutroProfessor() {
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		UUID roomId = UUID.randomUUID();
+		UUID anotherTeacherId = UUID.randomUUID();
+		when(roomRepository.findByIdAndTeacherId(roomId, anotherTeacherId)).thenReturn(Optional.empty());
+		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class));
+
+		assertThatThrownBy(() -> service.get(anotherTeacherId, roomId))
+				.isInstanceOfSatisfying(ApiException.class, exception -> {
+					assertThat(exception.getStatus().value()).isEqualTo(404);
+					assertThat(exception.getCode()).isEqualTo("ROOM_NOT_FOUND");
+				});
 	}
 
 	private CreateRoomRequest validRequest(Integer passingScore) {
@@ -304,5 +476,38 @@ class RoomServiceTest {
 		return new Institution(
 				"Instituto Exemplo", "11222333000181", "contato@example.com", "48999990000", true
 		);
+	}
+
+	private Room room(
+			String name,
+			String description,
+			Grade grade,
+			List<String> contentTopics,
+			int passingScorePercent,
+			String joinCode,
+			User teacher,
+			Institution institution
+	) {
+		return new Room(
+				name, description, grade, contentTopics, passingScorePercent,
+				joinCode, joinCodeHasher.hash(joinCode), teacher, institution
+		);
+	}
+
+	private RoomService service(
+			UserRepository userRepository,
+			RoomRepository roomRepository,
+			JoinCodeGenerator joinCodeGenerator
+	) {
+		return service(userRepository, roomRepository, joinCodeGenerator, mock(RoomMembershipRepository.class));
+	}
+
+	private RoomService service(
+			UserRepository userRepository,
+			RoomRepository roomRepository,
+			JoinCodeGenerator joinCodeGenerator,
+			RoomMembershipRepository membershipRepository
+	) {
+		return new RoomService(userRepository, roomRepository, membershipRepository, joinCodeGenerator, joinCodeHasher);
 	}
 }
