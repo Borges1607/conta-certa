@@ -74,6 +74,7 @@ public class RoomMembershipService {
 
 	@Transactional(readOnly = true)
 	public List<StudentRoomResponse> listStudentRooms(UUID studentId) {
+		requireStudent(studentId);
 		return membershipRepository
 				.findByStudentIdAndStatusOrderByJoinedAtDesc(studentId, MembershipStatus.ACTIVE)
 				.stream()
@@ -111,5 +112,13 @@ public class RoomMembershipService {
 				"ROOM_NOT_FOUND",
 				"Room was not found."
 		));
+	}
+
+	private void requireStudent(UUID studentId) {
+		userRepository.findById(studentId).ifPresent(student -> {
+			if (student.getRole() != Role.STUDENT) {
+				throw new ApiException(HttpStatus.FORBIDDEN, "STUDENT_REQUIRED", "A student account is required.");
+			}
+		});
 	}
 }
