@@ -69,6 +69,20 @@ public class Lesson {
 		status = ContentStatus.PUBLISHED;
 	}
 
+	public void archive() {
+		status = ContentStatus.ARCHIVED;
+	}
+
+	public void update(String title, String summary, String theoryMarkdown) {
+		this.title = title;
+		this.summary = summary;
+		this.theoryMarkdown = theoryMarkdown;
+	}
+
+	public Lesson duplicate(String title) {
+		return new Lesson(title, summary, theoryMarkdown, teacher);
+	}
+
 	@PrePersist
 	void onCreate() {
 		Instant now = Instant.now();

@@ -2,6 +2,9 @@ package com.ifsc.contacerta.service;
 
 import com.ifsc.contacerta.dto.lesson.CreateLessonRequest;
 import com.ifsc.contacerta.dto.lesson.LessonDetailResponse;
+import com.ifsc.contacerta.dto.lesson.LessonSummaryResponse;
+import com.ifsc.contacerta.dto.lesson.UpdateLessonRequest;
+import com.ifsc.contacerta.dto.shared.PageResponse;
 import com.ifsc.contacerta.entity.Lesson;
 import com.ifsc.contacerta.entity.User;
 import com.ifsc.contacerta.exception.ApiException;
@@ -12,6 +15,7 @@ import com.ifsc.contacerta.repository.QuestionRepository;
 import com.ifsc.contacerta.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,6 +55,46 @@ public class LessonService {
 		return toDetailResponse(lesson);
 	}
 
+	@Transactional(readOnly = true)
+	public PageResponse<LessonSummaryResponse> list(UUID teacherId, Pageable pageable) {
+		requireActiveTeacher(teacherId);
+		return PageResponse.from(lessonRepository.findByTeacherId(teacherId, pageable).map(this::toSummaryResponse));
+	}
+
+	@Transactional(readOnly = true)
+	public LessonDetailResponse get(UUID teacherId, UUID lessonId) {
+		requireActiveTeacher(teacherId);
+		return toDetailResponse(requireOwnedLesson(teacherId, lessonId));
+	}
+
+	@Transactional
+	public LessonDetailResponse update(UUID teacherId, UUID lessonId, UpdateLessonRequest request) {
+		requireActiveTeacher(teacherId);
+		Lesson lesson = requireOwnedLesson(teacherId, lessonId);
+		requireVersion(lesson, request.version());
+		if (lesson.getStatus() == com.ifsc.contacerta.model.ContentStatus.ARCHIVED) {
+			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "LESSON_ARCHIVED", "Archived lessons are read-only.");
+		}
+		lesson.update(request.title() == null ? lesson.getTitle() : request.title(), request.summary(), request.theoryMarkdown() == null ? lesson.getTheoryMarkdown() : request.theoryMarkdown());
+		return toDetailResponse(lesson);
+	}
+
+	@Transactional
+	public LessonDetailResponse archive(UUID teacherId, UUID lessonId) {
+		requireActiveTeacher(teacherId);
+		Lesson lesson = requireOwnedLesson(teacherId, lessonId);
+		lesson.archive();
+		return toDetailResponse(lesson);
+	}
+
+	@Transactional
+	public LessonDetailResponse duplicate(UUID teacherId, UUID lessonId) {
+		requireActiveTeacher(teacherId);
+		Lesson source = requireOwnedLesson(teacherId, lessonId);
+		Lesson copy = lessonRepository.save(source.duplicate(source.getTitle() + " (cópia)"));
+		return toDetailResponse(copy);
+	}
+
 	private User requireActiveTeacher(UUID teacherId) {
 		User teacher = userRepository.findById(teacherId).orElseThrow(() -> new ApiException(
 				HttpStatus.NOT_FOUND, "TEACHER_NOT_FOUND", "Teacher was not found."
@@ -62,6 +106,22 @@ public class LessonService {
 			throw new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_INACTIVE", "Teacher account is inactive.");
 		}
 		return teacher;
+	}
+
+	private Lesson requireOwnedLesson(UUID teacherId, UUID lessonId) {
+		return lessonRepository.findByIdAndTeacherId(lessonId, teacherId).orElseThrow(() -> new ApiException(
+				HttpStatus.NOT_FOUND, "LESSON_NOT_FOUND", "Lesson was not found."
+		));
+	}
+
+	private void requireVersion(Lesson lesson, Long version) {
+		if (version == null || version != lesson.getVersion()) {
+			throw new ApiException(HttpStatus.CONFLICT, "VERSION_CONFLICT", "The lesson was changed by another request.");
+		}
+	}
+
+	private LessonSummaryResponse toSummaryResponse(Lesson lesson) {
+		return new LessonSummaryResponse(lesson.getId(), lesson.getTitle(), lesson.getSummary(), lesson.getStatus(), 0, 0, lesson.getCreatedAt(), lesson.getUpdatedAt(), lesson.getVersion());
 	}
 
 	private LessonDetailResponse toDetailResponse(Lesson lesson) {
