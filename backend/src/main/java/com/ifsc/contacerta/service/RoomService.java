@@ -124,18 +124,20 @@ public class RoomService {
 	}
 
 	@Transactional
-	public TeacherRoomDetailResponse archive(UUID teacherId, UUID roomId) {
+	public TeacherRoomDetailResponse archive(UUID teacherId, UUID roomId, Long version) {
 		requireTeacher(teacherId);
 		Room room = requireOwnedRoom(teacherId, roomId);
+		requireCurrentVersion(room, version);
 		room.archive();
 		return toTeacherDetailResponse(room);
 	}
 
 	@Transactional
-	public void delete(UUID teacherId, UUID roomId) {
+	public void delete(UUID teacherId, UUID roomId, Long version) {
 		requireTeacher(teacherId);
 		Room room = requireOwnedRoom(teacherId, roomId);
 		requireMutable(room);
+		requireCurrentVersion(room, version);
 		if (membershipRepository.countByRoomId(roomId) > 0) {
 			throw new ApiException(
 					HttpStatus.CONFLICT,
@@ -147,10 +149,11 @@ public class RoomService {
 	}
 
 	@Transactional
-	public TeacherRoomDetailResponse regenerateCode(UUID teacherId, UUID roomId) {
+	public TeacherRoomDetailResponse regenerateCode(UUID teacherId, UUID roomId, Long version) {
 		requireTeacher(teacherId);
 		Room room = requireOwnedRoom(teacherId, roomId);
 		requireMutable(room);
+		requireCurrentVersion(room, version);
 		String joinCode = joinCodeGenerator.generateUnique();
 		room.changeJoinCode(joinCode, joinCodeHasher.hash(joinCode));
 		return toTeacherDetailResponse(room);
@@ -160,6 +163,7 @@ public class RoomService {
 	public TeacherRoomDetailResponse duplicate(UUID teacherId, UUID roomId, DuplicateRoomRequest request) {
 		requireTeacher(teacherId);
 		Room source = requireOwnedRoom(teacherId, roomId);
+		requireCurrentVersion(source, request.version());
 		String joinCode = joinCodeGenerator.generateUnique();
 		Room copy = source.duplicate(resolveDuplicateName(source, request.name()), joinCode, joinCodeHasher.hash(joinCode));
 		return toTeacherDetailResponse(roomRepository.save(copy));
@@ -239,7 +243,8 @@ public class RoomService {
 		if (grade == null) {
 			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "GRADE_REQUIRED", "Grade is required.");
 		}
-		if (contentTopics == null || contentTopics.stream().anyMatch(topic -> topic == null || topic.isBlank())) {
+		if (contentTopics == null || contentTopics.isEmpty()
+				|| contentTopics.stream().anyMatch(topic -> topic == null || topic.isBlank())) {
 			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_CONTENT_TOPICS", "Content topics are invalid.");
 		}
 		validatePassingScore(passingScore);

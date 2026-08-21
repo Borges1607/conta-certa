@@ -141,18 +141,22 @@ class TeacherRoomControllerTest extends PostgresIntegrationTest {
 		mockMvc.perform(post("/teacher/rooms/{roomId}/duplicate", room.getId())
 					.header("Authorization", bearer(login))
 					.contentType(MediaType.APPLICATION_JSON)
-					.content("{\"name\":\"Sala copiada\"}"))
+					.content("{\"name\":\"Sala copiada\",\"version\":" + currentVersion(room.getId()) + "}"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.name").value("Sala copiada"))
 				.andExpect(jsonPath("$.id").value(org.hamcrest.Matchers.not(room.getId().toString())));
 
 		mockMvc.perform(post("/teacher/rooms/{roomId}/regenerate-code", room.getId())
-					.header("Authorization", bearer(login)))
+					.header("Authorization", bearer(login))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"version\":" + currentVersion(room.getId()) + "}"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.joinCode").value(org.hamcrest.Matchers.matchesPattern("[A-Z0-9]{6}")));
 
 		mockMvc.perform(post("/teacher/rooms/{roomId}/archive", room.getId())
-					.header("Authorization", bearer(login)))
+					.header("Authorization", bearer(login))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"version\":" + currentVersion(room.getId()) + "}"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.archived").value(true));
 	}
@@ -175,9 +179,26 @@ class TeacherRoomControllerTest extends PostgresIntegrationTest {
 				.andExpect(jsonPath("$.code").value("VERSION_CONFLICT"));
 
 		mockMvc.perform(delete("/teacher/rooms/{roomId}", room.getId())
-					.header("Authorization", bearer(login)))
+					.header("Authorization", bearer(login))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"version\":" + currentVersion(room.getId()) + "}"))
 				.andExpect(status().isConflict())
 				.andExpect(jsonPath("$.code").value("ROOM_HAS_HISTORY"));
+	}
+
+	@Test
+	void deveValidarVersaoNasAcoesMutaveis() throws Exception {
+		Institution institution = institution();
+		User teacher = user(Role.TEACHER, institution);
+		Room room = room("Sala", "RST890", teacher, institution);
+		AuthResponse login = login(teacher);
+
+		mockMvc.perform(post("/teacher/rooms/{roomId}/archive", room.getId())
+					.header("Authorization", bearer(login))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"version\":" + (currentVersion(room.getId()) + 1) + "}"))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.code").value("VERSION_CONFLICT"));
 	}
 
 	@Test
@@ -197,6 +218,32 @@ class TeacherRoomControllerTest extends PostgresIntegrationTest {
 		mockMvc.perform(delete("/teacher/rooms/{roomId}/students/{studentId}", room.getId(), student.getId())
 					.header("Authorization", bearer(login)))
 				.andExpect(status().isNoContent());
+	}
+
+	@Test
+	void deveExigirProfessorEValidarPaginacaoAoGerenciarAlunos() throws Exception {
+		Institution institution = institution();
+		User teacher = user(Role.TEACHER, institution);
+		User student = user(Role.STUDENT, institution);
+		Room room = room("Sala", "UVW123", teacher, institution);
+		AuthResponse studentLogin = login(student);
+
+		mockMvc.perform(get("/teacher/rooms/{roomId}/students", room.getId())
+					.header("Authorization", bearer(studentLogin)))
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("TEACHER_REQUIRED"));
+
+		mockMvc.perform(delete("/teacher/rooms/{roomId}/students/{studentId}", room.getId(), student.getId())
+					.header("Authorization", bearer(studentLogin)))
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("TEACHER_REQUIRED"));
+
+		AuthResponse teacherLogin = login(teacher);
+		mockMvc.perform(get("/teacher/rooms/{roomId}/students", room.getId())
+					.header("Authorization", bearer(teacherLogin))
+					.param("page", "-1"))
+				.andExpect(status().isUnprocessableContent())
+				.andExpect(jsonPath("$.code").value("INVALID_PAGE"));
 	}
 
 	private Institution institution() {
@@ -225,6 +272,10 @@ class TeacherRoomControllerTest extends PostgresIntegrationTest {
 
 	private String bearer(AuthResponse response) {
 		return "Bearer " + response.accessToken();
+	}
+
+	private long currentVersion(UUID roomId) {
+		return roomRepository.findById(roomId).orElseThrow().getVersion();
 	}
 
 	private String randomCnpj() {

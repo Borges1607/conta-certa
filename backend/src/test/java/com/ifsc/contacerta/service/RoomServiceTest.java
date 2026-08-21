@@ -199,9 +199,9 @@ class RoomServiceTest {
 		when(roomRepository.findByIdAndTeacherId(room.getId(), teacher.getId())).thenReturn(Optional.of(room));
 		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class));
 
-		var archived = service.archive(teacher.getId(), room.getId());
+		var archived = service.archive(teacher.getId(), room.getId(), room.getVersion());
 		var firstArchivedAt = room.getArchivedAt();
-		var archivedAgain = service.archive(teacher.getId(), room.getId());
+		var archivedAgain = service.archive(teacher.getId(), room.getId(), room.getVersion());
 
 		assertThat(archived.archived()).isTrue();
 		assertThat(archivedAgain.archived()).isTrue();
@@ -228,7 +228,7 @@ class RoomServiceTest {
 		when(joinCodeGenerator.generateUnique()).thenReturn("XYZ789");
 		RoomService service = service(mock(UserRepository.class), roomRepository, joinCodeGenerator);
 
-		var response = service.regenerateCode(teacher.getId(), room.getId());
+		var response = service.regenerateCode(teacher.getId(), room.getId(), room.getVersion());
 
 		assertThat(response.joinCode()).isEqualTo("XYZ789");
 	}
@@ -275,7 +275,7 @@ class RoomServiceTest {
 		when(roomRepository.save(any(Room.class))).thenAnswer(invocation -> invocation.getArgument(0));
 		RoomService service = service(mock(UserRepository.class), roomRepository, joinCodeGenerator);
 
-		var response = service.duplicate(teacher.getId(), source.getId(), new DuplicateRoomRequest("Cópia da sala"));
+		var response = service.duplicate(teacher.getId(), source.getId(), new DuplicateRoomRequest("Cópia da sala", source.getVersion()));
 
 		assertThat(response.id()).isNotEqualTo(source.getId());
 		assertThat(response.name()).isEqualTo("Cópia da sala");
@@ -391,13 +391,13 @@ class RoomServiceTest {
 		when(membershipRepository.countByRoomId(unused.getId())).thenReturn(0L);
 		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class), membershipRepository);
 
-		service.delete(teacher.getId(), unused.getId());
+		service.delete(teacher.getId(), unused.getId(), unused.getVersion());
 
 		verify(roomRepository).delete(unused);
 		Room used = room("Sala histórica", null, Grade.HIGH_SCHOOL_1, List.of("Porcentagem"), 50, "ABC243", teacher, institution);
 		when(roomRepository.findByIdAndTeacherId(used.getId(), teacher.getId())).thenReturn(Optional.of(used));
 		when(membershipRepository.countByRoomId(used.getId())).thenReturn(1L);
-		assertThatThrownBy(() -> service.delete(teacher.getId(), used.getId()))
+		assertThatThrownBy(() -> service.delete(teacher.getId(), used.getId(), used.getVersion()))
 				.isInstanceOfSatisfying(ApiException.class, exception -> {
 					assertThat(exception.getStatus().value()).isEqualTo(409);
 					assertThat(exception.getCode()).isEqualTo("ROOM_HAS_HISTORY");
@@ -418,7 +418,7 @@ class RoomServiceTest {
 		when(membershipRepository.countByRoomId(room.getId())).thenReturn(1L);
 		RoomService service = service(mock(UserRepository.class), roomRepository, mock(JoinCodeGenerator.class), membershipRepository);
 
-		assertThatThrownBy(() -> service.delete(teacher.getId(), room.getId()))
+		assertThatThrownBy(() -> service.delete(teacher.getId(), room.getId(), room.getVersion()))
 				.isInstanceOfSatisfying(ApiException.class, exception -> {
 					assertThat(exception.getStatus().value()).isEqualTo(422);
 					assertThat(exception.getCode()).isEqualTo("ROOM_ARCHIVED");
@@ -442,7 +442,7 @@ class RoomServiceTest {
 		when(roomRepository.save(any(Room.class))).thenAnswer(invocation -> invocation.getArgument(0));
 		RoomService service = service(mock(UserRepository.class), roomRepository, joinCodeGenerator);
 
-		var response = service.duplicate(teacher.getId(), source.getId(), new DuplicateRoomRequest(null));
+		var response = service.duplicate(teacher.getId(), source.getId(), new DuplicateRoomRequest(null, source.getVersion()));
 
 		assertThat(response.name()).isEqualTo("Sala original (cópia 2)");
 	}

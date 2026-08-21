@@ -6,6 +6,7 @@ import com.ifsc.contacerta.dto.room.RoomStudentResponse;
 import com.ifsc.contacerta.dto.room.TeacherRoomDetailResponse;
 import com.ifsc.contacerta.dto.room.TeacherRoomSummaryResponse;
 import com.ifsc.contacerta.dto.room.UpdateRoomRequest;
+import com.ifsc.contacerta.dto.room.VersionRequest;
 import com.ifsc.contacerta.dto.shared.PageResponse;
 import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.security.CurrentUser;
@@ -84,17 +85,19 @@ public class TeacherRoomController {
 	@PostMapping("/{roomId}/archive")
 	public TeacherRoomDetailResponse archive(
 			@AuthenticationPrincipal CurrentUser currentUser,
-			@PathVariable UUID roomId
+			@PathVariable UUID roomId,
+			@Valid @RequestBody VersionRequest request
 	) {
-		return roomService.archive(currentUser.userId(), roomId);
+		return roomService.archive(currentUser.userId(), roomId, request.version());
 	}
 
 	@DeleteMapping("/{roomId}")
 	public ResponseEntity<Void> delete(
 			@AuthenticationPrincipal CurrentUser currentUser,
-			@PathVariable UUID roomId
+			@PathVariable UUID roomId,
+			@Valid @RequestBody VersionRequest request
 	) {
-		roomService.delete(currentUser.userId(), roomId);
+		roomService.delete(currentUser.userId(), roomId, request.version());
 		return ResponseEntity.noContent().build();
 	}
 
@@ -102,17 +105,18 @@ public class TeacherRoomController {
 	public TeacherRoomDetailResponse duplicate(
 			@AuthenticationPrincipal CurrentUser currentUser,
 			@PathVariable UUID roomId,
-			@Valid @RequestBody(required = false) DuplicateRoomRequest request
+		@Valid @RequestBody DuplicateRoomRequest request
 	) {
-		return roomService.duplicate(currentUser.userId(), roomId, request == null ? new DuplicateRoomRequest(null) : request);
+		return roomService.duplicate(currentUser.userId(), roomId, request);
 	}
 
 	@PostMapping("/{roomId}/regenerate-code")
 	public TeacherRoomDetailResponse regenerateCode(
 			@AuthenticationPrincipal CurrentUser currentUser,
-			@PathVariable UUID roomId
+			@PathVariable UUID roomId,
+			@Valid @RequestBody VersionRequest request
 	) {
-		return roomService.regenerateCode(currentUser.userId(), roomId);
+		return roomService.regenerateCode(currentUser.userId(), roomId, request.version());
 	}
 
 	@GetMapping("/{roomId}/students")
@@ -123,7 +127,7 @@ public class TeacherRoomController {
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size
 	) {
-		return membershipService.listRoomStudents(currentUser.userId(), roomId, search, PageRequest.of(page, size));
+		return membershipService.listRoomStudents(currentUser.userId(), roomId, search, studentPageable(page, size));
 	}
 
 	@DeleteMapping("/{roomId}/students/{studentId}")
@@ -137,9 +141,7 @@ public class TeacherRoomController {
 	}
 
 	private Pageable roomPageable(int page, int size, String sort) {
-		if (page < 0 || size < 1 || size > 100) {
-			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_PAGE", "Pagination values are invalid.");
-		}
+		validatePage(page, size);
 		String[] parts = sort.split(",", -1);
 		if (parts.length > 2 || parts[0].isBlank() || !ROOM_SORT_FIELDS.contains(parts[0])) {
 			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_ROOM_SORT", "Room sort is invalid.");
@@ -150,5 +152,16 @@ public class TeacherRoomController {
 						new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_ROOM_SORT", "Room sort is invalid.")
 				);
 		return PageRequest.of(page, size, Sort.by(direction, parts[0]));
+	}
+
+	private Pageable studentPageable(int page, int size) {
+		validatePage(page, size);
+		return PageRequest.of(page, size);
+	}
+
+	private void validatePage(int page, int size) {
+		if (page < 0 || size < 1 || size > 100) {
+			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_PAGE", "Pagination values are invalid.");
+		}
 	}
 }

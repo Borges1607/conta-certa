@@ -130,6 +130,18 @@ class StudentRoomControllerTest extends PostgresIntegrationTest {
 				.andExpect(jsonPath("$.code").value("INSTITUTION_MISMATCH"));
 	}
 
+	@Test
+	void deveRejeitarCodigoAusente() throws Exception {
+		AuthResponse login = login(user(Role.STUDENT, institution()));
+
+		mockMvc.perform(post("/student/rooms/join")
+					.header("Authorization", bearer(login))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{}"))
+				.andExpect(status().isUnprocessableContent())
+				.andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+	}
+
 	private Institution institution() {
 		return institutionRepository.saveAndFlush(new Institution(
 				"IFSC " + UUID.randomUUID(), randomCnpj(), "contato@example.com", "48999990000", true

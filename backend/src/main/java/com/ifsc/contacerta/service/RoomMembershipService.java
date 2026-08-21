@@ -89,6 +89,7 @@ public class RoomMembershipService {
 			String search,
 			Pageable pageable
 	) {
+		requireTeacher(teacherId);
 		requireOwnedRoom(teacherId, roomId);
 		return PageResponse.from(membershipRepository
 				.findStudentResponsesByRoomIdAndStatusAndSearchOrderByJoinedAtDesc(
@@ -98,6 +99,7 @@ public class RoomMembershipService {
 
 	@Transactional
 	public void remove(UUID teacherId, UUID roomId, UUID studentId) {
+		requireTeacher(teacherId);
 		User teacher = userRepository.findById(teacherId).orElseThrow();
 		requireOwnedRoom(teacherId, roomId);
 		RoomMembership membership = membershipRepository
@@ -118,6 +120,14 @@ public class RoomMembershipService {
 		userRepository.findById(studentId).ifPresent(student -> {
 			if (student.getRole() != Role.STUDENT) {
 				throw new ApiException(HttpStatus.FORBIDDEN, "STUDENT_REQUIRED", "A student account is required.");
+			}
+		});
+	}
+
+	private void requireTeacher(UUID teacherId) {
+		userRepository.findById(teacherId).ifPresent(teacher -> {
+			if (teacher.getRole() != Role.TEACHER) {
+				throw new ApiException(HttpStatus.FORBIDDEN, "TEACHER_REQUIRED", "A teacher account is required.");
 			}
 		});
 	}
