@@ -1,0 +1,22 @@
+package com.ifsc.contacerta.dto.question;
+
+import com.ifsc.contacerta.model.NumericUnit;
+import com.ifsc.contacerta.model.QuestionType;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+public record CreateQuestionRequest(
+		@NotBlank String prompt,
+		@NotNull QuestionType type,
+		String explanation,
+		List<QuestionOptionRequest> options,
+		Boolean correctBoolean,
+		BigDecimal correctNumericValue,
+		BigDecimal absoluteTolerance,
+		NumericUnit unit,
+		Integer decimalPlaces
+) {
+}
