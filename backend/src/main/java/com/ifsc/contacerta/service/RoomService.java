@@ -2,7 +2,6 @@ package com.ifsc.contacerta.service;
 
 import com.ifsc.contacerta.dto.room.CreateRoomRequest;
 import com.ifsc.contacerta.dto.room.DuplicateRoomRequest;
-import com.ifsc.contacerta.dto.room.RoomResponse;
 import com.ifsc.contacerta.dto.room.TeacherRoomDetailResponse;
 import com.ifsc.contacerta.dto.room.TeacherRoomSummaryResponse;
 import com.ifsc.contacerta.dto.room.UpdateRoomRequest;
@@ -44,11 +43,8 @@ public class RoomService {
 	private final JoinCodeHasher joinCodeHasher;
 
 	@Transactional
-	public RoomResponse create(UUID teacherId, CreateRoomRequest request) {
-		User teacher = userRepository.findById(teacherId).orElseThrow();
-		if (teacher.getRole() != Role.TEACHER) {
-			throw new ApiException(HttpStatus.FORBIDDEN, "TEACHER_REQUIRED", "A teacher account is required.");
-		}
+	public TeacherRoomDetailResponse create(UUID teacherId, CreateRoomRequest request) {
+		User teacher = requireActiveTeacher(teacherId);
 		if (teacher.getStatus() != AccountStatus.ACTIVE) {
 			throw new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_INACTIVE", "Teacher account is inactive.");
 		}
@@ -76,7 +72,8 @@ public class RoomService {
 				teacher.getInstitution()
 		);
 
-		return RoomMapper.toResponse(roomRepository.save(room));
+		Room savedRoom = roomRepository.save(room);
+		return toTeacherDetailResponse(savedRoom);
 	}
 
 	@Transactional
@@ -86,6 +83,7 @@ public class RoomService {
 			Boolean archived,
 			Pageable pageable
 	) {
+		requireTeacher(teacherId);
 		Page<TeacherRoomSummaryResponse> page = roomRepository
 				.findAll(RoomSpecification.ownedBy(teacherId, search, archived), pageable)
 				.map(room -> RoomMapper.toTeacherSummaryResponse(
@@ -97,11 +95,13 @@ public class RoomService {
 
 	@Transactional(readOnly = true)
 	public TeacherRoomDetailResponse get(UUID teacherId, UUID roomId) {
+		requireTeacher(teacherId);
 		return toTeacherDetailResponse(requireOwnedRoom(teacherId, roomId));
 	}
 
 	@Transactional
 	public TeacherRoomDetailResponse update(UUID teacherId, UUID roomId, UpdateRoomRequest request) {
+		requireTeacher(teacherId);
 		Room room = requireOwnedRoom(teacherId, roomId);
 		requireMutable(room);
 		requireCurrentVersion(room, request.version());
@@ -125,6 +125,7 @@ public class RoomService {
 
 	@Transactional
 	public TeacherRoomDetailResponse archive(UUID teacherId, UUID roomId) {
+		requireTeacher(teacherId);
 		Room room = requireOwnedRoom(teacherId, roomId);
 		room.archive();
 		return toTeacherDetailResponse(room);
@@ -132,6 +133,7 @@ public class RoomService {
 
 	@Transactional
 	public void delete(UUID teacherId, UUID roomId) {
+		requireTeacher(teacherId);
 		Room room = requireOwnedRoom(teacherId, roomId);
 		requireMutable(room);
 		if (membershipRepository.countByRoomId(roomId) > 0) {
@@ -146,6 +148,7 @@ public class RoomService {
 
 	@Transactional
 	public TeacherRoomDetailResponse regenerateCode(UUID teacherId, UUID roomId) {
+		requireTeacher(teacherId);
 		Room room = requireOwnedRoom(teacherId, roomId);
 		requireMutable(room);
 		String joinCode = joinCodeGenerator.generateUnique();
@@ -155,6 +158,7 @@ public class RoomService {
 
 	@Transactional
 	public TeacherRoomDetailResponse duplicate(UUID teacherId, UUID roomId, DuplicateRoomRequest request) {
+		requireTeacher(teacherId);
 		Room source = requireOwnedRoom(teacherId, roomId);
 		String joinCode = joinCodeGenerator.generateUnique();
 		Room copy = source.duplicate(resolveDuplicateName(source, request.name()), joinCode, joinCodeHasher.hash(joinCode));
@@ -167,6 +171,35 @@ public class RoomService {
 				"ROOM_NOT_FOUND",
 				"Room was not found."
 		));
+	}
+
+	private User requireActiveTeacher(UUID teacherId) {
+		User teacher = requireTeacher(teacherId);
+		if (teacher == null) {
+			throw new ApiException(HttpStatus.NOT_FOUND, "TEACHER_NOT_FOUND", "Teacher was not found.");
+		}
+		if (teacher.getStatus() != AccountStatus.ACTIVE) {
+			throw new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_INACTIVE", "Teacher account is inactive.");
+		}
+		if (!teacher.getInstitution().isActive()) {
+			throw new ApiException(
+					HttpStatus.UNPROCESSABLE_CONTENT,
+					"INSTITUTION_INACTIVE",
+					"The institution is inactive."
+			);
+		}
+		return teacher;
+	}
+
+	private User requireTeacher(UUID teacherId) {
+		return userRepository.findById(teacherId)
+				.map(teacher -> {
+					if (teacher.getRole() != Role.TEACHER) {
+						throw new ApiException(HttpStatus.FORBIDDEN, "TEACHER_REQUIRED", "A teacher account is required.");
+					}
+					return teacher;
+				})
+				.orElse(null);
 	}
 
 	private void requireMutable(Room room) {

@@ -61,8 +61,8 @@ class RoomServiceTest {
 				null
 		));
 
-		assertThat(response.teacherId()).isEqualTo(teacher.getId());
-		assertThat(response.institutionId()).isEqualTo(institution.getId());
+		assertThat(response.teacher().id()).isEqualTo(teacher.getId());
+		assertThat(response.institution().id()).isEqualTo(institution.getId());
 		assertThat(response.passingScorePercent()).isEqualTo(50);
 		assertThat(response.joinCode()).isEqualTo("ABC234");
 	}

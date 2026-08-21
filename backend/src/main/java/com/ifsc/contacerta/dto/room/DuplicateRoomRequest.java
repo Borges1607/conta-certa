@@ -1,4 +1,6 @@
 package com.ifsc.contacerta.dto.room;
 
-public record DuplicateRoomRequest(String name) {
+import jakarta.validation.constraints.Size;
+
+public record DuplicateRoomRequest(@Size(min = 1, max = 160) String name) {
 }
