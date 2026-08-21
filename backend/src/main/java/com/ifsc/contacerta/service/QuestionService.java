@@ -5,6 +5,7 @@ import com.ifsc.contacerta.dto.question.QuestionOptionRequest;
 import com.ifsc.contacerta.dto.question.QuestionOptionResponse;
 import com.ifsc.contacerta.dto.question.QuestionResponse;
 import com.ifsc.contacerta.dto.question.QuestionOrderRequest;
+import com.ifsc.contacerta.dto.question.DuplicateQuestionRequest;
 import com.ifsc.contacerta.entity.Lesson;
 import com.ifsc.contacerta.entity.Question;
 import com.ifsc.contacerta.entity.QuestionOptionData;
@@ -60,6 +61,17 @@ public class QuestionService {
 	public void delete(UUID teacherId, UUID questionId) {
 		Question question = requireOwnedQuestion(teacherId, questionId);
 		questionRepository.delete(question);
+	}
+
+	@Transactional
+	public QuestionResponse duplicate(UUID teacherId, UUID questionId, DuplicateQuestionRequest request) {
+		Question source = requireOwnedQuestion(teacherId, questionId);
+		Lesson target = lessonRepository.findByIdAndTeacherId(request.targetLessonId(), teacherId).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "LESSON_NOT_FOUND", "Lesson was not found."));
+		List<QuestionOptionData> options = source.getOptions().stream().map(option -> new QuestionOptionData(option.getText(), option.isCorrect())).toList();
+		Question copy = Question.choice(target, source.getType(), source.getPrompt(), source.getExplanation(), options);
+		if (source.getType() == QuestionType.TRUE_FALSE) copy.configureBoolean(source.getCorrectBoolean());
+		if (source.getType() == QuestionType.NUMERIC) copy.configureNumeric(source.getCorrectNumericValue(), source.getAbsoluteTolerance(), source.getUnit(), source.getDecimalPlaces());
+		return toResponse(questionRepository.save(copy));
 	}
 
 	@Transactional
