@@ -33,7 +33,16 @@ public class QuestionService {
 		List<QuestionOptionData> options = request.options() == null
 				? List.of()
 				: request.options().stream().map(option -> new QuestionOptionData(option.text(), option.correct())).toList();
-		return questionRepository.save(Question.choice(lesson, request.type(), request.prompt(), request.explanation(), options));
+		Question question = Question.choice(lesson, request.type(), request.prompt(), request.explanation(), options);
+		if (request.type() == QuestionType.TRUE_FALSE) {
+			question.configureBoolean(request.correctBoolean());
+		}
+		if (request.type() == QuestionType.NUMERIC) {
+			question.configureNumeric(
+					request.correctNumericValue(), request.absoluteTolerance(), request.unit(), request.decimalPlaces()
+			);
+		}
+		return questionRepository.save(question);
 	}
 
 	private void validate(CreateQuestionRequest request) {
@@ -42,6 +51,20 @@ public class QuestionService {
 			if (request.options() == null || request.options().size() < 2 || correctOptions != 1) {
 				throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_QUESTION_OPTIONS", "Single choice needs exactly one correct option.");
 			}
+		}
+		if (request.type() == QuestionType.MULTIPLE_CHOICE) {
+			long correctOptions = request.options() == null ? 0 : request.options().stream().filter(QuestionOptionRequest::correct).count();
+			if (request.options() == null || request.options().size() < 2 || correctOptions < 2) {
+				throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_QUESTION_OPTIONS", "Multiple choice needs at least two correct options.");
+			}
+		}
+		if (request.type() == QuestionType.TRUE_FALSE && request.correctBoolean() == null) {
+			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_TRUE_FALSE_ANSWER", "True or false questions need a correct answer.");
+		}
+		if (request.type() == QuestionType.NUMERIC && (request.correctNumericValue() == null || request.absoluteTolerance() == null
+				|| request.absoluteTolerance().signum() < 0 || request.unit() == null || request.decimalPlaces() == null
+				|| request.decimalPlaces() < 0)) {
+			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_NUMERIC_CONFIGURATION", "Numeric question configuration is invalid.");
 		}
 	}
 }

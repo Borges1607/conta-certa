@@ -1,6 +1,7 @@
 package com.ifsc.contacerta.entity;
 
 import com.ifsc.contacerta.model.QuestionType;
+import com.ifsc.contacerta.model.NumericUnit;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,6 +22,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -53,6 +55,22 @@ public class Question {
 
 	@Column(nullable = false)
 	private boolean active;
+
+	@Column(name = "correct_boolean")
+	private Boolean correctBoolean;
+
+	@Column(name = "correct_numeric_value", precision = 19, scale = 6)
+	private BigDecimal correctNumericValue;
+
+	@Column(name = "absolute_tolerance", precision = 19, scale = 6)
+	private BigDecimal absoluteTolerance;
+
+	@Enumerated(EnumType.STRING)
+	@Column(length = 16)
+	private NumericUnit unit;
+
+	@Column(name = "decimal_places")
+	private Integer decimalPlaces;
 
 	@Getter(AccessLevel.NONE)
 	@OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -91,6 +109,17 @@ public class Question {
 			List<QuestionOptionData> options
 	) {
 		return new Question(lesson, type, prompt, explanation, options);
+	}
+
+	public void configureBoolean(boolean correctBoolean) {
+		this.correctBoolean = correctBoolean;
+	}
+
+	public void configureNumeric(BigDecimal correctNumericValue, BigDecimal absoluteTolerance, NumericUnit unit, int decimalPlaces) {
+		this.correctNumericValue = correctNumericValue;
+		this.absoluteTolerance = absoluteTolerance;
+		this.unit = unit;
+		this.decimalPlaces = decimalPlaces;
 	}
 
 	public List<QuestionOption> getOptions() {
