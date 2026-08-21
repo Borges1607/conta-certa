@@ -122,6 +122,14 @@ public class Question {
 		this.decimalPlaces = decimalPlaces;
 	}
 
+	public void moveTo(int position) {
+		this.position = position;
+	}
+
+	public void archive() {
+		active = false;
+	}
+
 	public List<QuestionOption> getOptions() {
 		return List.copyOf(options);
 	}

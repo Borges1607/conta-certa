@@ -4,6 +4,7 @@ import com.ifsc.contacerta.dto.question.CreateQuestionRequest;
 import com.ifsc.contacerta.dto.question.QuestionOptionRequest;
 import com.ifsc.contacerta.dto.question.QuestionOptionResponse;
 import com.ifsc.contacerta.dto.question.QuestionResponse;
+import com.ifsc.contacerta.dto.question.QuestionOrderRequest;
 import com.ifsc.contacerta.entity.Lesson;
 import com.ifsc.contacerta.entity.Question;
 import com.ifsc.contacerta.entity.QuestionOptionData;
@@ -55,6 +56,26 @@ public class QuestionService {
 		return questionRepository.findByLessonIdOrderByPositionAsc(lessonId).stream().map(this::toResponse).toList();
 	}
 
+	@Transactional
+	public void delete(UUID teacherId, UUID questionId) {
+		Question question = requireOwnedQuestion(teacherId, questionId);
+		questionRepository.delete(question);
+	}
+
+	@Transactional
+	public List<QuestionResponse> reorder(UUID teacherId, UUID lessonId, QuestionOrderRequest request) {
+		lessonRepository.findByIdAndTeacherId(lessonId, teacherId).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "LESSON_NOT_FOUND", "Lesson was not found."));
+		List<Question> questions = questionRepository.findByLessonIdOrderByPositionAsc(lessonId);
+		if (questions.size() != request.questionIds().size() || !questions.stream().map(Question::getId).collect(java.util.stream.Collectors.toSet()).equals(new java.util.HashSet<>(request.questionIds()))) {
+			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_QUESTION_ORDER", "Question order is invalid.");
+		}
+		for (int index = 0; index < request.questionIds().size(); index++) {
+			UUID questionId = request.questionIds().get(index);
+			questions.stream().filter(question -> question.getId().equals(questionId)).findFirst().orElseThrow().moveTo(index + 1);
+		}
+		return questionRepository.findByLessonIdOrderByPositionAsc(lessonId).stream().map(this::toResponse).toList();
+	}
+
 	private void validate(CreateQuestionRequest request) {
 		if (request.type() == QuestionType.SINGLE_CHOICE) {
 			long correctOptions = request.options() == null ? 0 : request.options().stream().filter(QuestionOptionRequest::correct).count();
@@ -76,6 +97,10 @@ public class QuestionService {
 				|| request.decimalPlaces() < 0)) {
 			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_NUMERIC_CONFIGURATION", "Numeric question configuration is invalid.");
 		}
+	}
+
+	private Question requireOwnedQuestion(UUID teacherId, UUID questionId) {
+		return questionRepository.findByIdAndLessonTeacherId(questionId, teacherId).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "QUESTION_NOT_FOUND", "Question was not found."));
 	}
 
 	private QuestionResponse toResponse(Question question) {
