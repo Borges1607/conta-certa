@@ -2,6 +2,8 @@ package com.ifsc.contacerta.service;
 
 import com.ifsc.contacerta.dto.question.CreateQuestionRequest;
 import com.ifsc.contacerta.dto.question.QuestionOptionRequest;
+import com.ifsc.contacerta.dto.question.QuestionOptionResponse;
+import com.ifsc.contacerta.dto.question.QuestionResponse;
 import com.ifsc.contacerta.entity.Lesson;
 import com.ifsc.contacerta.entity.Question;
 import com.ifsc.contacerta.entity.QuestionOptionData;
@@ -25,7 +27,7 @@ public class QuestionService {
 	private final QuestionRepository questionRepository;
 
 	@Transactional
-	public Question create(UUID teacherId, UUID lessonId, CreateQuestionRequest request) {
+	public QuestionResponse create(UUID teacherId, UUID lessonId, CreateQuestionRequest request) {
 		Lesson lesson = lessonRepository.findByIdAndTeacherId(lessonId, teacherId).orElseThrow(() -> new ApiException(
 				HttpStatus.NOT_FOUND, "LESSON_NOT_FOUND", "Lesson was not found."
 		));
@@ -42,7 +44,15 @@ public class QuestionService {
 					request.correctNumericValue(), request.absoluteTolerance(), request.unit(), request.decimalPlaces()
 			);
 		}
-		return questionRepository.save(question);
+		return toResponse(questionRepository.save(question));
+	}
+
+	@Transactional(readOnly = true)
+	public List<QuestionResponse> list(UUID teacherId, UUID lessonId) {
+		lessonRepository.findByIdAndTeacherId(lessonId, teacherId).orElseThrow(() -> new ApiException(
+				HttpStatus.NOT_FOUND, "LESSON_NOT_FOUND", "Lesson was not found."
+		));
+		return questionRepository.findByLessonIdOrderByPositionAsc(lessonId).stream().map(this::toResponse).toList();
 	}
 
 	private void validate(CreateQuestionRequest request) {
@@ -66,5 +76,14 @@ public class QuestionService {
 				|| request.decimalPlaces() < 0)) {
 			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_NUMERIC_CONFIGURATION", "Numeric question configuration is invalid.");
 		}
+	}
+
+	private QuestionResponse toResponse(Question question) {
+		return new QuestionResponse(
+				question.getId(), question.getLesson().getId(), question.getPrompt(), question.getType(), question.getExplanation(),
+				question.getPosition(), !question.isActive(), question.getVersion(),
+				question.getOptions().stream().map(option -> new QuestionOptionResponse(option.getId(), option.getText(), option.isCorrect())).toList(),
+				question.getCorrectBoolean(), question.getCorrectNumericValue(), question.getAbsoluteTolerance(), question.getUnit(), question.getDecimalPlaces()
+		);
 	}
 }
