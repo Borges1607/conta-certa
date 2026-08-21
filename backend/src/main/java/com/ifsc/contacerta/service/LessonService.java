@@ -8,6 +8,7 @@ import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.model.AccountStatus;
 import com.ifsc.contacerta.model.Role;
 import com.ifsc.contacerta.repository.LessonRepository;
+import com.ifsc.contacerta.repository.QuestionRepository;
 import com.ifsc.contacerta.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,7 @@ public class LessonService {
 
 	private final UserRepository userRepository;
 	private final LessonRepository lessonRepository;
+	private final QuestionRepository questionRepository;
 
 	@Transactional
 	public LessonDetailResponse create(UUID teacherId, CreateLessonRequest request) {
@@ -29,6 +31,23 @@ public class LessonService {
 		Lesson lesson = lessonRepository.save(new Lesson(
 				request.title(), request.summary(), request.theoryMarkdown(), teacher
 		));
+		return toDetailResponse(lesson);
+	}
+
+	@Transactional
+	public LessonDetailResponse publish(UUID teacherId, UUID lessonId) {
+		requireActiveTeacher(teacherId);
+		Lesson lesson = lessonRepository.findByIdAndTeacherId(lessonId, teacherId).orElseThrow(() -> new ApiException(
+				HttpStatus.NOT_FOUND, "LESSON_NOT_FOUND", "Lesson was not found."
+		));
+		if (questionRepository.countByLessonIdAndActiveTrue(lessonId) == 0) {
+			throw new ApiException(
+					HttpStatus.UNPROCESSABLE_CONTENT,
+					"LESSON_HAS_NO_ACTIVE_QUESTIONS",
+					"A lesson needs at least one active question to be published."
+			);
+		}
+		lesson.publish();
 		return toDetailResponse(lesson);
 	}
 

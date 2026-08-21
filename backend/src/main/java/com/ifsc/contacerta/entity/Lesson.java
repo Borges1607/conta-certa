@@ -65,6 +65,10 @@ public class Lesson {
 		this.status = ContentStatus.DRAFT;
 	}
 
+	public void publish() {
+		status = ContentStatus.PUBLISHED;
+	}
+
 	@PrePersist
 	void onCreate() {
 		Instant now = Instant.now();
