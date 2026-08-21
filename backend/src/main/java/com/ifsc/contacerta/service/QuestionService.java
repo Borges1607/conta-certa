@@ -6,6 +6,7 @@ import com.ifsc.contacerta.dto.question.QuestionOptionResponse;
 import com.ifsc.contacerta.dto.question.QuestionResponse;
 import com.ifsc.contacerta.dto.question.QuestionOrderRequest;
 import com.ifsc.contacerta.dto.question.DuplicateQuestionRequest;
+import com.ifsc.contacerta.dto.question.UpdateQuestionRequest;
 import com.ifsc.contacerta.entity.Lesson;
 import com.ifsc.contacerta.entity.Question;
 import com.ifsc.contacerta.entity.QuestionOptionData;
@@ -72,6 +73,19 @@ public class QuestionService {
 		if (source.getType() == QuestionType.TRUE_FALSE) copy.configureBoolean(source.getCorrectBoolean());
 		if (source.getType() == QuestionType.NUMERIC) copy.configureNumeric(source.getCorrectNumericValue(), source.getAbsoluteTolerance(), source.getUnit(), source.getDecimalPlaces());
 		return toResponse(questionRepository.save(copy));
+	}
+
+	@Transactional
+	public QuestionResponse update(UUID teacherId, UUID questionId, UpdateQuestionRequest request) {
+		Question question = requireOwnedQuestion(teacherId, questionId);
+		if (request.version() != question.getVersion()) {
+			throw new ApiException(HttpStatus.CONFLICT, "VERSION_CONFLICT", "The question was changed by another request.");
+		}
+		question.updatePromptAndExplanation(
+				request.prompt() == null ? question.getPrompt() : request.prompt(),
+				request.explanation() == null ? question.getExplanation() : request.explanation()
+		);
+		return toResponse(question);
 	}
 
 	@Transactional

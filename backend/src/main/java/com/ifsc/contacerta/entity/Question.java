@@ -130,6 +130,11 @@ public class Question {
 		active = false;
 	}
 
+	public void updatePromptAndExplanation(String prompt, String explanation) {
+		this.prompt = prompt;
+		this.explanation = explanation;
+	}
+
 	public List<QuestionOption> getOptions() {
 		return List.copyOf(options);
 	}
