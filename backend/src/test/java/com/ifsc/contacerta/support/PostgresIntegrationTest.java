@@ -30,7 +30,9 @@ public abstract class PostgresIntegrationTest {
 	void clearDatabase() throws Exception {
 		try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement()) {
 			connection.setAutoCommit(true);
-			statement.execute("TRUNCATE TABLE room_memberships, room_topics, rooms, auth_sessions, refresh_tokens, users, institutions CASCADE");
+			statement.execute("TRUNCATE TABLE attempt_answer_selected_options, attempt_answers, attempt_option_snapshots, "
+					+ "attempt_question_snapshots, attempts, idempotency_records, extra_attempt_grants, room_student_progress, "
+					+ "room_memberships, room_topics, rooms, auth_sessions, refresh_tokens, users, institutions CASCADE");
 		}
 	}
 }
