@@ -2,6 +2,7 @@ package com.ifsc.contacerta.service;
 
 import com.ifsc.contacerta.dto.assignment.CreateLessonAssignmentRequest;
 import com.ifsc.contacerta.dto.assignment.LessonAssignmentResponse;
+import com.ifsc.contacerta.dto.assignment.UpdateLessonAssignmentRequest;
 import com.ifsc.contacerta.entity.Lesson;
 import com.ifsc.contacerta.entity.LessonAssignment;
 import com.ifsc.contacerta.entity.Room;
@@ -23,6 +24,7 @@ import tools.jackson.databind.JsonNode;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -119,6 +121,86 @@ public class LessonAssignmentService {
 		return toResponse(assignmentRepository.save(assignment), activeQuestionCount);
 	}
 
+	@Transactional
+	public LessonAssignmentResponse update(
+			UUID teacherId,
+			UUID roomId,
+			UUID assignmentId,
+			UpdateLessonAssignmentRequest request
+	) {
+		requireActiveTeacher(teacherId);
+		requireMutableRoom(teacherId, roomId);
+		LessonAssignment assignment = requireOwnedAssignment(teacherId, roomId, assignmentId);
+		requireCurrentVersion(assignment, request.version());
+		if (assignment.getStatus() == ContentStatus.ARCHIVED) {
+			throw new ApiException(
+					HttpStatus.UNPROCESSABLE_CONTENT,
+					"ASSIGNMENT_ARCHIVED",
+					"Archived assignments are read-only."
+			);
+		}
+
+		ContentStatus status = request.status() == null ? assignment.getStatus() : request.status();
+		Instant availableFrom = resolveInstant(request.availableFrom(), assignment.getAvailableFrom());
+		Instant dueAt = resolveInstant(request.dueAt(), assignment.getDueAt());
+		Integer timeLimitMinutes = resolveUpdateInteger(
+				request.timeLimitMinutes(), assignment.getTimeLimitMinutes()
+		);
+		Integer maxAttempts = resolveUpdateInteger(request.maxAttempts(), assignment.getMaxAttempts());
+		Integer questionCount = resolveUpdateInteger(request.questionCount(), assignment.getQuestionCount());
+		boolean shuffleQuestions = request.shuffleQuestions() == null
+				? assignment.isShuffleQuestions()
+				: request.shuffleQuestions();
+		boolean shuffleOptions = request.shuffleOptions() == null
+				? assignment.isShuffleOptions()
+				: request.shuffleOptions();
+		long activeQuestionCount = questionRepository.countByLessonIdAndActiveTrue(
+				assignment.getLesson().getId()
+		);
+		validateConfiguration(
+				status,
+				assignment.getLesson(),
+				availableFrom,
+				dueAt,
+				questionCount,
+				activeQuestionCount
+		);
+		assignment.configure(
+				status,
+				availableFrom,
+				dueAt,
+				timeLimitMinutes,
+				maxAttempts,
+				questionCount,
+				shuffleQuestions,
+				shuffleOptions
+		);
+		return toResponse(assignment, activeQuestionCount);
+	}
+
+	@Transactional
+	public void delete(UUID teacherId, UUID roomId, UUID assignmentId, long version) {
+		requireActiveTeacher(teacherId);
+		requireMutableRoom(teacherId, roomId);
+		LessonAssignment assignment = requireOwnedAssignment(teacherId, roomId, assignmentId);
+		requireCurrentVersion(assignment, version);
+		if (!canDelete(assignment)) {
+			throw new ApiException(
+					HttpStatus.CONFLICT,
+					"ASSIGNMENT_ALREADY_IN_USE",
+					"Assignments already available to students must be archived."
+			);
+		}
+
+		List<LessonAssignment> assignments = new ArrayList<>(assignmentRepository.findByRoomIdForUpdate(roomId));
+		assignmentRepository.delete(assignment);
+		assignmentRepository.flush();
+		List<LessonAssignment> remaining = assignments.stream()
+				.filter(current -> !current.getId().equals(assignmentId))
+				.toList();
+		normalizePositions(remaining, assignments.size());
+	}
+
 	private void openPosition(List<LessonAssignment> assignments, int insertionPosition) {
 		if (assignments.isEmpty()) {
 			return;
@@ -152,6 +234,60 @@ public class LessonAssignmentService {
 			);
 		}
 		return node.intValue();
+	}
+
+	private Integer resolveUpdateInteger(JsonNode node, Integer currentValue) {
+		if (node == null) {
+			return currentValue;
+		}
+		if (node.isNull()) {
+			return null;
+		}
+		if (!node.isIntegralNumber() || !node.canConvertToInt() || node.intValue() <= 0) {
+			throw new ApiException(
+					HttpStatus.UNPROCESSABLE_CONTENT,
+					"INVALID_ASSIGNMENT_LIMIT",
+					"Assignment limits must be positive integers or null."
+			);
+		}
+		return node.intValue();
+	}
+
+	private Instant resolveInstant(JsonNode node, Instant currentValue) {
+		if (node == null) {
+			return currentValue;
+		}
+		if (node.isNull()) {
+			return null;
+		}
+		if (!node.isString()) {
+			throw invalidDates();
+		}
+		try {
+			return Instant.parse(node.stringValue());
+		} catch (DateTimeParseException exception) {
+			throw invalidDates();
+		}
+	}
+
+	private boolean canDelete(LessonAssignment assignment) {
+		if (assignment.getStatus() == ContentStatus.DRAFT) {
+			return true;
+		}
+		return assignment.getStatus() == ContentStatus.PUBLISHED
+				&& assignment.getAvailableFrom() != null
+				&& assignment.getAvailableFrom().isAfter(clock.instant());
+	}
+
+	private void normalizePositions(List<LessonAssignment> assignments, int previousSize) {
+		for (int index = 0; index < assignments.size(); index++) {
+			assignments.get(index).moveTo(previousSize + index + 1);
+		}
+		assignmentRepository.flush();
+		for (int index = 0; index < assignments.size(); index++) {
+			assignments.get(index).moveTo(index + 1);
+		}
+		assignmentRepository.flush();
 	}
 
 	private void validateConfiguration(
@@ -247,6 +383,25 @@ public class LessonAssignmentService {
 				"LESSON_NOT_FOUND",
 				"Lesson was not found."
 		));
+	}
+
+	private LessonAssignment requireOwnedAssignment(UUID teacherId, UUID roomId, UUID assignmentId) {
+		return assignmentRepository.findByIdAndRoomIdAndRoomTeacherId(assignmentId, roomId, teacherId)
+				.orElseThrow(() -> new ApiException(
+						HttpStatus.NOT_FOUND,
+						"ASSIGNMENT_NOT_FOUND",
+						"Lesson assignment was not found."
+				));
+	}
+
+	private void requireCurrentVersion(LessonAssignment assignment, Long version) {
+		if (version == null || version != assignment.getVersion()) {
+			throw new ApiException(
+					HttpStatus.CONFLICT,
+					"VERSION_CONFLICT",
+					"The lesson assignment was changed by another request."
+			);
+		}
 	}
 
 	private LessonAssignmentResponse toResponse(LessonAssignment assignment) {

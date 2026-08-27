@@ -2,6 +2,7 @@ package com.ifsc.contacerta.service;
 
 import com.ifsc.contacerta.dto.assignment.CreateLessonAssignmentRequest;
 import com.ifsc.contacerta.dto.assignment.LessonAssignmentResponse;
+import com.ifsc.contacerta.dto.assignment.UpdateLessonAssignmentRequest;
 import com.ifsc.contacerta.entity.Institution;
 import com.ifsc.contacerta.entity.Lesson;
 import com.ifsc.contacerta.entity.LessonAssignment;
@@ -23,6 +24,7 @@ import org.springframework.http.HttpStatus;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.IntNode;
 import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.StringNode;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -233,6 +235,187 @@ class LessonAssignmentServiceTest {
 				);
 	}
 
+	@Test
+	void deveLimparLimiteComNullExplicito() {
+		LessonAssignment assignment = assignment(lesson, 1);
+		stubOwnedAssignment(assignment);
+		UpdateLessonAssignmentRequest request = new UpdateLessonAssignmentRequest(
+				null, null, null, NullNode.getInstance(), null, null, null, null, assignment.getVersion()
+		);
+
+		LessonAssignmentResponse response = service.update(
+				teacher.getId(), room.getId(), assignment.getId(), request
+		);
+
+		assertThat(response.timeLimitMinutes()).isNull();
+		assertThat(response.maxAttempts()).isEqualTo(3);
+	}
+
+	@Test
+	void devePreservarCamposOmitidos() {
+		LessonAssignment assignment = assignment(lesson, 1);
+		stubOwnedAssignment(assignment);
+		UpdateLessonAssignmentRequest request = new UpdateLessonAssignmentRequest(
+				null, null, null, null, null, null, null, null, assignment.getVersion()
+		);
+
+		LessonAssignmentResponse response = service.update(
+				teacher.getId(), room.getId(), assignment.getId(), request
+		);
+
+		assertThat(response.status()).isEqualTo(ContentStatus.DRAFT);
+		assertThat(response.timeLimitMinutes()).isEqualTo(30);
+		assertThat(response.maxAttempts()).isEqualTo(3);
+		assertThat(response.shuffleQuestions()).isTrue();
+		assertThat(response.shuffleOptions()).isTrue();
+	}
+
+	@Test
+	void deveRejeitarIntervaloDeDatasInvalido() {
+		LessonAssignment assignment = assignment(lesson, 1);
+		stubOwnedAssignment(assignment);
+		UpdateLessonAssignmentRequest request = new UpdateLessonAssignmentRequest(
+				null,
+				StringNode.valueOf("2026-09-10T12:00:00Z"),
+				StringNode.valueOf("2026-09-01T12:00:00Z"),
+				null, null, null, null, null, assignment.getVersion()
+		);
+
+		assertApiError(
+				HttpStatus.UNPROCESSABLE_CONTENT,
+				"INVALID_ASSIGNMENT_DATES",
+				() -> service.update(teacher.getId(), room.getId(), assignment.getId(), request)
+		);
+	}
+
+	@Test
+	void deveRejeitarLimitesNaoPositivos() {
+		LessonAssignment assignment = assignment(lesson, 1);
+		stubOwnedAssignment(assignment);
+		UpdateLessonAssignmentRequest request = new UpdateLessonAssignmentRequest(
+				null, null, null, IntNode.valueOf(0), null, null, null, null, assignment.getVersion()
+		);
+
+		assertApiError(
+				HttpStatus.UNPROCESSABLE_CONTENT,
+				"INVALID_ASSIGNMENT_LIMIT",
+				() -> service.update(teacher.getId(), room.getId(), assignment.getId(), request)
+		);
+	}
+
+	@Test
+	void deveRevalidarQuestoesAoPublicar() {
+		lesson.publish();
+		LessonAssignment assignment = assignment(lesson, 1);
+		stubOwnedAssignment(assignment);
+		when(questionRepository.countByLessonIdAndActiveTrue(lesson.getId())).thenReturn(0L);
+		UpdateLessonAssignmentRequest request = new UpdateLessonAssignmentRequest(
+				ContentStatus.PUBLISHED, null, null, null, null, null, null, null, assignment.getVersion()
+		);
+
+		assertApiError(
+				HttpStatus.UNPROCESSABLE_CONTENT,
+				"INSUFFICIENT_ACTIVE_QUESTIONS",
+				() -> service.update(teacher.getId(), room.getId(), assignment.getId(), request)
+		);
+	}
+
+	@Test
+	void deveImpedirAlteracaoArquivada() {
+		LessonAssignment assignment = assignment(lesson, 1);
+		assignment.archive();
+		stubOwnedAssignment(assignment);
+		UpdateLessonAssignmentRequest request = new UpdateLessonAssignmentRequest(
+				null, null, null, null, null, null, false, null, assignment.getVersion()
+		);
+
+		assertApiError(
+				HttpStatus.UNPROCESSABLE_CONTENT,
+				"ASSIGNMENT_ARCHIVED",
+				() -> service.update(teacher.getId(), room.getId(), assignment.getId(), request)
+		);
+	}
+
+	@Test
+	void deveRemoverRascunhoEFecharLacuna() {
+		LessonAssignment removed = assignment(lesson, 1);
+		LessonAssignment remaining = assignment(new Lesson("Segunda", null, "# Segunda", teacher), 2);
+		stubOwnedAssignment(removed);
+		when(assignmentRepository.findByRoomIdForUpdate(room.getId()))
+				.thenReturn(new ArrayList<>(List.of(removed, remaining)));
+
+		service.delete(teacher.getId(), room.getId(), removed.getId(), removed.getVersion());
+
+		assertThat(remaining.getPosition()).isEqualTo(1);
+	}
+
+	@Test
+	void deveRemoverPublicacaoFutura() {
+		lesson.publish();
+		LessonAssignment assignment = assignment(lesson, 1);
+		assignment.configure(
+				ContentStatus.PUBLISHED,
+				Instant.parse("2026-08-28T12:00:00Z"),
+				null,
+				30,
+				3,
+				null,
+				true,
+				true
+		);
+		stubOwnedAssignment(assignment);
+		when(assignmentRepository.findByRoomIdForUpdate(room.getId()))
+				.thenReturn(new ArrayList<>(List.of(assignment)));
+
+		service.delete(teacher.getId(), room.getId(), assignment.getId(), assignment.getVersion());
+	}
+
+	@Test
+	void deveImpedirRemocaoDeAtribuicaoJaDisponivel() {
+		lesson.publish();
+		LessonAssignment assignment = assignment(lesson, 1);
+		assignment.publish();
+		stubOwnedAssignment(assignment);
+
+		assertApiError(
+				HttpStatus.CONFLICT,
+				"ASSIGNMENT_ALREADY_IN_USE",
+				() -> service.delete(teacher.getId(), room.getId(), assignment.getId(), assignment.getVersion())
+		);
+	}
+
+	@Test
+	void deveRejeitarVersaoDesatualizada() {
+		LessonAssignment assignment = assignment(lesson, 1);
+		stubOwnedAssignment(assignment);
+		UpdateLessonAssignmentRequest request = new UpdateLessonAssignmentRequest(
+				null, null, null, null, null, null, null, null, assignment.getVersion() + 1
+		);
+
+		assertApiError(
+				HttpStatus.CONFLICT,
+				"VERSION_CONFLICT",
+				() -> service.update(teacher.getId(), room.getId(), assignment.getId(), request)
+		);
+	}
+
+	@Test
+	void deveOcultarAtribuicaoDeOutroProfessor() {
+		LessonAssignment assignment = assignment(lesson, 1);
+		when(assignmentRepository.findByIdAndRoomIdAndRoomTeacherId(
+				assignment.getId(), room.getId(), teacher.getId()
+		)).thenReturn(Optional.empty());
+		UpdateLessonAssignmentRequest request = new UpdateLessonAssignmentRequest(
+				null, null, null, null, null, null, null, null, assignment.getVersion()
+		);
+
+		assertApiError(
+				HttpStatus.NOT_FOUND,
+				"ASSIGNMENT_NOT_FOUND",
+				() -> service.update(teacher.getId(), room.getId(), assignment.getId(), request)
+		);
+	}
+
 	private CreateLessonAssignmentRequest request(
 			Lesson requestedLesson,
 			Integer position,
@@ -248,6 +431,12 @@ class LessonAssignmentServiceTest {
 
 	private LessonAssignment assignment(Lesson assignedLesson, int position) {
 		return new LessonAssignment(room, assignedLesson, position, null, null, 30, 3, null, true, true);
+	}
+
+	private void stubOwnedAssignment(LessonAssignment assignment) {
+		when(assignmentRepository.findByIdAndRoomIdAndRoomTeacherId(
+				assignment.getId(), room.getId(), teacher.getId()
+		)).thenReturn(Optional.of(assignment));
 	}
 
 	private void assertApiError(HttpStatus status, String code, Runnable operation) {
