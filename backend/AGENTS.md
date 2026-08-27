@@ -34,6 +34,16 @@ Não use nomes de tipos totalmente qualificados diretamente em campos, assinatur
 
 Use Lombok para eliminar boilerplate: `@RequiredArgsConstructor` na injeção por construtor, `@Getter` em entidades e exceções e `@NoArgsConstructor(access = AccessLevel.PROTECTED)` em entidades JPA. Não use `@Data`, `@Setter` ou `@AllArgsConstructor` em entidades. Mantenha construtores manuais somente quando eles executarem inicialização ou invariantes de domínio.
 
+Não use imports inline, sempre prefira realizar o import full.
+
+Siga boas práticas de programacao e padroes de projeto, nao faca overengineering.
+
+Retire todas as dúvidas com o usuário antes de comecar a implementar.
+
+Use Spring Data JPA `Specification` de forma seletiva em listagens com combinação de filtros opcionais, paginação e ordenação. A especificação deve sempre receber e aplicar o escopo de propriedade/tenant do usuário autenticado. Para buscas diretas por ID, validações de autorização, operações por código/chave única e relatórios com agregações, prefira métodos explícitos de repositório ou projeções/consultas dedicadas. Não introduza `Specification` quando ela não reduzir complexidade real.
+
+Sempre que possível crie mappers ao invés de métodos em classes que não deveriam ter essa responsabilidade.
+
 ## Diretrizes de testes
 
 O projeto usa JUnit 5 e Spring Boot Test. Nomeie testes como `ClasseTest` ou `ClasseTests` e métodos pelo comportamento esperado, por exemplo `deveCriarContaValida`. Cubra regras de serviço com testes unitários e use `@SpringBootTest` somente quando precisar do contexto completo. Não existe meta formal de cobertura; toda correção deve incluir um teste de regressão quando aplicável.
