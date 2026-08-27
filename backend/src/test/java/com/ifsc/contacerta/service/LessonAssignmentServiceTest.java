@@ -1,6 +1,8 @@
 package com.ifsc.contacerta.service;
 
 import com.ifsc.contacerta.dto.assignment.CreateLessonAssignmentRequest;
+import com.ifsc.contacerta.dto.assignment.LessonAssignmentOrderItem;
+import com.ifsc.contacerta.dto.assignment.LessonAssignmentOrderRequest;
 import com.ifsc.contacerta.dto.assignment.LessonAssignmentResponse;
 import com.ifsc.contacerta.dto.assignment.UpdateLessonAssignmentRequest;
 import com.ifsc.contacerta.entity.Institution;
@@ -32,6 +34,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -413,6 +416,100 @@ class LessonAssignmentServiceTest {
 				HttpStatus.NOT_FOUND,
 				"ASSIGNMENT_NOT_FOUND",
 				() -> service.update(teacher.getId(), room.getId(), assignment.getId(), request)
+		);
+	}
+
+	@Test
+	void deveReordenarListaCompletaComPosicoesContiguas() {
+		LessonAssignment first = assignment(lesson, 1);
+		LessonAssignment second = assignment(new Lesson("Segunda", null, "# Segunda", teacher), 2);
+		when(assignmentRepository.findByRoomIdForUpdate(room.getId()))
+				.thenReturn(new ArrayList<>(List.of(first, second)));
+		LessonAssignmentOrderRequest request = new LessonAssignmentOrderRequest(List.of(
+				new LessonAssignmentOrderItem(second.getId(), second.getVersion()),
+				new LessonAssignmentOrderItem(first.getId(), first.getVersion())
+		));
+
+		assertThat(service.reorder(teacher.getId(), room.getId(), request))
+				.extracting(LessonAssignmentResponse::id, LessonAssignmentResponse::position)
+				.containsExactly(tuple(second.getId(), 1), tuple(first.getId(), 2));
+	}
+
+	@Test
+	void deveRejeitarListaDeOrdemVazia() {
+		when(assignmentRepository.findByRoomIdForUpdate(room.getId())).thenReturn(new ArrayList<>());
+
+		assertApiError(
+				HttpStatus.CONFLICT,
+				"INVALID_ASSIGNMENT_ORDER",
+				() -> service.reorder(
+						teacher.getId(), room.getId(), new LessonAssignmentOrderRequest(List.of())
+				)
+		);
+	}
+
+	@Test
+	void deveRejeitarIdentificadorDuplicado() {
+		LessonAssignment first = assignment(lesson, 1);
+		LessonAssignment second = assignment(new Lesson("Segunda", null, "# Segunda", teacher), 2);
+		when(assignmentRepository.findByRoomIdForUpdate(room.getId()))
+				.thenReturn(new ArrayList<>(List.of(first, second)));
+		LessonAssignmentOrderRequest request = new LessonAssignmentOrderRequest(List.of(
+				new LessonAssignmentOrderItem(first.getId(), first.getVersion()),
+				new LessonAssignmentOrderItem(first.getId(), first.getVersion())
+		));
+
+		assertApiError(
+				HttpStatus.CONFLICT,
+				"INVALID_ASSIGNMENT_ORDER",
+				() -> service.reorder(teacher.getId(), room.getId(), request)
+		);
+	}
+
+	@Test
+	void deveRejeitarIdentificadorAusenteOuExtra() {
+		LessonAssignment first = assignment(lesson, 1);
+		when(assignmentRepository.findByRoomIdForUpdate(room.getId()))
+				.thenReturn(new ArrayList<>(List.of(first)));
+		LessonAssignmentOrderRequest request = new LessonAssignmentOrderRequest(List.of(
+				new LessonAssignmentOrderItem(UUID.randomUUID(), 0L)
+		));
+
+		assertApiError(
+				HttpStatus.CONFLICT,
+				"INVALID_ASSIGNMENT_ORDER",
+				() -> service.reorder(teacher.getId(), room.getId(), request)
+		);
+	}
+
+	@Test
+	void deveRejeitarVersaoDesatualizadaNaOrdenacao() {
+		LessonAssignment assignment = assignment(lesson, 1);
+		when(assignmentRepository.findByRoomIdForUpdate(room.getId()))
+				.thenReturn(new ArrayList<>(List.of(assignment)));
+		LessonAssignmentOrderRequest request = new LessonAssignmentOrderRequest(List.of(
+				new LessonAssignmentOrderItem(assignment.getId(), assignment.getVersion() + 1)
+		));
+
+		assertApiError(
+				HttpStatus.CONFLICT,
+				"VERSION_CONFLICT",
+				() -> service.reorder(teacher.getId(), room.getId(), request)
+		);
+	}
+
+	@Test
+	void deveImpedirOrdenacaoEmSalaArquivada() {
+		room.archive();
+		LessonAssignment assignment = assignment(lesson, 1);
+		LessonAssignmentOrderRequest request = new LessonAssignmentOrderRequest(List.of(
+				new LessonAssignmentOrderItem(assignment.getId(), assignment.getVersion())
+		));
+
+		assertApiError(
+				HttpStatus.UNPROCESSABLE_CONTENT,
+				"ROOM_ARCHIVED",
+				() -> service.reorder(teacher.getId(), room.getId(), request)
 		);
 	}
 

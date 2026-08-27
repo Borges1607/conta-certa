@@ -1,6 +1,8 @@
 package com.ifsc.contacerta.service;
 
 import com.ifsc.contacerta.dto.assignment.CreateLessonAssignmentRequest;
+import com.ifsc.contacerta.dto.assignment.LessonAssignmentOrderItem;
+import com.ifsc.contacerta.dto.assignment.LessonAssignmentOrderRequest;
 import com.ifsc.contacerta.dto.assignment.LessonAssignmentResponse;
 import com.ifsc.contacerta.dto.assignment.UpdateLessonAssignmentRequest;
 import com.ifsc.contacerta.entity.Lesson;
@@ -26,7 +28,11 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -199,6 +205,71 @@ public class LessonAssignmentService {
 				.filter(current -> !current.getId().equals(assignmentId))
 				.toList();
 		normalizePositions(remaining, assignments.size());
+	}
+
+	@Transactional
+	public List<LessonAssignmentResponse> reorder(
+			UUID teacherId,
+			UUID roomId,
+			LessonAssignmentOrderRequest request
+	) {
+		requireActiveTeacher(teacherId);
+		requireMutableRoom(teacherId, roomId);
+		List<LessonAssignment> assignments = new ArrayList<>(assignmentRepository.findByRoomIdForUpdate(roomId));
+		validateCompleteOrder(assignments, request);
+
+		Map<UUID, LessonAssignment> assignmentsById = new HashMap<>();
+		for (LessonAssignment assignment : assignments) {
+			assignmentsById.put(assignment.getId(), assignment);
+		}
+		for (LessonAssignmentOrderItem item : request.assignments()) {
+			requireCurrentVersion(assignmentsById.get(item.assignmentId()), item.version());
+		}
+
+		int size = assignments.size();
+		for (int index = 0; index < size; index++) {
+			assignments.get(index).moveTo(size + index + 1);
+		}
+		assignmentRepository.flush();
+		List<LessonAssignment> reordered = new ArrayList<>(size);
+		for (int index = 0; index < request.assignments().size(); index++) {
+			LessonAssignment assignment = assignmentsById.get(request.assignments().get(index).assignmentId());
+			assignment.moveTo(index + 1);
+			reordered.add(assignment);
+		}
+		assignmentRepository.flush();
+		return reordered.stream().map(this::toResponse).toList();
+	}
+
+	private void validateCompleteOrder(
+			List<LessonAssignment> assignments,
+			LessonAssignmentOrderRequest request
+	) {
+		if (request == null || request.assignments() == null || request.assignments().isEmpty()
+				|| request.assignments().size() != assignments.size()) {
+			throw invalidOrder();
+		}
+		Set<UUID> persistedIds = new HashSet<>();
+		for (LessonAssignment assignment : assignments) {
+			persistedIds.add(assignment.getId());
+		}
+		Set<UUID> requestedIds = new HashSet<>();
+		for (LessonAssignmentOrderItem item : request.assignments()) {
+			if (item == null || item.assignmentId() == null || !requestedIds.add(item.assignmentId())) {
+				throw invalidOrder();
+			}
+		}
+		if (!requestedIds.equals(persistedIds)) {
+			throw invalidOrder();
+		}
+	}
+
+	private ApiException invalidOrder() {
+		return new ApiException(
+				HttpStatus.CONFLICT,
+				"INVALID_ASSIGNMENT_ORDER",
+				"The complete room assignment order is required."
+		);
 	}
 
 	private void openPosition(List<LessonAssignment> assignments, int insertionPosition) {
