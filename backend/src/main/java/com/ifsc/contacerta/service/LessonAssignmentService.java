@@ -181,6 +181,7 @@ public class LessonAssignmentService {
 				shuffleQuestions,
 				shuffleOptions
 		);
+		assignmentRepository.flush();
 		return toResponse(assignment, activeQuestionCount);
 	}
 

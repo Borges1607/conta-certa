@@ -128,7 +128,8 @@ class TeacherLessonAssignmentControllerTest extends PostgresIntegrationTest {
 							""".formatted(assignment.getVersion())))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status").value("PUBLISHED"))
-				.andExpect(jsonPath("$.timeLimitMinutes").doesNotExist());
+				.andExpect(jsonPath("$.timeLimitMinutes").doesNotExist())
+				.andExpect(jsonPath("$.version").value(assignment.getVersion() + 1));
 	}
 
 	@Test
