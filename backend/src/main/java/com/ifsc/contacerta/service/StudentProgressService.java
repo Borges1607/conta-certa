@@ -14,6 +14,8 @@ public class StudentProgressService {
 	private final AttemptRepository attemptRepository;
 	@Transactional(readOnly = true)
 	public boolean hasPassedAssignment(UUID studentId, UUID assignmentId) {
-		return attemptRepository.findByAssignmentIdAndStudentIdAndStatus(assignmentId, studentId, AttemptStatus.SUBMITTED).map(attempt -> Boolean.TRUE.equals(attempt.getPassed())).orElse(false);
+		return attemptRepository.existsByAssignmentIdAndStudentIdAndStatusAndPassedTrue(
+				assignmentId, studentId, AttemptStatus.SUBMITTED
+		);
 	}
 }

@@ -37,6 +37,12 @@ public interface AttemptRepository extends JpaRepository<Attempt, UUID> {
 			AttemptStatus status
 	);
 
+	boolean existsByAssignmentIdAndStudentIdAndStatusAndPassedTrue(
+			UUID assignmentId,
+			UUID studentId,
+			AttemptStatus status
+	);
+
 	@Query("select coalesce(max(attempt.xpCredited), 0) from Attempt attempt "
 			+ "where attempt.assignment.id = :assignmentId and attempt.student.id = :studentId "
 			+ "and attempt.status in :statuses")
