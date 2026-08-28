@@ -62,6 +62,9 @@ public class StudentLessonService {
 	@Transactional(readOnly = true)
 	public PageResponse<AttemptHistoryResponse> history(UUID studentId, UUID assignmentId, Pageable pageable) {
 		requireStudent(studentId);
+		LessonAssignment assignment = assignmentRepository.findById(assignmentId)
+				.orElseThrow(() -> error("ASSIGNMENT_NOT_FOUND", "Assignment was not found."));
+		requireMembership(studentId, assignment.getRoom().getId());
 		return PageResponse.from(attemptRepository.findByAssignmentIdAndStudentIdOrderBySequenceDesc(assignmentId, studentId, pageable)
 				.map(attempt -> new AttemptHistoryResponse(attempt.getId(), attempt.getSequence(), attempt.getStatus(),
 						attempt.getScorePercent(), attempt.getPassed(), attempt.getStartedAt(), attempt.getSubmittedAt())));
