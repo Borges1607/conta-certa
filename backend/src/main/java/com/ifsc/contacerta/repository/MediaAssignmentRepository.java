@@ -25,4 +25,14 @@ public interface MediaAssignmentRepository extends JpaRepository<MediaAssignment
 			@Param("studentId") UUID studentId,
 			@Param("status") MembershipStatus status
 	);
+
+	@Query("select assignment from MediaAssignment assignment "
+			+ "join RoomMembership membership on membership.room.id = assignment.room.id "
+			+ "where assignment.video.id = :videoId and membership.student.id = :studentId "
+			+ "and membership.status = :status")
+	List<MediaAssignment> findAccessibleVideoAssignments(
+			@Param("videoId") UUID videoId,
+			@Param("studentId") UUID studentId,
+			@Param("status") MembershipStatus status
+	);
 }
