@@ -6,6 +6,24 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-public record AttemptResultResponse(UUID id, AttemptStatus status, int totalQuestions, int answeredQuestions,
-		int correctAnswers, int scorePercent, boolean passed, int stars, int xpCredited, Instant submittedAt,
-		List<AttemptAnswerReviewResponse> review) {}
+public record AttemptResultResponse(
+		UUID attemptId,
+		UUID assignmentId,
+		UUID roomId,
+		UUID lessonId,
+		String lessonTitle,
+		AttemptStatus status,
+		int correctAnswers,
+		int totalQuestions,
+		int scorePercent,
+		boolean passed,
+		int stars,
+		int xpEarnedThisAttempt,
+		int roomXpTotal,
+		Instant startedAt,
+		Instant submittedAt,
+		int passingScorePercent,
+		Long attemptsRemaining,
+		List<AttemptAnswerReviewResponse> answers
+) {
+}

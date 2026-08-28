@@ -1,3 +1,11 @@
 package com.ifsc.contacerta.dto.attempt;
-import java.time.Instant; import java.util.Set; import java.util.UUID;
-public record AttemptAnswerValueResponse(Set<UUID> selectedOptionIds, Boolean booleanValue, String numericValue, Instant answeredAt) {}
+
+import java.util.List;
+import java.util.UUID;
+
+public record AttemptAnswerValueResponse(
+		List<UUID> selectedOptionIds,
+		Boolean booleanValue,
+		String numericValue
+) {
+}

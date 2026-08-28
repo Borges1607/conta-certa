@@ -3,6 +3,7 @@ package com.ifsc.contacerta.service;
 import com.ifsc.contacerta.config.AttemptProperties;
 import com.ifsc.contacerta.dto.attempt.AttemptAnswerReceiptResponse;
 import com.ifsc.contacerta.dto.attempt.AttemptAnswerReviewResponse;
+import com.ifsc.contacerta.dto.attempt.AttemptAnswerValueResponse;
 import com.ifsc.contacerta.dto.attempt.AttemptResponse;
 import com.ifsc.contacerta.dto.attempt.AttemptResultResponse;
 import com.ifsc.contacerta.dto.attempt.AttemptStartResult;
@@ -30,6 +31,7 @@ import com.ifsc.contacerta.repository.IdempotencyRecordRepository;
 import com.ifsc.contacerta.repository.LessonAssignmentRepository;
 import com.ifsc.contacerta.repository.QuestionRepository;
 import com.ifsc.contacerta.repository.RoomMembershipRepository;
+import com.ifsc.contacerta.repository.RoomStudentProgressRepository;
 import com.ifsc.contacerta.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -58,22 +60,22 @@ public class AttemptService {
 	private final Clock clock;
 	private final AttemptMapper mapper;
 	private final IdempotencyHasher hasher;
+	private final IdempotencyResponseCodec idempotencyResponseCodec;
 	private final AttemptScoringService scoringService;
 	private final AttemptFinalizationService finalizationService;
 	private final StudentProgressService progressService;
+	private final RoomStudentProgressRepository roomProgressRepository;
 	private final java.util.random.RandomGenerator randomGenerator;
 	@Transactional
 	public AttemptStartResult start(UUID studentId, UUID assignmentId, String key) {
 		if (key == null || key.isBlank()) throw error(HttpStatus.CONFLICT, "IDEMPOTENCY_KEY_REQUIRED", "Idempotency-Key is required.");
-		User student = userRepository.findById(studentId).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "STUDENT_NOT_FOUND", "Student was not found."));
-		if (student.getRole() != Role.STUDENT) throw error(HttpStatus.FORBIDDEN, "STUDENT_REQUIRED", "A student account is required.");
-		if (student.getStatus() != AccountStatus.ACTIVE) throw error(HttpStatus.FORBIDDEN, "ACCOUNT_INACTIVE", "Student account is inactive.");
+		User student = requireStudent(studentId);
 		LessonAssignment assignment = assignmentRepository.findById(assignmentId).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "ASSIGNMENT_NOT_FOUND", "Assignment was not found."));
 		RoomMembership membership = membershipRepository.findForUpdateByRoomIdAndStudentId(assignment.getRoom().getId(), studentId).filter(m -> m.getStatus() == MembershipStatus.ACTIVE).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "MEMBERSHIP_NOT_FOUND", "Membership was not found."));
 		Instant now = Instant.now(clock); IdempotencyRecord record = idempotencyRepository.findByUserIdAndKey(studentId, key).orElse(null);
-		if (record != null && record.getExpiresAt().isAfter(now)) { if (!record.getRouteScope().equals(assignmentId.toString()) || !record.getRequestHash().equals(hasher.hashStartScope())) throw error(HttpStatus.CONFLICT, "IDEMPOTENCY_KEY_REUSED", "Idempotency key was reused."); Attempt attempt = record.getAttempt(); return new AttemptStartResult(HttpStatus.valueOf(record.getResponseStatus()), record.getResponseLocation() == null ? null : URI.create(record.getResponseLocation()), mapper.toPublicResponse(attempt, now)); }
+		if (record != null && record.getExpiresAt().isAfter(now)) { if (!record.getRouteScope().equals(assignmentId.toString()) || !record.getRequestHash().equals(hasher.hashStartScope())) throw error(HttpStatus.CONFLICT, "IDEMPOTENCY_KEY_REUSED", "Idempotency key was reused."); return new AttemptStartResult(HttpStatus.valueOf(record.getResponseStatus()), record.getResponseLocation() == null ? null : URI.create(record.getResponseLocation()), idempotencyResponseCodec.decode(record.getResponseBody())); }
 		if (record != null) { idempotencyRepository.delete(record); idempotencyRepository.flush(); }
-		Attempt active = attemptRepository.findByAssignmentIdAndStudentIdAndStatus(assignmentId, studentId, AttemptStatus.IN_PROGRESS).orElse(null); if (active != null) return new AttemptStartResult(HttpStatus.OK, null, mapper.toPublicResponse(active, now));
+		Attempt active = attemptRepository.findByAssignmentIdAndStudentIdAndStatus(assignmentId, studentId, AttemptStatus.IN_PROGRESS).orElse(null); if (active != null) return new AttemptStartResult(HttpStatus.OK, null, publicResponse(active));
 		if (assignment.getRoom().getArchivedAt() != null) throw error(HttpStatus.CONFLICT, "ROOM_ARCHIVED", "Room is archived."); if (assignment.getStatus() != ContentStatus.PUBLISHED) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "ASSIGNMENT_NOT_AVAILABLE", "Assignment is not published."); if (assignment.getAvailableFrom() != null && now.isBefore(assignment.getAvailableFrom())) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "ASSIGNMENT_NOT_AVAILABLE", "Assignment is not available."); if (assignment.getDueAt() != null && !now.isBefore(assignment.getDueAt())) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "ASSIGNMENT_CLOSED", "Assignment is closed.");
 		LessonAssignment previous = assignmentRepository.findByRoomIdAndStatusOrderByPositionAsc(assignment.getRoom().getId(), ContentStatus.PUBLISHED).stream()
 				.filter(candidate -> candidate.getPosition() < assignment.getPosition())
@@ -90,14 +92,14 @@ public class AttemptService {
 			if (assignment.isShuffleOptions()) java.util.Collections.shuffle(options, new java.util.Random(randomGenerator.nextLong()));
 			attempt.addSnapshot(selectedQuestions.get(index), index + 1, options);
 		}
-		attemptRepository.saveAndFlush(attempt); AttemptResponse body = mapper.toPublicResponse(attempt, now); URI location = URI.create("/student/attempts/" + attempt.getId()); idempotencyRepository.save(new IdempotencyRecord(student, "POST", assignmentId.toString(), key, hasher.hashStartScope(), 201, "application/json", location.toString(), "{}", attempt, now, now.plus(properties.idempotencyTtl()))); return new AttemptStartResult(HttpStatus.CREATED, location, body);
+		attemptRepository.saveAndFlush(attempt); AttemptResponse body = publicResponse(attempt); URI location = URI.create("/student/attempts/" + attempt.getId()); idempotencyRepository.save(new IdempotencyRecord(student, "POST", assignmentId.toString(), key, hasher.hashStartScope(), 201, "application/json", location.toString(), idempotencyResponseCodec.encode(body), attempt, now, now.plus(properties.idempotencyTtl()))); return new AttemptStartResult(HttpStatus.CREATED, location, body);
 	}
 	private ApiException error(HttpStatus status, String code, String message) { return new ApiException(status, code, message); }
 	@Transactional
 	public AttemptResponse get(UUID studentId, UUID attemptId) {
 		Attempt attempt = ownedLockedAttempt(studentId, attemptId);
 		finalizeIfExpired(attempt);
-		return mapper.toPublicResponse(attempt, Instant.now(clock));
+		return publicResponse(attempt);
 	}
 	@Transactional
 	public AttemptAnswerReceiptResponse answer(
@@ -120,7 +122,7 @@ public class AttemptService {
 			if (!sameAnswer(existing, scored)) {
 				throw error(HttpStatus.CONFLICT, "ANSWER_ALREADY_RECORDED", "Answer was already recorded.");
 			}
-			return new AttemptAnswerReceiptResponse(existing.isCorrect(), existing.getAnsweredAt());
+			return new AttemptAnswerReceiptResponse(snapshotId, existing.getAnsweredAt(), existing.isCorrect());
 		}
 
 		Instant now = Instant.now(clock);
@@ -133,7 +135,7 @@ public class AttemptService {
 			saved = AttemptAnswer.choice(snapshot, scored.selectedOptions(), scored.correct(), now);
 		}
 		answerRepository.save(saved);
-		return new AttemptAnswerReceiptResponse(saved.isCorrect(), saved.getAnsweredAt());
+		return new AttemptAnswerReceiptResponse(snapshotId, saved.getAnsweredAt(), saved.isCorrect());
 	}
 	@Transactional
 	public AttemptResultResponse submit(UUID studentId, UUID attemptId) {
@@ -156,9 +158,22 @@ public class AttemptService {
 	}
 
 	private Attempt ownedLockedAttempt(UUID studentId, UUID attemptId) {
+		requireStudent(studentId);
 		return attemptRepository.findByIdForUpdate(attemptId)
 				.filter(attempt -> attempt.getStudent().getId().equals(studentId))
 				.orElseThrow(() -> error(HttpStatus.NOT_FOUND, "ATTEMPT_NOT_FOUND", "Attempt was not found."));
+	}
+
+	private User requireStudent(UUID studentId) {
+		User student = userRepository.findById(studentId)
+				.orElseThrow(() -> error(HttpStatus.NOT_FOUND, "STUDENT_NOT_FOUND", "Student was not found."));
+		if (student.getRole() != Role.STUDENT) {
+			throw error(HttpStatus.FORBIDDEN, "STUDENT_REQUIRED", "A student account is required.");
+		}
+		if (student.getStatus() != AccountStatus.ACTIVE) {
+			throw error(HttpStatus.FORBIDDEN, "ACCOUNT_INACTIVE", "Student account is inactive.");
+		}
+		return student;
 	}
 
 	private void finalizeIfExpired(Attempt attempt) {
@@ -183,14 +198,47 @@ public class AttemptService {
 				.equals(incoming.selectedOptions().stream().map(option -> option.getId()).collect(java.util.stream.Collectors.toSet()));
 	}
 
+	private AttemptResponse publicResponse(Attempt attempt) {
+		return mapper.toPublicResponse(
+				attempt,
+				answerRepository.findByQuestionSnapshotAttemptId(attempt.getId())
+		);
+	}
+
 	private AttemptResultResponse result(Attempt attempt) {
 		if (attempt.getStatus() == AttemptStatus.IN_PROGRESS) {
 			throw error(HttpStatus.CONFLICT, "ATTEMPT_IN_PROGRESS", "Attempt is in progress.");
 		}
+		LessonAssignment assignment = attempt.getAssignment();
+		UUID roomId = assignment.getRoom().getId();
+		UUID studentId = attempt.getStudent().getId();
+		int roomXpTotal = roomProgressRepository.findByRoomIdAndStudentId(roomId, studentId)
+				.map(progress -> progress.getTotalXp())
+				.orElse(0);
+		long used = attemptRepository.countByAssignmentIdAndStudentId(assignment.getId(), studentId);
+		long granted = grantRepository.sumQuantityByAssignmentIdAndStudentId(assignment.getId(), studentId);
+		Long attemptsRemaining = assignment.getMaxAttempts() == null
+				? null
+				: Math.max(0, assignment.getMaxAttempts() + granted - used);
 		return new AttemptResultResponse(
-				attempt.getId(), attempt.getStatus(), attempt.getTotalQuestions(), attempt.getAnsweredQuestions(),
-				attempt.getCorrectAnswers(), attempt.getScorePercent(), attempt.getPassed(), attempt.getStars(),
-				attempt.getXpCredited(), attempt.getSubmittedAt(), review(attempt)
+				attempt.getId(),
+				assignment.getId(),
+				roomId,
+				assignment.getLesson().getId(),
+				assignment.getLesson().getTitle(),
+				attempt.getStatus(),
+				attempt.getCorrectAnswers(),
+				attempt.getTotalQuestions(),
+				attempt.getScorePercent(),
+				attempt.getPassed(),
+				attempt.getStars(),
+				attempt.getXpCredited(),
+				roomXpTotal,
+				attempt.getStartedAt(),
+				attempt.getSubmittedAt(),
+				assignment.getRoom().getPassingScorePercent(),
+				attemptsRemaining,
+				review(attempt)
 		);
 	}
 
@@ -199,11 +247,27 @@ public class AttemptService {
 				.collect(java.util.stream.Collectors.toMap(answer -> answer.getQuestionSnapshot().getId(), answer -> answer));
 		return attempt.getSnapshots().stream().map(snapshot -> {
 			AttemptAnswer answer = answers.get(snapshot.getId());
-			List<UUID> selected = answer == null ? List.of() : answer.getSelectedOptions().stream().map(option -> option.getId()).toList();
-			List<UUID> correct = snapshot.getOptions().stream().filter(option -> option.isCorrect()).map(option -> option.getId()).toList();
-			return new AttemptAnswerReviewResponse(snapshot.getId(), snapshot.getType(), snapshot.getPrompt(), snapshot.getExplanation(),
-					answer != null && answer.isCorrect(), selected, correct, answer == null ? null : answer.getBooleanValue(),
-					snapshot.getCorrectBoolean(), answer == null ? null : answer.getNumericValue(), snapshot.getCorrectNumericValue());
+			return new AttemptAnswerReviewResponse(
+					mapper.toQuestion(snapshot),
+					answer == null ? null : mapper.toAnswerValue(answer),
+					correctAnswer(snapshot),
+					answer != null && answer.isCorrect(),
+					snapshot.getExplanation()
+			);
 		}).toList();
+	}
+
+	private AttemptAnswerValueResponse correctAnswer(AttemptQuestionSnapshot snapshot) {
+		List<UUID> selectedOptionIds = snapshot.getOptions().stream()
+				.filter(option -> option.isCorrect())
+				.map(option -> option.getId())
+				.toList();
+		return new AttemptAnswerValueResponse(
+				selectedOptionIds.isEmpty() ? null : selectedOptionIds,
+				snapshot.getCorrectBoolean(),
+				snapshot.getCorrectNumericValue() == null
+						? null
+						: snapshot.getCorrectNumericValue().toPlainString()
+		);
 	}
 }
