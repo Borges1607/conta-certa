@@ -2,6 +2,7 @@ package com.ifsc.contacerta.service;
 
 import com.ifsc.contacerta.config.AttemptProperties;
 import com.ifsc.contacerta.dto.attempt.AttemptAnswerReceiptResponse;
+import com.ifsc.contacerta.dto.attempt.AttemptAnswerReviewResponse;
 import com.ifsc.contacerta.dto.attempt.AttemptResponse;
 import com.ifsc.contacerta.dto.attempt.AttemptResultResponse;
 import com.ifsc.contacerta.dto.attempt.AttemptStartResult;
@@ -180,7 +181,20 @@ public class AttemptService {
 		return new AttemptResultResponse(
 				attempt.getId(), attempt.getStatus(), attempt.getTotalQuestions(), attempt.getAnsweredQuestions(),
 				attempt.getCorrectAnswers(), attempt.getScorePercent(), attempt.getPassed(), attempt.getStars(),
-				attempt.getXpCredited(), attempt.getSubmittedAt()
+				attempt.getXpCredited(), attempt.getSubmittedAt(), review(attempt)
 		);
+	}
+
+	private List<AttemptAnswerReviewResponse> review(Attempt attempt) {
+		java.util.Map<UUID, AttemptAnswer> answers = answerRepository.findByQuestionSnapshotAttemptId(attempt.getId()).stream()
+				.collect(java.util.stream.Collectors.toMap(answer -> answer.getQuestionSnapshot().getId(), answer -> answer));
+		return attempt.getSnapshots().stream().map(snapshot -> {
+			AttemptAnswer answer = answers.get(snapshot.getId());
+			List<UUID> selected = answer == null ? List.of() : answer.getSelectedOptions().stream().map(option -> option.getId()).toList();
+			List<UUID> correct = snapshot.getOptions().stream().filter(option -> option.isCorrect()).map(option -> option.getId()).toList();
+			return new AttemptAnswerReviewResponse(snapshot.getId(), snapshot.getType(), snapshot.getPrompt(), snapshot.getExplanation(),
+					answer != null && answer.isCorrect(), selected, correct, answer == null ? null : answer.getBooleanValue(),
+					snapshot.getCorrectBoolean(), answer == null ? null : answer.getNumericValue(), snapshot.getCorrectNumericValue());
+		}).toList();
 	}
 }
