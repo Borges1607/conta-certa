@@ -6,6 +6,7 @@ import com.ifsc.contacerta.entity.ExtraAttemptGrant;
 import com.ifsc.contacerta.entity.LessonAssignment;
 import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.model.MembershipStatus;
+import com.ifsc.contacerta.model.Role;
 import com.ifsc.contacerta.repository.AttemptRepository;
 import com.ifsc.contacerta.repository.ExtraAttemptGrantRepository;
 import com.ifsc.contacerta.repository.LessonAssignmentRepository;
@@ -32,6 +33,11 @@ public class ExtraAttemptGrantService {
 
 	@Transactional
 	public ExtraAttemptGrantResponse grant(UUID teacherId, UUID assignmentId, UUID studentId, CreateExtraAttemptGrantRequest request) {
+		var teacher = userRepository.findById(teacherId)
+				.orElseThrow(() -> error(HttpStatus.NOT_FOUND, "TEACHER_NOT_FOUND", "Teacher was not found."));
+		if (teacher.getRole() != Role.TEACHER) {
+			throw error(HttpStatus.FORBIDDEN, "TEACHER_REQUIRED", "A teacher account is required.");
+		}
 		LessonAssignment assignment = assignmentRepository.findById(assignmentId)
 				.filter(candidate -> candidate.getRoom().getTeacher().getId().equals(teacherId))
 				.orElseThrow(() -> error(HttpStatus.NOT_FOUND, "ASSIGNMENT_NOT_FOUND", "Assignment was not found."));
@@ -43,7 +49,7 @@ public class ExtraAttemptGrantService {
 		var membership = membershipRepository.findForUpdateByRoomIdAndStudentId(assignment.getRoom().getId(), studentId)
 				.filter(candidate -> candidate.getStatus() == MembershipStatus.ACTIVE)
 				.orElseThrow(() -> error(HttpStatus.NOT_FOUND, "MEMBERSHIP_NOT_FOUND", "Membership was not found."));
-		ExtraAttemptGrant grant = grantRepository.save(new ExtraAttemptGrant(assignment, student, membership.getRoom().getTeacher(), request.quantity(), Instant.now(clock)));
+		ExtraAttemptGrant grant = grantRepository.save(new ExtraAttemptGrant(assignment, student, teacher, request.quantity(), Instant.now(clock)));
 		long granted = grantRepository.sumQuantityByAssignmentIdAndStudentId(assignmentId, studentId);
 		long used = attemptRepository.countByAssignmentIdAndStudentId(assignmentId, studentId);
 		return new ExtraAttemptGrantResponse(grant.getId(), Math.toIntExact(granted), used, Math.max(0, assignment.getMaxAttempts() + granted - used));

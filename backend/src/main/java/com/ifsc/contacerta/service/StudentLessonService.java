@@ -14,6 +14,7 @@ import com.ifsc.contacerta.repository.AttemptRepository;
 import com.ifsc.contacerta.repository.ExtraAttemptGrantRepository;
 import com.ifsc.contacerta.repository.LessonAssignmentRepository;
 import com.ifsc.contacerta.repository.RoomMembershipRepository;
+import com.ifsc.contacerta.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -33,10 +34,12 @@ public class StudentLessonService {
 	private final LessonAssignmentRepository assignmentRepository;
 	private final AttemptRepository attemptRepository;
 	private final ExtraAttemptGrantRepository grantRepository;
+	private final UserRepository userRepository;
 	private final Clock clock;
 
 	@Transactional(readOnly = true)
 	public List<StudentLessonPathResponse> path(UUID studentId, UUID roomId) {
+		requireStudent(studentId);
 		requireMembership(studentId, roomId);
 		Instant now = Instant.now(clock);
 		return assignmentRepository.findByRoomIdAndStatusOrderByPositionAsc(roomId, ContentStatus.PUBLISHED).stream()
@@ -45,6 +48,7 @@ public class StudentLessonService {
 
 	@Transactional(readOnly = true)
 	public StudentLessonDetailResponse detail(UUID studentId, UUID roomId, UUID lessonId) {
+		requireStudent(studentId);
 		requireMembership(studentId, roomId);
 		LessonAssignment assignment = assignmentRepository.findByRoomIdAndLessonId(roomId, lessonId)
 				.filter(candidate -> candidate.getStatus() == ContentStatus.PUBLISHED)
@@ -57,6 +61,7 @@ public class StudentLessonService {
 
 	@Transactional(readOnly = true)
 	public PageResponse<AttemptHistoryResponse> history(UUID studentId, UUID assignmentId, Pageable pageable) {
+		requireStudent(studentId);
 		return PageResponse.from(attemptRepository.findByAssignmentIdAndStudentIdOrderBySequenceDesc(assignmentId, studentId, pageable)
 				.map(attempt -> new AttemptHistoryResponse(attempt.getId(), attempt.getSequence(), attempt.getStatus(),
 						attempt.getScorePercent(), attempt.getPassed(), attempt.getStartedAt(), attempt.getSubmittedAt())));
@@ -91,6 +96,17 @@ public class StudentLessonService {
 	private void requireMembership(UUID studentId, UUID roomId) {
 		membershipRepository.findByRoomIdAndStudentId(roomId, studentId).filter(membership -> membership.getStatus() == MembershipStatus.ACTIVE)
 				.orElseThrow(() -> error("MEMBERSHIP_NOT_FOUND", "Membership was not found."));
+	}
+
+	private void requireStudent(UUID studentId) {
+		var student = userRepository.findById(studentId)
+				.orElseThrow(() -> error("STUDENT_NOT_FOUND", "Student was not found."));
+		if (student.getRole() != com.ifsc.contacerta.model.Role.STUDENT) {
+			throw new ApiException(HttpStatus.FORBIDDEN, "STUDENT_REQUIRED", "A student account is required.");
+		}
+		if (student.getStatus() != com.ifsc.contacerta.model.AccountStatus.ACTIVE) {
+			throw new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_INACTIVE", "Student account is inactive.");
+		}
 	}
 
 	private ApiException error(String code, String message) { return new ApiException(HttpStatus.NOT_FOUND, code, message); }
