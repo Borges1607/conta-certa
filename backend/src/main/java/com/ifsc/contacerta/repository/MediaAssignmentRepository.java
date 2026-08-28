@@ -7,10 +7,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface MediaAssignmentRepository extends JpaRepository<MediaAssignment, UUID> {
 	List<MediaAssignment> findByRoomIdOrderByPositionAsc(UUID roomId);
+	Optional<MediaAssignment> findByIdAndRoomIdAndRoomTeacherId(UUID id, UUID roomId, UUID teacherId);
+	boolean existsByRoomIdAndVideoId(UUID roomId, UUID videoId);
+	boolean existsByRoomIdAndMaterialId(UUID roomId, UUID materialId);
 
 	@Query("select assignment from MediaAssignment assignment "
 			+ "join RoomMembership membership on membership.room.id = assignment.room.id "
