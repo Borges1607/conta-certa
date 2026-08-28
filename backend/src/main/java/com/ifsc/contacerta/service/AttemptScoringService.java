@@ -21,9 +21,18 @@ public class AttemptScoringService {
 		int shapes = (request.selectedOptionIds() != null ? 1 : 0) + (request.booleanValue() != null ? 1 : 0) + (request.numericValue() != null ? 1 : 0);
 		if (shapes != 1) throw invalid();
 		return switch (snapshot.getType()) {
-			case SINGLE_CHOICE, MULTIPLE_CHOICE -> scoreChoice(snapshot, request.selectedOptionIds());
-			case TRUE_FALSE -> new ScoredAnswer(Set.of(), request.booleanValue(), null, request.booleanValue().equals(snapshot.getCorrectBoolean()));
-			case NUMERIC -> scoreNumeric(snapshot, request.numericValue());
+			case SINGLE_CHOICE, MULTIPLE_CHOICE -> {
+				if (request.selectedOptionIds() == null) throw invalid();
+				yield scoreChoice(snapshot, request.selectedOptionIds());
+			}
+			case TRUE_FALSE -> {
+				if (request.booleanValue() == null) throw invalid();
+				yield new ScoredAnswer(Set.of(), request.booleanValue(), null, request.booleanValue().equals(snapshot.getCorrectBoolean()));
+			}
+			case NUMERIC -> {
+				if (request.numericValue() == null) throw invalid();
+				yield scoreNumeric(snapshot, request.numericValue());
+			}
 		};
 	}
 	private ScoredAnswer scoreChoice(AttemptQuestionSnapshot snapshot, List<UUID> ids) {

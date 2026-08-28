@@ -58,6 +58,7 @@ public class AttemptService {
 	private final AttemptMapper mapper;
 	private final IdempotencyHasher hasher;
 	private final AttemptScoringService scoringService;
+	private final AttemptFinalizationService finalizationService;
 	@Transactional
 	public AttemptStartResult start(UUID studentId, UUID assignmentId, String key) {
 		if (key == null || key.isBlank()) throw error(HttpStatus.CONFLICT, "IDEMPOTENCY_KEY_REQUIRED", "Idempotency-Key is required.");
@@ -77,13 +78,104 @@ public class AttemptService {
 		Attempt attempt = new Attempt(assignment, student, (int) used + 1, now, expiresAt); for (int index = 0; index < wanted; index++) attempt.addSnapshot(questions.get(index), index + 1, questions.get(index).getOptions()); attemptRepository.saveAndFlush(attempt); AttemptResponse body = mapper.toPublicResponse(attempt, now); URI location = URI.create("/student/attempts/" + attempt.getId()); idempotencyRepository.save(new IdempotencyRecord(student, "POST", assignmentId.toString(), key, hasher.hashStartScope(), 201, "application/json", location.toString(), "{}", attempt, now, now.plus(properties.idempotencyTtl()))); return new AttemptStartResult(HttpStatus.CREATED, location, body);
 	}
 	private ApiException error(HttpStatus status, String code, String message) { return new ApiException(status, code, message); }
-	@Transactional(readOnly = true)
-	public AttemptResponse get(UUID studentId, UUID attemptId) { Attempt attempt = attemptRepository.findByIdAndStudentId(attemptId, studentId).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "ATTEMPT_NOT_FOUND", "Attempt was not found.")); return mapper.toPublicResponse(attempt, Instant.now(clock)); }
 	@Transactional
-	public AttemptAnswerReceiptResponse answer(UUID studentId, UUID attemptId, UUID snapshotId, RecordAttemptAnswerRequest request) { Attempt attempt = attemptRepository.findByIdForUpdate(attemptId).filter(a -> a.getStudent().getId().equals(studentId)).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "ATTEMPT_NOT_FOUND", "Attempt was not found.")); if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) throw error(HttpStatus.CONFLICT, "ATTEMPT_FINISHED", "Attempt is finished."); AttemptQuestionSnapshot snapshot = snapshotRepository.findById(snapshotId).filter(s -> s.getAttempt().getId().equals(attemptId)).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "QUESTION_SNAPSHOT_NOT_FOUND", "Question snapshot was not found.")); AttemptAnswer existing = answerRepository.findByQuestionSnapshotId(snapshotId).orElse(null); if (existing != null) return new AttemptAnswerReceiptResponse(existing.isCorrect(), existing.getAnsweredAt()); AttemptScoringService.ScoredAnswer scored = scoringService.validateAndScore(snapshot, request); AttemptAnswer saved; if (scored.numericValue() != null) saved = AttemptAnswer.numeric(snapshot, scored.numericValue(), scored.correct(), Instant.now(clock)); else if (scored.booleanValue() != null) saved = AttemptAnswer.booleanAnswer(snapshot, scored.booleanValue(), scored.correct(), Instant.now(clock)); else saved = AttemptAnswer.choice(snapshot, scored.selectedOptions(), scored.correct(), Instant.now(clock)); answerRepository.save(saved); return new AttemptAnswerReceiptResponse(saved.isCorrect(), saved.getAnsweredAt()); }
+	public AttemptResponse get(UUID studentId, UUID attemptId) {
+		Attempt attempt = ownedLockedAttempt(studentId, attemptId);
+		finalizeIfExpired(attempt);
+		return mapper.toPublicResponse(attempt, Instant.now(clock));
+	}
 	@Transactional
-	public AttemptResultResponse submit(UUID studentId, UUID attemptId) { Attempt attempt = attemptRepository.findByIdForUpdate(attemptId).filter(a -> a.getStudent().getId().equals(studentId)).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "ATTEMPT_NOT_FOUND", "Attempt was not found.")); if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) return result(attempt); List<AttemptAnswer> answers = answerRepository.findByQuestionSnapshotAttemptId(attemptId); int total = attempt.getSnapshots().size(); int correct = (int) answers.stream().filter(AttemptAnswer::isCorrect).count(); int score = total == 0 ? 0 : (int) Math.round(correct * 100.0 / total); boolean passed = score >= attempt.getAssignment().getRoom().getPassingScorePercent(); int stars = score < 50 ? 0 : score < 70 ? 1 : score < 90 ? 2 : 3; attempt.finalizeAs(AttemptStatus.SUBMITTED, Instant.now(clock), total, answers.size(), correct, passed, stars, correct * 10); return result(attempt); }
-	@Transactional(readOnly = true)
-	public AttemptResultResponse result(UUID studentId, UUID attemptId) { Attempt attempt = attemptRepository.findByIdAndStudentId(attemptId, studentId).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "ATTEMPT_NOT_FOUND", "Attempt was not found.")); return result(attempt); }
-	private AttemptResultResponse result(Attempt attempt) { if (attempt.getStatus() == AttemptStatus.IN_PROGRESS) throw error(HttpStatus.CONFLICT, "ATTEMPT_IN_PROGRESS", "Attempt is in progress."); return new AttemptResultResponse(attempt.getId(), attempt.getStatus(), attempt.getTotalQuestions(), attempt.getAnsweredQuestions(), attempt.getCorrectAnswers(), attempt.getScorePercent(), attempt.getPassed(), attempt.getStars(), attempt.getXpCredited(), attempt.getSubmittedAt()); }
+	public AttemptAnswerReceiptResponse answer(
+			UUID studentId,
+			UUID attemptId,
+			UUID snapshotId,
+			RecordAttemptAnswerRequest request
+	) {
+		Attempt attempt = ownedLockedAttempt(studentId, attemptId);
+		finalizeIfExpired(attempt);
+		if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
+			throw error(HttpStatus.CONFLICT, "ATTEMPT_FINISHED", "Attempt is finished.");
+		}
+		AttemptQuestionSnapshot snapshot = snapshotRepository.findById(snapshotId)
+				.filter(candidate -> candidate.getAttempt().getId().equals(attemptId))
+				.orElseThrow(() -> error(HttpStatus.NOT_FOUND, "QUESTION_SNAPSHOT_NOT_FOUND", "Question snapshot was not found."));
+		AttemptScoringService.ScoredAnswer scored = scoringService.validateAndScore(snapshot, request);
+		AttemptAnswer existing = answerRepository.findByQuestionSnapshotId(snapshotId).orElse(null);
+		if (existing != null) {
+			if (!sameAnswer(existing, scored)) {
+				throw error(HttpStatus.CONFLICT, "ANSWER_ALREADY_RECORDED", "Answer was already recorded.");
+			}
+			return new AttemptAnswerReceiptResponse(existing.isCorrect(), existing.getAnsweredAt());
+		}
+
+		Instant now = Instant.now(clock);
+		AttemptAnswer saved;
+		if (scored.numericValue() != null) {
+			saved = AttemptAnswer.numeric(snapshot, scored.numericValue(), scored.correct(), now);
+		} else if (scored.booleanValue() != null) {
+			saved = AttemptAnswer.booleanAnswer(snapshot, scored.booleanValue(), scored.correct(), now);
+		} else {
+			saved = AttemptAnswer.choice(snapshot, scored.selectedOptions(), scored.correct(), now);
+		}
+		answerRepository.save(saved);
+		return new AttemptAnswerReceiptResponse(saved.isCorrect(), saved.getAnsweredAt());
+	}
+	@Transactional
+	public AttemptResultResponse submit(UUID studentId, UUID attemptId) {
+		Attempt attempt = ownedLockedAttempt(studentId, attemptId);
+		if (attempt.getStatus() == AttemptStatus.IN_PROGRESS) {
+			Instant now = Instant.now(clock);
+			finalizationService.finalizeAttempt(
+					attempt,
+					isExpired(attempt, now) ? AttemptStatus.EXPIRED : AttemptStatus.SUBMITTED,
+					now
+			);
+		}
+		return result(attempt);
+	}
+	@Transactional
+	public AttemptResultResponse result(UUID studentId, UUID attemptId) {
+		Attempt attempt = ownedLockedAttempt(studentId, attemptId);
+		finalizeIfExpired(attempt);
+		return result(attempt);
+	}
+
+	private Attempt ownedLockedAttempt(UUID studentId, UUID attemptId) {
+		return attemptRepository.findByIdForUpdate(attemptId)
+				.filter(attempt -> attempt.getStudent().getId().equals(studentId))
+				.orElseThrow(() -> error(HttpStatus.NOT_FOUND, "ATTEMPT_NOT_FOUND", "Attempt was not found."));
+	}
+
+	private void finalizeIfExpired(Attempt attempt) {
+		Instant now = Instant.now(clock);
+		if (isExpired(attempt, now)) {
+			finalizationService.finalizeAttempt(attempt, AttemptStatus.EXPIRED, now);
+		}
+	}
+
+	private boolean isExpired(Attempt attempt, Instant now) {
+		return attempt.getExpiresAt() != null && !now.isBefore(attempt.getExpiresAt());
+	}
+
+	private boolean sameAnswer(AttemptAnswer existing, AttemptScoringService.ScoredAnswer incoming) {
+		if (incoming.numericValue() != null) {
+			return incoming.numericValue().compareTo(existing.getNumericValue()) == 0;
+		}
+		if (incoming.booleanValue() != null) {
+			return incoming.booleanValue().equals(existing.getBooleanValue());
+		}
+		return existing.getSelectedOptions().stream().map(option -> option.getId()).collect(java.util.stream.Collectors.toSet())
+				.equals(incoming.selectedOptions().stream().map(option -> option.getId()).collect(java.util.stream.Collectors.toSet()));
+	}
+
+	private AttemptResultResponse result(Attempt attempt) {
+		if (attempt.getStatus() == AttemptStatus.IN_PROGRESS) {
+			throw error(HttpStatus.CONFLICT, "ATTEMPT_IN_PROGRESS", "Attempt is in progress.");
+		}
+		return new AttemptResultResponse(
+				attempt.getId(), attempt.getStatus(), attempt.getTotalQuestions(), attempt.getAnsweredQuestions(),
+				attempt.getCorrectAnswers(), attempt.getScorePercent(), attempt.getPassed(), attempt.getStars(),
+				attempt.getXpCredited(), attempt.getSubmittedAt()
+		);
+	}
 }

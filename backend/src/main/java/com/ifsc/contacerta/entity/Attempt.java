@@ -21,6 +21,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -125,7 +127,12 @@ public class Attempt {
 		this.totalQuestions = totalQuestions;
 		this.answeredQuestions = answeredQuestions;
 		this.correctAnswers = correctAnswers;
-		this.scorePercent = totalQuestions == 0 ? 0 : correctAnswers * 100 / totalQuestions;
+		this.scorePercent = totalQuestions == 0
+				? 0
+				: BigDecimal.valueOf(correctAnswers)
+						.multiply(BigDecimal.valueOf(100))
+						.divide(BigDecimal.valueOf(totalQuestions), 0, RoundingMode.HALF_UP)
+						.intValueExact();
 		this.passed = passed;
 		this.stars = stars;
 		this.xpCredited = xpCredited;
