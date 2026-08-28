@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 import java.util.List;
+import org.springframework.data.domain.Page;
 import java.util.UUID;
 
 public interface AttemptRepository extends JpaRepository<Attempt, UUID> {
@@ -61,6 +62,11 @@ public interface AttemptRepository extends JpaRepository<Attempt, UUID> {
 			@Param("now") java.time.Instant now,
 		org.springframework.data.domain.Pageable pageable
 	);
+
+	Page<Attempt> findByAssignmentIdAndStudentIdOrderBySequenceDesc(UUID assignmentId, UUID studentId, org.springframework.data.domain.Pageable pageable);
+
+	@Query("select coalesce(max(attempt.scorePercent), 0) from Attempt attempt where attempt.assignment.id = :assignmentId and attempt.student.id = :studentId and attempt.status in :statuses")
+	Integer findBestScoreByAssignmentIdAndStudentIdAndStatusIn(@Param("assignmentId") UUID assignmentId, @Param("studentId") UUID studentId, @Param("statuses") List<AttemptStatus> statuses);
 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("select attempt from Attempt attempt where attempt.id = :id")
