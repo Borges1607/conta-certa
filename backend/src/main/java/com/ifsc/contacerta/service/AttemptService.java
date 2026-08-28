@@ -61,6 +61,7 @@ public class AttemptService {
 	private final AttemptScoringService scoringService;
 	private final AttemptFinalizationService finalizationService;
 	private final StudentProgressService progressService;
+	private final java.util.random.RandomGenerator randomGenerator;
 	@Transactional
 	public AttemptStartResult start(UUID studentId, UUID assignmentId, String key) {
 		if (key == null || key.isBlank()) throw error(HttpStatus.CONFLICT, "IDEMPOTENCY_KEY_REQUIRED", "Idempotency-Key is required.");
@@ -81,7 +82,15 @@ public class AttemptService {
 		long used = attemptRepository.countByAssignmentIdAndStudentId(assignmentId, studentId); long allowed = assignment.getMaxAttempts() == null ? Long.MAX_VALUE : assignment.getMaxAttempts() + grantRepository.sumQuantityByAssignmentIdAndStudentId(assignmentId, studentId); if (used >= allowed) throw error(HttpStatus.CONFLICT, "ATTEMPT_LIMIT_REACHED", "Attempt limit reached.");
 		List<Question> questions = questionRepository.findByLessonIdAndActiveTrueOrderByPositionAsc(assignment.getLesson().getId()); int wanted = assignment.getQuestionCount() == null ? questions.size() : assignment.getQuestionCount(); if (questions.size() < wanted || wanted == 0) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "ASSIGNMENT_CONTENT_UNAVAILABLE", "Assignment content is unavailable.");
 		Instant expiresAt = assignment.getTimeLimitMinutes() == null ? assignment.getDueAt() : now.plusSeconds(assignment.getTimeLimitMinutes() * 60L); if (assignment.getDueAt() != null && (expiresAt == null || assignment.getDueAt().isBefore(expiresAt))) expiresAt = assignment.getDueAt();
-		Attempt attempt = new Attempt(assignment, student, (int) used + 1, now, expiresAt); for (int index = 0; index < wanted; index++) attempt.addSnapshot(questions.get(index), index + 1, questions.get(index).getOptions()); attemptRepository.saveAndFlush(attempt); AttemptResponse body = mapper.toPublicResponse(attempt, now); URI location = URI.create("/student/attempts/" + attempt.getId()); idempotencyRepository.save(new IdempotencyRecord(student, "POST", assignmentId.toString(), key, hasher.hashStartScope(), 201, "application/json", location.toString(), "{}", attempt, now, now.plus(properties.idempotencyTtl()))); return new AttemptStartResult(HttpStatus.CREATED, location, body);
+		List<Question> selectedQuestions = new java.util.ArrayList<>(questions);
+		if (assignment.isShuffleQuestions()) java.util.Collections.shuffle(selectedQuestions, new java.util.Random(randomGenerator.nextLong()));
+		Attempt attempt = new Attempt(assignment, student, (int) used + 1, now, expiresAt);
+		for (int index = 0; index < wanted; index++) {
+			List<com.ifsc.contacerta.entity.QuestionOption> options = new java.util.ArrayList<>(selectedQuestions.get(index).getOptions());
+			if (assignment.isShuffleOptions()) java.util.Collections.shuffle(options, new java.util.Random(randomGenerator.nextLong()));
+			attempt.addSnapshot(selectedQuestions.get(index), index + 1, options);
+		}
+		attemptRepository.saveAndFlush(attempt); AttemptResponse body = mapper.toPublicResponse(attempt, now); URI location = URI.create("/student/attempts/" + attempt.getId()); idempotencyRepository.save(new IdempotencyRecord(student, "POST", assignmentId.toString(), key, hasher.hashStartScope(), 201, "application/json", location.toString(), "{}", attempt, now, now.plus(properties.idempotencyTtl()))); return new AttemptStartResult(HttpStatus.CREATED, location, body);
 	}
 	private ApiException error(HttpStatus status, String code, String message) { return new ApiException(status, code, message); }
 	@Transactional
