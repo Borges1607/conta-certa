@@ -13,5 +13,7 @@ public interface QuestionRepository extends JpaRepository<Question, UUID> {
 
 	List<Question> findByLessonIdOrderByPositionAsc(UUID lessonId);
 
+	List<Question> findByLessonIdAndActiveTrueOrderByPositionAsc(UUID lessonId);
+
 	Optional<Question> findByIdAndLessonTeacherId(UUID id, UUID teacherId);
 }
