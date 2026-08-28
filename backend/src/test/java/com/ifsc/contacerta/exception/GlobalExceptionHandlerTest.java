@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -58,6 +60,14 @@ class GlobalExceptionHandlerTest {
 				.andExpect(jsonPath("$.fieldErrors[0].message").value("must not be blank"));
 	}
 
+	@Test
+	void deveTraduzirConflitoDeVersaoParaProblemDetails() throws Exception {
+		mockMvc.perform(get("/test/version-conflict"))
+				.andExpect(status().isConflict())
+				.andExpect(content().contentType("application/problem+json"))
+				.andExpect(jsonPath("$.code").value("VERSION_CONFLICT"));
+	}
+
 	@RestController
 	static class TestController {
 
@@ -68,6 +78,11 @@ class GlobalExceptionHandlerTest {
 					"EMAIL_ALREADY_EXISTS",
 					"Email is already registered."
 			);
+		}
+
+		@GetMapping("/test/version-conflict")
+		void versionConflict() {
+			throw new ObjectOptimisticLockingFailureException(TestController.class, UUID.randomUUID());
 		}
 
 		@PostMapping("/test/validation")

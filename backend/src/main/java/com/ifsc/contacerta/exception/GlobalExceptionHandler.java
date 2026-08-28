@@ -1,11 +1,13 @@
 package com.ifsc.contacerta.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -44,6 +46,20 @@ public class GlobalExceptionHandler {
 				"One or more fields are invalid.",
 				request,
 				fieldErrors
+		);
+	}
+
+	@ExceptionHandler({ObjectOptimisticLockingFailureException.class, OptimisticLockException.class})
+	public ResponseEntity<ProblemDetail> handleVersionConflict(
+			RuntimeException exception,
+			HttpServletRequest request
+	) {
+		return response(
+				HttpStatus.CONFLICT,
+				"VERSION_CONFLICT",
+				"The resource was modified by another request.",
+				request,
+				null
 		);
 	}
 
