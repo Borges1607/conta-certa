@@ -1,3 +1,7 @@
 package com.ifsc.contacerta.dto.attempt;
+
 import java.time.Instant;
-public record AttemptAnswerReceiptResponse(boolean correct, Instant answeredAt) {}
+import java.util.UUID;
+
+public record AttemptAnswerReceiptResponse(UUID questionSnapshotId, Instant answeredAt, boolean correct) {
+}

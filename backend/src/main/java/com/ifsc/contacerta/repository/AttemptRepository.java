@@ -71,6 +71,12 @@ public interface AttemptRepository extends JpaRepository<Attempt, UUID> {
 
 	Page<Attempt> findByAssignmentIdAndStudentIdOrderBySequenceDesc(UUID assignmentId, UUID studentId, org.springframework.data.domain.Pageable pageable);
 
+	Optional<Attempt> findFirstByAssignmentIdAndStudentIdAndStatusInOrderByScorePercentDescSubmittedAtAsc(
+			UUID assignmentId,
+			UUID studentId,
+			List<AttemptStatus> statuses
+	);
+
 	@Query("select coalesce(max(attempt.scorePercent), 0) from Attempt attempt where attempt.assignment.id = :assignmentId and attempt.student.id = :studentId and attempt.status in :statuses")
 	Integer findBestScoreByAssignmentIdAndStudentIdAndStatusIn(@Param("assignmentId") UUID assignmentId, @Param("studentId") UUID studentId, @Param("statuses") List<AttemptStatus> statuses);
 

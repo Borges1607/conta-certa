@@ -89,19 +89,13 @@ All resources derive the caller from the authenticated principal. Cross-student,
 
 ### Student lesson path
 
-`GET /student/rooms/{roomId}/lessons` returns the complete published assignment path ordered by position. Each item includes lesson summary, availability, limits, best result, attempts used and available, and one lock state:
+`GET /student/rooms/{roomId}/lessons` returns the complete published assignment path ordered by position. Each item follows the frontend contract and includes `order`, dates, nested `rules`, best score/stars, active and best attempt IDs, plus an availability state: `AVAILABLE`, `IN_PROGRESS`, `PASSED`, `FAILED`, or `LOCKED`. A locked item also returns one explicit `lockReason`: `PREREQUISITE_NOT_PASSED`, `NOT_YET_AVAILABLE`, `DUE_DATE_PASSED`, `NO_ATTEMPTS_LEFT`, or `NOT_PUBLISHED`.
 
-- `AVAILABLE`;
-- `NOT_OPEN_YET`;
-- `CLOSED`;
-- `PREREQUISITE_REQUIRED`;
-- `ATTEMPT_LIMIT_REACHED`.
-
-An existing `IN_PROGRESS` attempt keeps its assignment resumable even when the normal attempt limit has since been reached. Archived rooms remain readable but do not permit new attempts.
+An existing `IN_PROGRESS` attempt remains resumable even when the normal attempt limit has since been reached. A completed result remains readable after the due date or attempt exhaustion. Archived rooms remain readable but do not permit new attempts.
 
 `GET /student/rooms/{roomId}/lessons/{lessonId}` resolves the unique room assignment for that lesson and returns theory plus assignment configuration and progress. It never exposes source question content or gabaritos.
 
-Attempt history is paginated with the project standard `PageResponse`, defaults to page 0 and size 20, and permits at most size 100.
+Attempt history is exposed only at `GET /student/rooms/{roomId}/lessons/{lessonId}/attempts`, is paginated with the project standard `PageResponse`, defaults to page 0 and size 20, and permits at most size 100. Each item identifies `attemptId` and includes score, stars, pass state, correct/total question counts, and whether it is the best attempt.
 
 ### Starting an attempt
 
@@ -112,7 +106,7 @@ Attempt history is paginated with the project standard `PageResponse`, defaults 
 - Reusing a key with a different request hash or scope returns `409 IDEMPOTENCY_KEY_REUSED`.
 - A new key while an attempt is already `IN_PROGRESS` returns that attempt with `200 OK` and does not create a row.
 
-The public attempt DTO contains snapshot IDs, prompts, types, shuffled option IDs/text, numeric presentation metadata, current answer values, start/expiry times, and server time. It omits correctness, gabaritos, and explanations.
+The public attempt DTO contains room/lesson context, snapshot IDs, prompts, types, shuffled option IDs/text, numeric presentation metadata, current answer values, start/expiry times, and the passing score. It omits correctness, gabaritos, and explanations.
 
 ### Recording an answer
 

@@ -5,6 +5,7 @@ import com.ifsc.contacerta.dto.extraattempt.ExtraAttemptGrantResponse;
 import com.ifsc.contacerta.entity.ExtraAttemptGrant;
 import com.ifsc.contacerta.entity.LessonAssignment;
 import com.ifsc.contacerta.exception.ApiException;
+import com.ifsc.contacerta.model.AccountStatus;
 import com.ifsc.contacerta.model.MembershipStatus;
 import com.ifsc.contacerta.model.Role;
 import com.ifsc.contacerta.repository.AttemptRepository;
@@ -33,10 +34,20 @@ public class ExtraAttemptGrantService {
 
 	@Transactional
 	public ExtraAttemptGrantResponse grant(UUID teacherId, UUID assignmentId, UUID studentId, CreateExtraAttemptGrantRequest request) {
+		if (request == null || request.quantity() < 1 || request.quantity() > 100) {
+			throw error(
+					HttpStatus.UNPROCESSABLE_CONTENT,
+					"INVALID_EXTRA_ATTEMPT_QUANTITY",
+					"Extra attempt quantity must be between 1 and 100."
+			);
+		}
 		var teacher = userRepository.findById(teacherId)
 				.orElseThrow(() -> error(HttpStatus.NOT_FOUND, "TEACHER_NOT_FOUND", "Teacher was not found."));
 		if (teacher.getRole() != Role.TEACHER) {
 			throw error(HttpStatus.FORBIDDEN, "TEACHER_REQUIRED", "A teacher account is required.");
+		}
+		if (teacher.getStatus() != AccountStatus.ACTIVE) {
+			throw error(HttpStatus.FORBIDDEN, "ACCOUNT_INACTIVE", "Teacher account is inactive.");
 		}
 		LessonAssignment assignment = assignmentRepository.findById(assignmentId)
 				.filter(candidate -> candidate.getRoom().getTeacher().getId().equals(teacherId))
@@ -46,6 +57,12 @@ public class ExtraAttemptGrantService {
 		}
 		var student = userRepository.findById(studentId)
 				.orElseThrow(() -> error(HttpStatus.NOT_FOUND, "STUDENT_NOT_FOUND", "Student was not found."));
+		if (student.getRole() != Role.STUDENT) {
+			throw error(HttpStatus.FORBIDDEN, "STUDENT_REQUIRED", "A student account is required.");
+		}
+		if (student.getStatus() != AccountStatus.ACTIVE) {
+			throw error(HttpStatus.FORBIDDEN, "ACCOUNT_INACTIVE", "Student account is inactive.");
+		}
 		var membership = membershipRepository.findForUpdateByRoomIdAndStudentId(assignment.getRoom().getId(), studentId)
 				.filter(candidate -> candidate.getStatus() == MembershipStatus.ACTIVE)
 				.orElseThrow(() -> error(HttpStatus.NOT_FOUND, "MEMBERSHIP_NOT_FOUND", "Membership was not found."));
