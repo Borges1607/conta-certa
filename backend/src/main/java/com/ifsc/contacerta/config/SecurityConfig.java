@@ -29,6 +29,11 @@ public class SecurityConfig {
 				.authorizeHttpRequests(authorize -> authorize
 						.requestMatchers(HttpMethod.POST, "/auth/login", "/auth/refresh").permitAll()
 						.requestMatchers(HttpMethod.GET, "/institutions/options").permitAll()
+						.requestMatchers(
+								HttpMethod.GET,
+								"/student/rooms/*/ranking",
+								"/student/rooms/*/achievements"
+						).hasRole("STUDENT")
 						.anyRequest().authenticated()
 				)
 				.exceptionHandling(exceptions -> exceptions

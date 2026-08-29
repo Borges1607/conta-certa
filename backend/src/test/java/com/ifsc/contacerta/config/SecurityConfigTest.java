@@ -55,6 +55,16 @@ class SecurityConfigTest extends PostgresIntegrationTest {
 	}
 
 	@Test
+	void deveRestringirGamificacaoAoAluno() throws Exception {
+		AuthSession session = activeSession(AccountStatus.ACTIVE);
+		String token = jwtService.issue(session.getUser().getId(), Role.ADMIN, session.getId());
+
+		mockMvc.perform(get("/student/rooms/{roomId}/ranking", UUID.randomUUID())
+					.header("Authorization", "Bearer " + token))
+				.andExpect(status().isForbidden());
+	}
+
+	@Test
 	void deveAutenticarTokenVinculadoASessaoAtiva() throws Exception {
 		AuthSession session = activeSession(AccountStatus.ACTIVE);
 		String token = jwtService.issue(session.getUser().getId(), Role.ADMIN, session.getId());
