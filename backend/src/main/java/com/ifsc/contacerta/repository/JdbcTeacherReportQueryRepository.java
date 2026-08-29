@@ -127,6 +127,9 @@ public class JdbcTeacherReportQueryRepository implements TeacherReportQueryRepos
 			UUID studentId,
 			Pageable pageable
 	) {
+		Sort.Order order = pageable.getSort().stream().findFirst()
+				.orElseGet(() -> Sort.Order.desc("submittedAt"));
+		String direction = order.isAscending() ? "asc" : "desc";
 		JdbcClient.StatementSpec statement = jdbcClient.sql("""
 				select a.id as attempt_id, l.id as lesson_id, l.title as lesson_title,
 				       la.id as assignment_id, a.sequence, a.status, a.started_at, a.submitted_at,
@@ -138,9 +141,9 @@ public class JdbcTeacherReportQueryRepository implements TeacherReportQueryRepos
 				join lessons l on l.id = la.lesson_id
 				where la.room_id = :roomId and a.student_id = :studentId
 				""" + attemptConditions(filter) + """
-				order by a.submitted_at desc, a.id asc
+				order by a.submitted_at %s, a.id asc
 				limit :limit offset :offset
-				""");
+				""".formatted(direction));
 		statement = bindAttemptFilter(
 				statement.param("roomId", filter.roomId()).param("studentId", studentId), filter
 		).param("limit", pageable.getPageSize()).param("offset", pageable.getOffset());

@@ -126,6 +126,29 @@ class TeacherReportQueryRepositoryTest extends PostgresIntegrationTest {
 	}
 
 	@Test
+	void deveOrdenarTentativasPelaDirecaoSolicitada() {
+		Fixture fixture = createFixture();
+		UUID olderAttemptId = insertAttempt(
+				fixture.assignmentId(), fixture.studentOneId(), 1,
+				"2026-08-10T10:00:00Z", 60, true, 1, 10
+		);
+		UUID newerAttemptId = insertAttempt(
+				fixture.assignmentId(), fixture.studentOneId(), 2,
+				"2026-08-11T10:00:00Z", 80, true, 3, 20
+		);
+
+		Page<TeacherReportAttemptResponse> result = repository.attempts(
+				new ReportFilter(fixture.roomId(), null, null, null),
+				fixture.studentOneId(),
+				PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "submittedAt"))
+		);
+
+		assertThat(result.getContent())
+				.extracting(TeacherReportAttemptResponse::attemptId)
+				.containsExactly(olderAttemptId, newerAttemptId);
+	}
+
+	@Test
 	void deveClassificarTodosOsAlunosAtivosPeloResultadoFiltrado() {
 		Fixture fixture = createFixture();
 		insertAttempt(fixture.assignmentId(), fixture.studentOneId(), 1, "2026-08-10T10:00:00Z", 60, true, 1, 10);
