@@ -3,14 +3,15 @@ package com.ifsc.contacerta.repository;
 import com.ifsc.contacerta.entity.Attempt;
 import com.ifsc.contacerta.model.AttemptStatus;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.Optional;
+import java.time.Instant;
 import java.util.List;
-import org.springframework.data.domain.Page;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface AttemptRepository extends JpaRepository<Attempt, UUID> {
@@ -31,10 +32,10 @@ public interface AttemptRepository extends JpaRepository<Attempt, UUID> {
 			List<AttemptStatus> statuses
 	);
 
-	long countByAssignmentIdAndStudentIdAndStatusAndPassedTrue(
+	long countByAssignmentIdAndStudentIdAndStatusInAndPassedTrue(
 			UUID assignmentId,
 			UUID studentId,
-			AttemptStatus status
+			List<AttemptStatus> statuses
 	);
 
 	boolean existsByAssignmentIdAndStudentIdAndStatusAndPassedTrue(
@@ -65,7 +66,7 @@ public interface AttemptRepository extends JpaRepository<Attempt, UUID> {
 			+ "and attempt.expiresAt is not null and attempt.expiresAt <= :now order by attempt.expiresAt")
 	List<UUID> findExpiredIds(
 			@Param("status") AttemptStatus status,
-			@Param("now") java.time.Instant now,
+			@Param("now") Instant now,
 		org.springframework.data.domain.Pageable pageable
 	);
 
