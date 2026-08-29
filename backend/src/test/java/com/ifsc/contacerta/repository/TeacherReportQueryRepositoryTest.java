@@ -150,6 +150,19 @@ class TeacherReportQueryRepositoryTest extends PostgresIntegrationTest {
 		);
 	}
 
+	@Test
+	void deveCriarIndicesParciaisParaConsultasDeRelatorio() {
+		List<String> indexNames = jdbcClient.sql("""
+				select indexname from pg_indexes
+				where schemaname = 'public' and tablename = 'attempts'
+				""").query(String.class).list();
+
+		assertThat(indexNames).contains(
+				"idx_attempts_assignment_submitted_finalized",
+				"idx_attempts_student_submitted_finalized"
+		);
+	}
+
 	private Fixture createFixture() {
 		UUID institutionId = UUID.randomUUID();
 		UUID teacherId = UUID.randomUUID();
