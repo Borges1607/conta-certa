@@ -5,6 +5,7 @@ import com.ifsc.contacerta.dto.report.ReportScoreDistributionResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportOverviewResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportStudentResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportAttemptResponse;
+import com.ifsc.contacerta.dto.report.TeacherReportRankingResponse;
 import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.model.ReportFilter;
 import com.ifsc.contacerta.repository.TeacherReportQueryRepository;
@@ -107,6 +108,25 @@ class TeacherReportServiceTest {
 		Page<TeacherReportAttemptResponse> result = service.attempts(
 				teacherId, roomId, studentId, null, ReportPeriod.ALL, null, null,
 				0, 20, "desc"
+		);
+
+		assertThat(result).isSameAs(expected);
+	}
+
+	@Test
+	void deveConsultarRankingComFiltroValidado() {
+		TeacherReportFilterFactory filterFactory = mock(TeacherReportFilterFactory.class);
+		TeacherReportQueryRepository queryRepository = mock(TeacherReportQueryRepository.class);
+		TeacherReportService service = new TeacherReportService(filterFactory, queryRepository);
+		UUID teacherId = UUID.randomUUID();
+		UUID roomId = UUID.randomUUID();
+		ReportFilter filter = new ReportFilter(roomId, null, null, null);
+		List<TeacherReportRankingResponse> expected = List.of();
+		when(filterFactory.create(teacherId, roomId, null, ReportPeriod.ALL, null, null)).thenReturn(filter);
+		when(queryRepository.ranking(filter)).thenReturn(expected);
+
+		List<TeacherReportRankingResponse> result = service.ranking(
+				teacherId, roomId, null, ReportPeriod.ALL, null, null
 		);
 
 		assertThat(result).isSameAs(expected);

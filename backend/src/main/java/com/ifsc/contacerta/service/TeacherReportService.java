@@ -4,6 +4,7 @@ import com.ifsc.contacerta.dto.report.ReportPeriod;
 import com.ifsc.contacerta.dto.report.TeacherReportOverviewResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportStudentResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportAttemptResponse;
+import com.ifsc.contacerta.dto.report.TeacherReportRankingResponse;
 import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.model.ReportFilter;
 import com.ifsc.contacerta.model.ReportStudentSort;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpStatus;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -92,6 +94,19 @@ public class TeacherReportService {
 		} catch (IllegalArgumentException exception) {
 			throw badRequest("Unsupported report sort direction.");
 		}
+	}
+
+	@Transactional(readOnly = true)
+	public List<TeacherReportRankingResponse> ranking(
+			UUID teacherId,
+			UUID roomId,
+			UUID lessonId,
+			ReportPeriod period,
+			Instant from,
+			Instant to
+	) {
+		ReportFilter filter = filterFactory.create(teacherId, roomId, lessonId, period, from, to);
+		return queryRepository.ranking(filter);
 	}
 
 	private ApiException badRequest(String detail) {

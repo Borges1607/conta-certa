@@ -7,6 +7,7 @@ import com.ifsc.contacerta.dto.report.ReportScoreDistributionResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportAttemptAnswerResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportAttemptResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportOverviewResponse;
+import com.ifsc.contacerta.dto.report.TeacherReportRankingResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportStudentResponse;
 import com.ifsc.contacerta.model.AttemptStatus;
 import com.ifsc.contacerta.model.QuestionType;
@@ -171,6 +172,52 @@ public class JdbcTeacherReportQueryRepository implements TeacherReportQueryRepos
 				.toList();
 		long total = countAttempts(filter, studentId);
 		return new PageImpl<>(content, pageable, total);
+	}
+
+	@Override
+	public List<TeacherReportRankingResponse> ranking(ReportFilter filter) {
+		JdbcClient.StatementSpec statement = jdbcClient.sql("""
+				with filtered_attempts as (
+				    select a.student_id, a.assignment_id, a.xp_credited, a.stars, a.submitted_at
+				    from attempts a
+				    join lesson_assignments la on la.id = a.assignment_id
+				    where la.room_id = :roomId
+				""" + attemptConditions(filter) + """
+				), xp_totals as (
+				    select student_id, coalesce(sum(xp_credited), 0) as xp,
+				           min(submitted_at) as first_completion_at
+				    from filtered_attempts group by student_id
+				), best_stars as (
+				    select student_id, assignment_id, max(stars) as stars
+				    from filtered_attempts group by student_id, assignment_id
+				), star_totals as (
+				    select student_id, coalesce(sum(stars), 0) as stars
+				    from best_stars group by student_id
+				), ranked as (
+				    select u.id as student_id, u.full_name, u.registration_number, u.email,
+				           coalesce(xp.xp, 0) as xp, coalesce(st.stars, 0) as stars,
+				           xp.first_completion_at,
+				           row_number() over (order by coalesce(xp.xp, 0) desc,
+				             coalesce(st.stars, 0) desc, xp.first_completion_at asc nulls last, u.id asc) as position
+				    from room_memberships rm
+				    join users u on u.id = rm.student_id
+				    left join xp_totals xp on xp.student_id = u.id
+				    left join star_totals st on st.student_id = u.id
+				    where rm.room_id = :roomId and rm.status = 'ACTIVE'
+				)
+				select * from ranked order by position
+				""");
+		return bindAttemptFilter(statement.param("roomId", filter.roomId()), filter)
+				.query((rs, rowNum) -> new TeacherReportRankingResponse(
+						Math.toIntExact(rs.getLong("position")),
+						rs.getObject("student_id", UUID.class),
+						rs.getString("full_name"),
+						rs.getString("registration_number"),
+						rs.getString("email"),
+						rs.getLong("xp"),
+						rs.getLong("stars"),
+						toInstant(rs.getObject("first_completion_at", OffsetDateTime.class))
+				)).list();
 	}
 
 	private Map<UUID, List<TeacherReportAttemptAnswerResponse>> loadAnswers(List<UUID> attemptIds) {

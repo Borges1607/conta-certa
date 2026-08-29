@@ -8,6 +8,7 @@ import com.ifsc.contacerta.dto.report.TeacherReportOverviewResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportStudentResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportAttemptResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportAttemptAnswerResponse;
+import com.ifsc.contacerta.dto.report.TeacherReportRankingResponse;
 import com.ifsc.contacerta.model.ReportFilter;
 import com.ifsc.contacerta.model.QuestionType;
 import com.ifsc.contacerta.support.PostgresIntegrationTest;
@@ -22,6 +23,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -121,6 +123,31 @@ class TeacherReportQueryRepositoryTest extends PostgresIntegrationTest {
 				"Explicação congelada",
 				Instant.parse("2026-08-10T09:59:00Z")
 		));
+	}
+
+	@Test
+	void deveClassificarTodosOsAlunosAtivosPeloResultadoFiltrado() {
+		Fixture fixture = createFixture();
+		insertAttempt(fixture.assignmentId(), fixture.studentOneId(), 1, "2026-08-10T10:00:00Z", 60, true, 1, 10);
+		insertAttempt(fixture.assignmentId(), fixture.studentOneId(), 2, "2026-08-11T10:00:00Z", 80, true, 3, 20);
+		insertAttempt(fixture.assignmentId(), fixture.studentOneId(), 3, "2026-07-01T10:00:00Z", 100, true, 3, 100);
+
+		List<TeacherReportRankingResponse> result = repository.ranking(new ReportFilter(
+				fixture.roomId(), null,
+				Instant.parse("2026-08-01T00:00:00Z"),
+				Instant.parse("2026-08-20T00:00:00Z")
+		));
+
+		assertThat(result).containsExactly(
+				new TeacherReportRankingResponse(
+						1, fixture.studentOneId(), "Aluno Um", "S1", "um@example.com",
+						30, 3, Instant.parse("2026-08-10T10:00:00Z")
+				),
+				new TeacherReportRankingResponse(
+						2, fixture.studentTwoId(), "Aluno Dois", "S2", "dois@example.com",
+						0, 0, null
+				)
+		);
 	}
 
 	private Fixture createFixture() {
