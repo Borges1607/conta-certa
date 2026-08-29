@@ -27,7 +27,9 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class AttemptFinalizationServiceTest {
@@ -39,8 +41,9 @@ class AttemptFinalizationServiceTest {
 		AttemptAnswerRepository answerRepository = mock(AttemptAnswerRepository.class);
 		RoomMembershipRepository membershipRepository = mock(RoomMembershipRepository.class);
 		RoomStudentProgressRepository progressRepository = mock(RoomStudentProgressRepository.class);
+		AchievementUnlockService achievementUnlockService = mock(AchievementUnlockService.class);
 		AttemptFinalizationService service = new AttemptFinalizationService(
-				attemptRepository, answerRepository, membershipRepository, progressRepository
+				attemptRepository, answerRepository, membershipRepository, progressRepository, achievementUnlockService
 		);
 		Instant finalizedAt = Instant.parse("2026-08-28T12:30:00Z");
 		AttemptAnswer correctAnswer = AttemptAnswer.booleanAnswer(
@@ -64,13 +67,86 @@ class AttemptFinalizationServiceTest {
 		assertThat(fixture.attempt().getPassed()).isFalse();
 		assertThat(fixture.attempt().getStars()).isEqualTo(1);
 		assertThat(fixture.attempt().getXpCredited()).isEqualTo(10);
+		verify(achievementUnlockService).evaluate(any(RoomStudentProgress.class), eq(50), eq(finalizedAt));
+	}
+
+	@Test
+	void deveContarPrimeiraAprovacaoExpiradaUmaUnicaVez() {
+		Fixture fixture = fixture(50);
+		AttemptRepository attemptRepository = mock(AttemptRepository.class);
+		AttemptAnswerRepository answerRepository = mock(AttemptAnswerRepository.class);
+		RoomMembershipRepository membershipRepository = mock(RoomMembershipRepository.class);
+		RoomStudentProgressRepository progressRepository = mock(RoomStudentProgressRepository.class);
+		AchievementUnlockService achievementUnlockService = mock(AchievementUnlockService.class);
+		AttemptFinalizationService service = new AttemptFinalizationService(
+				attemptRepository, answerRepository, membershipRepository, progressRepository, achievementUnlockService
+		);
+		Instant finalizedAt = Instant.parse("2026-08-28T12:30:00Z");
+		AttemptAnswer correctAnswer = AttemptAnswer.booleanAnswer(
+				fixture.attempt().getSnapshots().getFirst(), true, true, finalizedAt.minusSeconds(10)
+		);
+		RoomMembership membership = new RoomMembership(fixture.room(), fixture.student());
+		RoomStudentProgress progress = new RoomStudentProgress(fixture.room(), fixture.student());
+		when(membershipRepository.findForUpdateByRoomIdAndStudentId(fixture.room().getId(), fixture.student().getId()))
+				.thenReturn(Optional.of(membership));
+		when(answerRepository.findByQuestionSnapshotAttemptId(fixture.attempt().getId()))
+				.thenReturn(List.of(correctAnswer));
+		when(progressRepository.findForUpdateByRoomIdAndStudentId(fixture.room().getId(), fixture.student().getId()))
+				.thenReturn(Optional.of(progress));
+		when(attemptRepository.countByAssignmentIdAndStudentIdAndStatusInAndPassedTrue(
+				fixture.attempt().getAssignment().getId(), fixture.student().getId(),
+				List.of(AttemptStatus.SUBMITTED, AttemptStatus.EXPIRED)
+		)).thenReturn(0L);
+
+		service.finalizeAttempt(fixture.attempt(), AttemptStatus.EXPIRED, finalizedAt);
+
+		assertThat(progress.getPassedAssignmentCount()).isEqualTo(1);
+		verify(achievementUnlockService).evaluate(progress, 50, finalizedAt);
+	}
+
+	@Test
+	void naoDeveContarNovamenteAprovacaoExpiradaDaMesmaAtribuicao() {
+		Fixture fixture = fixture(50);
+		AttemptRepository attemptRepository = mock(AttemptRepository.class);
+		AttemptAnswerRepository answerRepository = mock(AttemptAnswerRepository.class);
+		RoomMembershipRepository membershipRepository = mock(RoomMembershipRepository.class);
+		RoomStudentProgressRepository progressRepository = mock(RoomStudentProgressRepository.class);
+		AchievementUnlockService achievementUnlockService = mock(AchievementUnlockService.class);
+		AttemptFinalizationService service = new AttemptFinalizationService(
+				attemptRepository, answerRepository, membershipRepository, progressRepository, achievementUnlockService
+		);
+		Instant finalizedAt = Instant.parse("2026-08-28T12:30:00Z");
+		AttemptAnswer correctAnswer = AttemptAnswer.booleanAnswer(
+				fixture.attempt().getSnapshots().getFirst(), true, true, finalizedAt.minusSeconds(10)
+		);
+		RoomMembership membership = new RoomMembership(fixture.room(), fixture.student());
+		RoomStudentProgress progress = new RoomStudentProgress(fixture.room(), fixture.student());
+		when(membershipRepository.findForUpdateByRoomIdAndStudentId(fixture.room().getId(), fixture.student().getId()))
+				.thenReturn(Optional.of(membership));
+		when(answerRepository.findByQuestionSnapshotAttemptId(fixture.attempt().getId()))
+				.thenReturn(List.of(correctAnswer));
+		when(progressRepository.findForUpdateByRoomIdAndStudentId(fixture.room().getId(), fixture.student().getId()))
+				.thenReturn(Optional.of(progress));
+		when(attemptRepository.countByAssignmentIdAndStudentIdAndStatusInAndPassedTrue(
+				fixture.attempt().getAssignment().getId(), fixture.student().getId(),
+				List.of(AttemptStatus.SUBMITTED, AttemptStatus.EXPIRED)
+		)).thenReturn(1L);
+
+		service.finalizeAttempt(fixture.attempt(), AttemptStatus.EXPIRED, finalizedAt);
+
+		assertThat(progress.getPassedAssignmentCount()).isZero();
+		verify(achievementUnlockService).evaluate(progress, 50, finalizedAt);
 	}
 
 	private Fixture fixture() {
+		return fixture(60);
+	}
+
+	private Fixture fixture(int passingScore) {
 		Institution institution = new Institution("Instituto", "11222333000181", "contato@example.com", "48999990000", true);
 		User teacher = new User(Role.TEACHER, AccountStatus.ACTIVE, "Professora", "prof@example.com", "P-1", institution);
 		User student = new User(Role.STUDENT, AccountStatus.ACTIVE, "Aluno", "aluno@example.com", "A-1", institution);
-		Room room = new Room("Sala", null, Grade.HIGH_SCHOOL_1, List.of("Frações"), 60, "ABC234", "hash", teacher, institution);
+		Room room = new Room("Sala", null, Grade.HIGH_SCHOOL_1, List.of("Frações"), passingScore, "ABC234", "hash", teacher, institution);
 		Lesson lesson = new Lesson("Frações", null, "# Teoria", teacher);
 		LessonAssignment assignment = new LessonAssignment(room, lesson, 1, null, null, 30, 3, 2, false, false);
 		Attempt attempt = new Attempt(assignment, student, 1, Instant.parse("2026-08-28T12:00:00Z"), null);

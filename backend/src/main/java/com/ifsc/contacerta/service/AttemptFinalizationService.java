@@ -13,6 +13,8 @@ import com.ifsc.contacerta.repository.RoomStudentProgressRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.List;
 
@@ -29,6 +31,7 @@ public class AttemptFinalizationService {
 	private final AttemptAnswerRepository answerRepository;
 	private final RoomMembershipRepository membershipRepository;
 	private final RoomStudentProgressRepository progressRepository;
+	private final AchievementUnlockService achievementUnlockService;
 
 	public void finalizeAttempt(Attempt attempt, AttemptStatus status, Instant finalizedAt) {
 		if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
@@ -57,8 +60,8 @@ public class AttemptFinalizationService {
 		boolean firstCompletion = attemptRepository.countByAssignmentIdAndStudentIdAndStatusIn(
 				attempt.getAssignment().getId(), attempt.getStudent().getId(), FINAL_STATUSES
 		) == 0;
-		boolean firstPass = passed && attemptRepository.countByAssignmentIdAndStudentIdAndStatusAndPassedTrue(
-				attempt.getAssignment().getId(), attempt.getStudent().getId(), AttemptStatus.SUBMITTED
+		boolean firstPass = passed && attemptRepository.countByAssignmentIdAndStudentIdAndStatusInAndPassedTrue(
+				attempt.getAssignment().getId(), attempt.getStudent().getId(), FINAL_STATUSES
 		) == 0;
 		int potentialXp = correctAnswers * 10;
 		int xpDelta = Math.max(0, potentialXp - previousBestXp);
@@ -80,15 +83,16 @@ public class AttemptFinalizationService {
 				membership.getStudent().getId()
 		).orElseGet(() -> progressRepository.save(new RoomStudentProgress(membership.getRoom(), membership.getStudent())));
 		progress.applyResult(xpDelta, starsDelta, firstCompletion, firstPass, finalizedAt);
+		achievementUnlockService.evaluate(progress, score, finalizedAt);
 	}
 
 	private int score(int correctAnswers, int totalQuestions) {
 		if (totalQuestions == 0) {
 			return 0;
 		}
-		return java.math.BigDecimal.valueOf(correctAnswers)
-				.multiply(java.math.BigDecimal.valueOf(100))
-				.divide(java.math.BigDecimal.valueOf(totalQuestions), 0, java.math.RoundingMode.HALF_UP)
+		return BigDecimal.valueOf(correctAnswers)
+				.multiply(BigDecimal.valueOf(100))
+				.divide(BigDecimal.valueOf(totalQuestions), 0, RoundingMode.HALF_UP)
 				.intValueExact();
 	}
 

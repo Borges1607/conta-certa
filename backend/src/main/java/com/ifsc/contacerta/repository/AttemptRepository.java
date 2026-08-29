@@ -31,10 +31,10 @@ public interface AttemptRepository extends JpaRepository<Attempt, UUID> {
 			List<AttemptStatus> statuses
 	);
 
-	long countByAssignmentIdAndStudentIdAndStatusAndPassedTrue(
+	long countByAssignmentIdAndStudentIdAndStatusInAndPassedTrue(
 			UUID assignmentId,
 			UUID studentId,
-			AttemptStatus status
+			List<AttemptStatus> statuses
 	);
 
 	boolean existsByAssignmentIdAndStudentIdAndStatusAndPassedTrue(
