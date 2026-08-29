@@ -4,15 +4,23 @@ import com.ifsc.contacerta.dto.report.ReportAttemptSeriesItemResponse;
 import com.ifsc.contacerta.dto.report.ReportLessonPerformanceResponse;
 import com.ifsc.contacerta.dto.report.ReportScoreDistributionResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportOverviewResponse;
+import com.ifsc.contacerta.dto.report.TeacherReportStudentResponse;
 import com.ifsc.contacerta.model.ReportFilter;
+import com.ifsc.contacerta.model.ReportStudentSort;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -38,6 +46,68 @@ public class JdbcTeacherReportQueryRepository implements TeacherReportQueryRepos
 				scoreDistribution(filter),
 				lessonPerformance(filter)
 		);
+	}
+
+	@Override
+	public Page<TeacherReportStudentResponse> students(ReportFilter filter, Pageable pageable) {
+		Sort.Order order = pageable.getSort().stream().findFirst()
+				.orElseGet(() -> Sort.Order.desc("totalXp"));
+		ReportStudentSort sort = ReportStudentSort.fromProperty(order.getProperty());
+		String direction = order.isAscending() ? "asc" : "desc";
+		String nulls = order.getProperty().equals("lastActivityAt") ? " nulls last" : "";
+		String metricsConditions = attemptConditions(filter);
+		String sql = """
+				select u.id as student_id, u.full_name, u.registration_number, u.email,
+				       coalesce(rsp.total_xp, 0) as total_xp,
+				       coalesce(rsp.level, 1) as level,
+				       coalesce(rsp.total_best_stars, 0) as total_stars,
+				       coalesce(rsp.completed_assignment_count, 0) as completed_assignments,
+				       coalesce(rsp.passed_assignment_count, 0) as passed_assignments,
+				       rsp.last_activity_at,
+				       coalesce(metrics.attempt_count, 0) as attempt_count,
+				       coalesce(metrics.average_score, 0) as average_score,
+				       coalesce(metrics.best_score, 0) as best_score
+				from room_memberships rm
+				join users u on u.id = rm.student_id
+				left join room_student_progress rsp
+				  on rsp.room_id = rm.room_id and rsp.student_id = rm.student_id
+				left join (
+				    select a.student_id, count(*) as attempt_count,
+				           avg(a.score_percent) as average_score, max(a.score_percent) as best_score
+				    from attempts a
+				    join lesson_assignments la on la.id = a.assignment_id
+				    where la.room_id = :roomId
+				""" + metricsConditions + """
+				    group by a.student_id
+				) metrics on metrics.student_id = rm.student_id
+				where rm.room_id = :roomId and rm.status = 'ACTIVE'
+				order by %s %s%s, u.id asc
+				limit :limit offset :offset
+				""".formatted(sort.expression(), direction, nulls);
+		JdbcClient.StatementSpec statement = bindAttemptFilter(
+				jdbcClient.sql(sql).param("roomId", filter.roomId()), filter
+		).param("limit", pageable.getPageSize()).param("offset", pageable.getOffset());
+		List<TeacherReportStudentResponse> content = statement.query((rs, rowNum) ->
+				new TeacherReportStudentResponse(
+						rs.getObject("student_id", UUID.class),
+						rs.getString("full_name"),
+						rs.getString("registration_number"),
+						rs.getString("email"),
+						rs.getInt("total_xp"),
+						rs.getInt("level"),
+						rs.getInt("total_stars"),
+						rs.getInt("completed_assignments"),
+						rs.getInt("passed_assignments"),
+						toInstant(rs.getObject("last_activity_at", OffsetDateTime.class)),
+						rs.getLong("attempt_count"),
+						decimal(rs.getBigDecimal("average_score")),
+						decimal(rs.getBigDecimal("best_score"))
+				)).list();
+		long total = jdbcClient.sql("""
+				select count(*) from room_memberships
+				where room_id = :roomId and status = 'ACTIVE'
+				""").param("roomId", filter.roomId()).query(Long.class).single();
+		return new PageImpl<>(content, pageable, total);
 	}
 
 	private RoomMetrics roomMetrics(ReportFilter filter) {
@@ -176,6 +246,10 @@ public class JdbcTeacherReportQueryRepository implements TeacherReportQueryRepos
 
 	private BigDecimal decimal(BigDecimal value) {
 		return value == null ? ZERO : value.setScale(2, RoundingMode.HALF_UP);
+	}
+
+	private Instant toInstant(OffsetDateTime value) {
+		return value == null ? null : value.toInstant();
 	}
 
 	private record RoomMetrics(long activeStudentCount, BigDecimal averageRoomXp) { }

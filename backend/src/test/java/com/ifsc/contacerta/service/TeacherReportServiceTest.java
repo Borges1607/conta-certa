@@ -3,9 +3,16 @@ package com.ifsc.contacerta.service;
 import com.ifsc.contacerta.dto.report.ReportPeriod;
 import com.ifsc.contacerta.dto.report.ReportScoreDistributionResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportOverviewResponse;
+import com.ifsc.contacerta.dto.report.TeacherReportStudentResponse;
+import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.model.ReportFilter;
 import com.ifsc.contacerta.repository.TeacherReportQueryRepository;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -13,6 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -38,5 +46,54 @@ class TeacherReportServiceTest {
 		);
 
 		assertThat(result).isSameAs(expected);
+	}
+
+	@Test
+	void deveConsultarAlunosComPaginacaoEOrdenacaoValidadas() {
+		TeacherReportFilterFactory filterFactory = mock(TeacherReportFilterFactory.class);
+		TeacherReportQueryRepository queryRepository = mock(TeacherReportQueryRepository.class);
+		TeacherReportService service = new TeacherReportService(filterFactory, queryRepository);
+		UUID teacherId = UUID.randomUUID();
+		UUID roomId = UUID.randomUUID();
+		ReportFilter filter = new ReportFilter(roomId, null, null, null);
+		PageRequest pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "totalXp"));
+		Page<TeacherReportStudentResponse> expected = new PageImpl<>(List.of(), pageable, 0);
+		when(filterFactory.create(teacherId, roomId, null, ReportPeriod.ALL, null, null)).thenReturn(filter);
+		when(queryRepository.students(filter, pageable)).thenReturn(expected);
+
+		Page<TeacherReportStudentResponse> result = service.students(
+				teacherId, roomId, null, ReportPeriod.ALL, null, null,
+				0, 20, "totalXp", "desc"
+		);
+
+		assertThat(result).isSameAs(expected);
+	}
+
+	@Test
+	void deveRejeitarPaginacaoEOrdenacaoInvalidas() {
+		TeacherReportService service = new TeacherReportService(
+				mock(TeacherReportFilterFactory.class), mock(TeacherReportQueryRepository.class)
+		);
+
+		assertBadRequest(() -> service.students(
+				UUID.randomUUID(), UUID.randomUUID(), null, null, null, null,
+				0, 101, "totalXp", "desc"
+		));
+		assertBadRequest(() -> service.students(
+				UUID.randomUUID(), UUID.randomUUID(), null, null, null, null,
+				0, 20, "unknown", "desc"
+		));
+		assertBadRequest(() -> service.students(
+				UUID.randomUUID(), UUID.randomUUID(), null, null, null, null,
+				0, 20, "totalXp", "sideways"
+		));
+	}
+
+	private void assertBadRequest(Runnable action) {
+		assertThatThrownBy(action::run)
+				.isInstanceOfSatisfying(ApiException.class, exception -> {
+					assertThat(exception.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+					assertThat(exception.getCode()).isEqualTo("BAD_REQUEST");
+				});
 	}
 }

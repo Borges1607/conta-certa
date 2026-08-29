@@ -4,10 +4,14 @@ import com.ifsc.contacerta.dto.report.ReportAttemptSeriesItemResponse;
 import com.ifsc.contacerta.dto.report.ReportLessonPerformanceResponse;
 import com.ifsc.contacerta.dto.report.ReportScoreDistributionResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportOverviewResponse;
+import com.ifsc.contacerta.dto.report.TeacherReportStudentResponse;
 import com.ifsc.contacerta.model.ReportFilter;
 import com.ifsc.contacerta.support.PostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
 import java.math.BigDecimal;
@@ -54,6 +58,35 @@ class TeacherReportQueryRepositoryTest extends PostgresIntegrationTest {
 		));
 	}
 
+	@Test
+	void devePaginarAlunosAtivosComProgressoAtualEMetricasFiltradas() {
+		Fixture fixture = createFixture();
+		insertAttempt(fixture.assignmentId(), fixture.studentOneId(), 1, "2026-08-10T10:00:00Z", 40, false, 1, 10);
+		insertAttempt(fixture.assignmentId(), fixture.studentOneId(), 2, "2026-08-11T10:00:00Z", 80, true, 3, 30);
+		insertAttempt(fixture.assignmentId(), fixture.studentOneId(), 3, "2026-07-01T10:00:00Z", 100, true, 3, 50);
+
+		Page<TeacherReportStudentResponse> result = repository.students(
+				new ReportFilter(
+						fixture.roomId(), null,
+						Instant.parse("2026-08-01T00:00:00Z"),
+						Instant.parse("2026-08-20T00:00:00Z")
+				),
+				PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "totalXp"))
+		);
+
+		assertThat(result.getTotalElements()).isEqualTo(2);
+		assertThat(result.getContent()).containsExactly(
+				new TeacherReportStudentResponse(
+						fixture.studentOneId(), "Aluno Um", "S1", "um@example.com",
+						100, 1, 0, 0, 0, null, 2, new BigDecimal("60.00"), new BigDecimal("80.00")
+				),
+				new TeacherReportStudentResponse(
+						fixture.studentTwoId(), "Aluno Dois", "S2", "dois@example.com",
+						50, 1, 0, 0, 0, null, 0, new BigDecimal("0.00"), new BigDecimal("0.00")
+				)
+		);
+	}
+
 	private Fixture createFixture() {
 		UUID institutionId = UUID.randomUUID();
 		UUID teacherId = UUID.randomUUID();
@@ -88,7 +121,7 @@ class TeacherReportQueryRepositoryTest extends PostgresIntegrationTest {
 		insertAssignment(secondAssignmentId, roomId, secondLessonId, 2, now);
 		insertProgress(roomId, studentOneId, 100, now);
 		insertProgress(roomId, studentTwoId, 50, now);
-		return new Fixture(roomId, lessonId, assignmentId, studentOneId);
+		return new Fixture(roomId, lessonId, assignmentId, studentOneId, studentTwoId);
 	}
 
 	private void insertUser(UUID id, String role, String name, String email, String registration, UUID institution, Instant now) {
@@ -150,5 +183,11 @@ class TeacherReportQueryRepositoryTest extends PostgresIntegrationTest {
 				.param("score", score).param("passed", passed).param("stars", stars).param("xp", xp).update();
 	}
 
-	private record Fixture(UUID roomId, UUID lessonId, UUID assignmentId, UUID studentOneId) { }
+	private record Fixture(
+			UUID roomId,
+			UUID lessonId,
+			UUID assignmentId,
+			UUID studentOneId,
+			UUID studentTwoId
+	) { }
 }
