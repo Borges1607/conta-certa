@@ -4,6 +4,7 @@ import com.ifsc.contacerta.dto.report.ReportPeriod;
 import com.ifsc.contacerta.dto.report.ReportScoreDistributionResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportOverviewResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportStudentResponse;
+import com.ifsc.contacerta.dto.report.TeacherReportAttemptResponse;
 import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.model.ReportFilter;
 import com.ifsc.contacerta.repository.TeacherReportQueryRepository;
@@ -87,6 +88,28 @@ class TeacherReportServiceTest {
 				UUID.randomUUID(), UUID.randomUUID(), null, null, null, null,
 				0, 20, "totalXp", "sideways"
 		));
+	}
+
+	@Test
+	void deveConsultarTentativasSomenteAposValidarAlunoAtivo() {
+		TeacherReportFilterFactory filterFactory = mock(TeacherReportFilterFactory.class);
+		TeacherReportQueryRepository queryRepository = mock(TeacherReportQueryRepository.class);
+		TeacherReportService service = new TeacherReportService(filterFactory, queryRepository);
+		UUID teacherId = UUID.randomUUID();
+		UUID roomId = UUID.randomUUID();
+		UUID studentId = UUID.randomUUID();
+		ReportFilter filter = new ReportFilter(roomId, null, null, null);
+		PageRequest pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "submittedAt"));
+		Page<TeacherReportAttemptResponse> expected = new PageImpl<>(List.of(), pageable, 0);
+		when(filterFactory.create(teacherId, roomId, null, ReportPeriod.ALL, null, null)).thenReturn(filter);
+		when(queryRepository.attempts(filter, studentId, pageable)).thenReturn(expected);
+
+		Page<TeacherReportAttemptResponse> result = service.attempts(
+				teacherId, roomId, studentId, null, ReportPeriod.ALL, null, null,
+				0, 20, "desc"
+		);
+
+		assertThat(result).isSameAs(expected);
 	}
 
 	private void assertBadRequest(Runnable action) {

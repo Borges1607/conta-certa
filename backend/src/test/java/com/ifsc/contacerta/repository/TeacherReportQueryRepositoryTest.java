@@ -1,11 +1,15 @@
 package com.ifsc.contacerta.repository;
 
+import com.ifsc.contacerta.dto.attempt.AttemptAnswerValueResponse;
 import com.ifsc.contacerta.dto.report.ReportAttemptSeriesItemResponse;
 import com.ifsc.contacerta.dto.report.ReportLessonPerformanceResponse;
 import com.ifsc.contacerta.dto.report.ReportScoreDistributionResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportOverviewResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportStudentResponse;
+import com.ifsc.contacerta.dto.report.TeacherReportAttemptResponse;
+import com.ifsc.contacerta.dto.report.TeacherReportAttemptAnswerResponse;
 import com.ifsc.contacerta.model.ReportFilter;
+import com.ifsc.contacerta.model.QuestionType;
 import com.ifsc.contacerta.support.PostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,6 +89,38 @@ class TeacherReportQueryRepositoryTest extends PostgresIntegrationTest {
 						50, 1, 0, 0, 0, null, 0, new BigDecimal("0.00"), new BigDecimal("0.00")
 				)
 		);
+	}
+
+	@Test
+	void deveListarTentativasFinalizadasComRespostasDosSnapshots() {
+		Fixture fixture = createFixture();
+		UUID attemptId = insertAttempt(
+				fixture.assignmentId(), fixture.studentOneId(), 1,
+				"2026-08-10T10:00:00Z", 80, true, 3, 30
+		);
+		UUID snapshotId = insertBooleanAnswer(fixture.lessonId(), attemptId, "Enunciado congelado", true, false);
+
+		Page<TeacherReportAttemptResponse> result = repository.attempts(
+				new ReportFilter(fixture.roomId(), null, null, null),
+				fixture.studentOneId(),
+				PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "submittedAt"))
+		);
+
+		assertThat(result.getTotalElements()).isEqualTo(1);
+		TeacherReportAttemptResponse attempt = result.getContent().getFirst();
+		assertThat(attempt.attemptId()).isEqualTo(attemptId);
+		assertThat(attempt.lessonId()).isEqualTo(fixture.lessonId());
+		assertThat(attempt.lessonTitle()).isEqualTo("Aula de porcentagem");
+		assertThat(attempt.durationSeconds()).isEqualTo(600);
+		assertThat(attempt.scorePercent()).isEqualTo(80);
+		assertThat(attempt.answers()).containsExactly(new TeacherReportAttemptAnswerResponse(
+				snapshotId, 1, "Enunciado congelado", QuestionType.TRUE_FALSE,
+				new AttemptAnswerValueResponse(null, false, null),
+				false,
+				new AttemptAnswerValueResponse(null, true, null),
+				"Explicação congelada",
+				Instant.parse("2026-08-10T09:59:00Z")
+		));
 	}
 
 	private Fixture createFixture() {
@@ -168,19 +204,45 @@ class TeacherReportQueryRepositoryTest extends PostgresIntegrationTest {
 				.param("xp", xp).param("now", Timestamp.from(now)).update();
 	}
 
-	private void insertAttempt(UUID assignmentId, UUID studentId, int sequence, String submittedAt,
+	private UUID insertAttempt(UUID assignmentId, UUID studentId, int sequence, String submittedAt,
 			int score, boolean passed, int stars, int xp) {
 		Instant submitted = Instant.parse(submittedAt);
+		UUID attemptId = UUID.randomUUID();
 		jdbcClient.sql("""
 				insert into attempts (id, assignment_id, student_id, sequence, status, started_at, submitted_at,
 				 total_questions, answered_questions, correct_answers, score_percent, passed, stars, xp_credited,
 				 created_at, updated_at)
 				values (:id, :assignment, :student, :sequence, 'SUBMITTED', :started, :submitted,
 				 100, 100, :score, :score, :passed, :stars, :xp, :submitted, :submitted)
-				""").param("id", UUID.randomUUID()).param("assignment", assignmentId).param("student", studentId)
+				""").param("id", attemptId).param("assignment", assignmentId).param("student", studentId)
 				.param("sequence", sequence).param("started", Timestamp.from(submitted.minusSeconds(600)))
 				.param("submitted", Timestamp.from(submitted))
 				.param("score", score).param("passed", passed).param("stars", stars).param("xp", xp).update();
+		return attemptId;
+	}
+
+	private UUID insertBooleanAnswer(UUID lessonId, UUID attemptId, String prompt, boolean correctValue, boolean answer) {
+		UUID questionId = UUID.randomUUID();
+		UUID snapshotId = UUID.randomUUID();
+		jdbcClient.sql("""
+				insert into questions (id, lesson_id, type, prompt, explanation, position, active,
+				 correct_boolean, created_at, updated_at)
+				values (:id, :lesson, 'TRUE_FALSE', 'Enunciado atual', 'Explicação atual', 1, true,
+				 :correct, now(), now())
+				""").param("id", questionId).param("lesson", lessonId).param("correct", correctValue).update();
+		jdbcClient.sql("""
+				insert into attempt_question_snapshots (id, attempt_id, question_id, type, prompt, explanation,
+				 position, correct_boolean)
+				values (:id, :attempt, :question, 'TRUE_FALSE', :prompt, 'Explicação congelada', 1, :correct)
+				""").param("id", snapshotId).param("attempt", attemptId).param("question", questionId)
+				.param("prompt", prompt).param("correct", correctValue).update();
+		jdbcClient.sql("""
+				insert into attempt_answers (id, question_snapshot_id, boolean_value, correct, answered_at)
+				values (:id, :snapshot, :answer, :correct, :answeredAt)
+				""").param("id", UUID.randomUUID()).param("snapshot", snapshotId).param("answer", answer)
+				.param("correct", answer == correctValue)
+				.param("answeredAt", Timestamp.from(Instant.parse("2026-08-10T09:59:00Z"))).update();
+		return snapshotId;
 	}
 
 	private record Fixture(

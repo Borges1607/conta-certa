@@ -1,10 +1,15 @@
 package com.ifsc.contacerta.repository;
 
+import com.ifsc.contacerta.dto.attempt.AttemptAnswerValueResponse;
 import com.ifsc.contacerta.dto.report.ReportAttemptSeriesItemResponse;
 import com.ifsc.contacerta.dto.report.ReportLessonPerformanceResponse;
 import com.ifsc.contacerta.dto.report.ReportScoreDistributionResponse;
+import com.ifsc.contacerta.dto.report.TeacherReportAttemptAnswerResponse;
+import com.ifsc.contacerta.dto.report.TeacherReportAttemptResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportOverviewResponse;
 import com.ifsc.contacerta.dto.report.TeacherReportStudentResponse;
+import com.ifsc.contacerta.model.AttemptStatus;
+import com.ifsc.contacerta.model.QuestionType;
 import com.ifsc.contacerta.model.ReportFilter;
 import com.ifsc.contacerta.model.ReportStudentSort;
 import lombok.RequiredArgsConstructor;
@@ -17,11 +22,16 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.Array;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Repository
@@ -108,6 +118,146 @@ public class JdbcTeacherReportQueryRepository implements TeacherReportQueryRepos
 				where room_id = :roomId and status = 'ACTIVE'
 				""").param("roomId", filter.roomId()).query(Long.class).single();
 		return new PageImpl<>(content, pageable, total);
+	}
+
+	@Override
+	public Page<TeacherReportAttemptResponse> attempts(
+			ReportFilter filter,
+			UUID studentId,
+			Pageable pageable
+	) {
+		JdbcClient.StatementSpec statement = jdbcClient.sql("""
+				select a.id as attempt_id, l.id as lesson_id, l.title as lesson_title,
+				       la.id as assignment_id, a.sequence, a.status, a.started_at, a.submitted_at,
+				       extract(epoch from (a.submitted_at - a.started_at))::bigint as duration_seconds,
+				       a.total_questions, a.answered_questions, a.correct_answers, a.score_percent,
+				       a.passed, a.stars, a.xp_credited
+				from attempts a
+				join lesson_assignments la on la.id = a.assignment_id
+				join lessons l on l.id = la.lesson_id
+				where la.room_id = :roomId and a.student_id = :studentId
+				""" + attemptConditions(filter) + """
+				order by a.submitted_at desc, a.id asc
+				limit :limit offset :offset
+				""");
+		statement = bindAttemptFilter(
+				statement.param("roomId", filter.roomId()).param("studentId", studentId), filter
+		).param("limit", pageable.getPageSize()).param("offset", pageable.getOffset());
+		List<TeacherReportAttemptResponse> summaries = statement.query((rs, rowNum) ->
+				new TeacherReportAttemptResponse(
+						rs.getObject("attempt_id", UUID.class),
+						rs.getObject("lesson_id", UUID.class),
+						rs.getString("lesson_title"),
+						rs.getObject("assignment_id", UUID.class),
+						rs.getInt("sequence"),
+						AttemptStatus.valueOf(rs.getString("status")),
+						toInstant(rs.getObject("started_at", OffsetDateTime.class)),
+						toInstant(rs.getObject("submitted_at", OffsetDateTime.class)),
+						rs.getLong("duration_seconds"),
+						rs.getInt("total_questions"),
+						rs.getInt("answered_questions"),
+						rs.getInt("correct_answers"),
+						rs.getInt("score_percent"),
+						rs.getBoolean("passed"),
+						rs.getInt("stars"),
+						rs.getInt("xp_credited"),
+						List.of()
+				)).list();
+		Map<UUID, List<TeacherReportAttemptAnswerResponse>> answers = loadAnswers(
+				summaries.stream().map(TeacherReportAttemptResponse::attemptId).toList()
+		);
+		List<TeacherReportAttemptResponse> content = summaries.stream()
+				.map(summary -> withAnswers(summary, answers.getOrDefault(summary.attemptId(), List.of())))
+				.toList();
+		long total = countAttempts(filter, studentId);
+		return new PageImpl<>(content, pageable, total);
+	}
+
+	private Map<UUID, List<TeacherReportAttemptAnswerResponse>> loadAnswers(List<UUID> attemptIds) {
+		if (attemptIds.isEmpty()) {
+			return Map.of();
+		}
+		Map<UUID, List<TeacherReportAttemptAnswerResponse>> result = new HashMap<>();
+		jdbcClient.sql("""
+				select aqs.attempt_id, aqs.id as snapshot_id, aqs.position, aqs.prompt, aqs.type,
+				       aa.boolean_value, aa.numeric_value, aa.correct, aa.answered_at,
+				       aqs.correct_boolean, aqs.correct_numeric_value, aqs.explanation,
+				       array(select aos.source_option_id
+				             from attempt_answer_selected_options selected
+				             join attempt_option_snapshots aos on aos.id = selected.option_snapshot_id
+				             where selected.answer_id = aa.id order by aos.position) as selected_option_ids,
+				       array(select aos.source_option_id from attempt_option_snapshots aos
+				             where aos.question_snapshot_id = aqs.id and aos.correct order by aos.position) as correct_option_ids
+				from attempt_question_snapshots aqs
+				join attempt_answers aa on aa.question_snapshot_id = aqs.id
+				where aqs.attempt_id in (:attemptIds)
+				order by aqs.attempt_id, aqs.position
+				""").param("attemptIds", attemptIds).query((rs, rowNum) -> {
+			UUID attemptId = rs.getObject("attempt_id", UUID.class);
+			QuestionType type = QuestionType.valueOf(rs.getString("type"));
+			TeacherReportAttemptAnswerResponse answer = new TeacherReportAttemptAnswerResponse(
+					rs.getObject("snapshot_id", UUID.class),
+					rs.getInt("position"),
+					rs.getString("prompt"),
+					type,
+					answerValue(type, uuidList(rs.getArray("selected_option_ids")),
+							rs.getObject("boolean_value", Boolean.class), rs.getBigDecimal("numeric_value")),
+					rs.getBoolean("correct"),
+					answerValue(type, uuidList(rs.getArray("correct_option_ids")),
+							rs.getObject("correct_boolean", Boolean.class), rs.getBigDecimal("correct_numeric_value")),
+					rs.getString("explanation"),
+					toInstant(rs.getObject("answered_at", OffsetDateTime.class))
+			);
+			result.computeIfAbsent(attemptId, ignored -> new ArrayList<>()).add(answer);
+			return answer;
+		}).list();
+		return result;
+	}
+
+	private long countAttempts(ReportFilter filter, UUID studentId) {
+		JdbcClient.StatementSpec statement = jdbcClient.sql("""
+				select count(*) from attempts a
+				join lesson_assignments la on la.id = a.assignment_id
+				where la.room_id = :roomId and a.student_id = :studentId
+				""" + attemptConditions(filter));
+		return bindAttemptFilter(statement.param("roomId", filter.roomId()).param("studentId", studentId), filter)
+				.query(Long.class).single();
+	}
+
+	private TeacherReportAttemptResponse withAnswers(
+			TeacherReportAttemptResponse source,
+			List<TeacherReportAttemptAnswerResponse> answers
+	) {
+		return new TeacherReportAttemptResponse(
+				source.attemptId(), source.lessonId(), source.lessonTitle(), source.assignmentId(),
+				source.sequence(), source.status(), source.startedAt(), source.submittedAt(),
+				source.durationSeconds(), source.totalQuestions(), source.answeredQuestions(),
+				source.correctAnswers(), source.scorePercent(), source.passed(), source.starsEarned(),
+				source.xpCredited(), List.copyOf(answers)
+		);
+	}
+
+	private AttemptAnswerValueResponse answerValue(
+			QuestionType type,
+			List<UUID> optionIds,
+			Boolean booleanValue,
+			BigDecimal numericValue
+	) {
+		return switch (type) {
+			case SINGLE_CHOICE, MULTIPLE_CHOICE -> new AttemptAnswerValueResponse(optionIds, null, null);
+			case TRUE_FALSE -> new AttemptAnswerValueResponse(null, booleanValue, null);
+			case NUMERIC -> new AttemptAnswerValueResponse(
+					null, null, numericValue == null ? null : numericValue.stripTrailingZeros().toPlainString()
+			);
+		};
+	}
+
+	private List<UUID> uuidList(Array array) throws SQLException {
+		if (array == null) {
+			return List.of();
+		}
+		UUID[] values = (UUID[]) array.getArray();
+		return List.of(values);
 	}
 
 	private RoomMetrics roomMetrics(ReportFilter filter) {
