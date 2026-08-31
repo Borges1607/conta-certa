@@ -57,14 +57,9 @@ public class TeacherReportService {
 		if (page < 0 || size < 1 || size > 100) {
 			throw badRequest("Page must be non-negative and size must be between 1 and 100.");
 		}
-		try {
-			ReportStudentSort.fromProperty(sort);
-			Sort.Direction sortDirection = Sort.Direction.fromString(direction);
-			ReportFilter filter = filterFactory.create(teacherId, roomId, lessonId, period, from, to);
-			return queryRepository.students(filter, PageRequest.of(page, size, Sort.by(sortDirection, sort)));
-		} catch (IllegalArgumentException exception) {
-			throw badRequest("Unsupported report sort or direction.");
-		}
+		Sort.Direction sortDirection = studentSortDirection(sort, direction);
+		ReportFilter filter = filterFactory.create(teacherId, roomId, lessonId, period, from, to);
+		return queryRepository.students(filter, PageRequest.of(page, size, Sort.by(sortDirection, sort)));
 	}
 
 	@Transactional(readOnly = true)
@@ -83,17 +78,13 @@ public class TeacherReportService {
 		if (page < 0 || size < 1 || size > 100) {
 			throw badRequest("Page must be non-negative and size must be between 1 and 100.");
 		}
-		try {
-			Sort.Direction sortDirection = Sort.Direction.fromString(direction);
-			ReportFilter filter = filterFactory.create(teacherId, roomId, lessonId, period, from, to);
-			filterFactory.requireActiveStudent(roomId, studentId);
-			PageRequest pageable = PageRequest.of(
-					page, size, Sort.by(sortDirection, "submittedAt")
-			);
-			return queryRepository.attempts(filter, studentId, pageable);
-		} catch (IllegalArgumentException exception) {
-			throw badRequest("Unsupported report sort direction.");
-		}
+		Sort.Direction sortDirection = sortDirection(direction, "Unsupported report sort direction.");
+		ReportFilter filter = filterFactory.create(teacherId, roomId, lessonId, period, from, to);
+		filterFactory.requireActiveStudent(roomId, studentId);
+		PageRequest pageable = PageRequest.of(
+				page, size, Sort.by(sortDirection, "submittedAt")
+		);
+		return queryRepository.attempts(filter, studentId, pageable);
 	}
 
 	@Transactional(readOnly = true)
@@ -111,5 +102,22 @@ public class TeacherReportService {
 
 	private ApiException badRequest(String detail) {
 		return new ApiException(HttpStatus.BAD_REQUEST, "BAD_REQUEST", detail);
+	}
+
+	private Sort.Direction studentSortDirection(String sort, String direction) {
+		try {
+			ReportStudentSort.fromProperty(sort);
+			return Sort.Direction.fromString(direction);
+		} catch (IllegalArgumentException exception) {
+			throw badRequest("Unsupported report sort or direction.");
+		}
+	}
+
+	private Sort.Direction sortDirection(String direction, String detail) {
+		try {
+			return Sort.Direction.fromString(direction);
+		} catch (IllegalArgumentException exception) {
+			throw badRequest(detail);
+		}
 	}
 }

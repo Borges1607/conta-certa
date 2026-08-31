@@ -1,6 +1,7 @@
 package com.ifsc.contacerta.repository;
 
 import com.ifsc.contacerta.dto.attempt.AttemptAnswerValueResponse;
+import com.ifsc.contacerta.dto.attempt.AttemptOptionResponse;
 import com.ifsc.contacerta.dto.report.ReportAttemptSeriesItemResponse;
 import com.ifsc.contacerta.dto.report.ReportLessonPerformanceResponse;
 import com.ifsc.contacerta.dto.report.ReportScoreDistributionResponse;
@@ -232,12 +233,16 @@ public class JdbcTeacherReportQueryRepository implements TeacherReportQueryRepos
 				select aqs.attempt_id, aqs.id as snapshot_id, aqs.position, aqs.prompt, aqs.type,
 				       aa.boolean_value, aa.numeric_value, aa.correct, aa.answered_at,
 				       aqs.correct_boolean, aqs.correct_numeric_value, aqs.explanation,
-				       array(select aos.source_option_id
+				       array(select aos.id
 				             from attempt_answer_selected_options selected
 				             join attempt_option_snapshots aos on aos.id = selected.option_snapshot_id
 				             where selected.answer_id = aa.id order by aos.position) as selected_option_ids,
-				       array(select aos.source_option_id from attempt_option_snapshots aos
-				             where aos.question_snapshot_id = aqs.id and aos.correct order by aos.position) as correct_option_ids
+				       array(select aos.id from attempt_option_snapshots aos
+				             where aos.question_snapshot_id = aqs.id and aos.correct order by aos.position) as correct_option_ids,
+				       array(select aos.id from attempt_option_snapshots aos
+				             where aos.question_snapshot_id = aqs.id order by aos.position) as option_ids,
+				       array(select aos.text from attempt_option_snapshots aos
+				             where aos.question_snapshot_id = aqs.id order by aos.position) as option_texts
 				from attempt_question_snapshots aqs
 				join attempt_answers aa on aa.question_snapshot_id = aqs.id
 				where aqs.attempt_id in (:attemptIds)
@@ -250,6 +255,7 @@ public class JdbcTeacherReportQueryRepository implements TeacherReportQueryRepos
 					rs.getInt("position"),
 					rs.getString("prompt"),
 					type,
+					options(rs.getArray("option_ids"), rs.getArray("option_texts")),
 					answerValue(type, uuidList(rs.getArray("selected_option_ids")),
 							rs.getObject("boolean_value", Boolean.class), rs.getBigDecimal("numeric_value")),
 					rs.getBoolean("correct"),
@@ -308,6 +314,19 @@ public class JdbcTeacherReportQueryRepository implements TeacherReportQueryRepos
 		}
 		UUID[] values = (UUID[]) array.getArray();
 		return List.of(values);
+	}
+
+	private List<AttemptOptionResponse> options(Array idArray, Array textArray) throws SQLException {
+		List<UUID> ids = uuidList(idArray);
+		if (ids.isEmpty()) {
+			return List.of();
+		}
+		String[] texts = (String[]) textArray.getArray();
+		List<AttemptOptionResponse> options = new ArrayList<>(ids.size());
+		for (int index = 0; index < ids.size(); index++) {
+			options.add(new AttemptOptionResponse(ids.get(index), texts[index]));
+		}
+		return List.copyOf(options);
 	}
 
 	private RoomMetrics roomMetrics(ReportFilter filter) {

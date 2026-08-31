@@ -1,6 +1,7 @@
 package com.ifsc.contacerta.repository;
 
 import com.ifsc.contacerta.dto.attempt.AttemptAnswerValueResponse;
+import com.ifsc.contacerta.dto.attempt.AttemptOptionResponse;
 import com.ifsc.contacerta.dto.report.ReportAttemptSeriesItemResponse;
 import com.ifsc.contacerta.dto.report.ReportLessonPerformanceResponse;
 import com.ifsc.contacerta.dto.report.ReportScoreDistributionResponse;
@@ -21,6 +22,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -117,12 +119,36 @@ class TeacherReportQueryRepositoryTest extends PostgresIntegrationTest {
 		assertThat(attempt.scorePercent()).isEqualTo(80);
 		assertThat(attempt.answers()).containsExactly(new TeacherReportAttemptAnswerResponse(
 				snapshotId, 1, "Enunciado congelado", QuestionType.TRUE_FALSE,
+				List.of(),
 				new AttemptAnswerValueResponse(null, false, null),
 				false,
 				new AttemptAnswerValueResponse(null, true, null),
 				"Explicação congelada",
 				Instant.parse("2026-08-10T09:59:00Z")
 		));
+	}
+
+	@Test
+	void deveExporOpcoesCongeladasEReferenciarIdsDosSnapshots() {
+		Fixture fixture = createFixture();
+		UUID attemptId = insertAttempt(
+				fixture.assignmentId(), fixture.studentOneId(), 1,
+				"2026-08-10T10:00:00Z", 100, true, 3, 30
+		);
+		ChoiceAnswer choice = insertChoiceAnswer(fixture.lessonId(), attemptId);
+
+		TeacherReportAttemptAnswerResponse answer = repository.attempts(
+				new ReportFilter(fixture.roomId(), null, null, null),
+				fixture.studentOneId(),
+				PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "submittedAt"))
+		).getContent().getFirst().answers().getFirst();
+
+		assertThat(answer.options()).containsExactly(
+				new AttemptOptionResponse(choice.selectedSnapshotId(), "Opção congelada selecionada"),
+				new AttemptOptionResponse(choice.correctSnapshotId(), "Opção congelada correta")
+		);
+		assertThat(answer.recordedAnswer().selectedOptionIds()).containsExactly(choice.selectedSnapshotId());
+		assertThat(answer.answerKey().selectedOptionIds()).containsExactly(choice.correctSnapshotId());
 	}
 
 	@Test
@@ -146,6 +172,62 @@ class TeacherReportQueryRepositoryTest extends PostgresIntegrationTest {
 		assertThat(result.getContent())
 				.extracting(TeacherReportAttemptResponse::attemptId)
 				.containsExactly(olderAttemptId, newerAttemptId);
+	}
+
+	@Test
+	void deveAplicarStatusIntervaloSemiabertoEFiltroDeAulaNasTentativas() {
+		Fixture fixture = createFixture();
+		UUID atFrom = insertAttemptWithStatus(
+				fixture.assignmentId(), fixture.studentOneId(), 1,
+				"EXPIRED", "2026-08-10T00:00:00Z"
+		);
+		insertAttemptWithStatus(
+				fixture.assignmentId(), fixture.studentOneId(), 2,
+				"SUBMITTED", "2026-08-20T00:00:00Z"
+		);
+		insertAttemptWithStatus(
+				fixture.assignmentId(), fixture.studentOneId(), 3,
+				"IN_PROGRESS", null
+		);
+		insertAttemptWithStatus(
+				fixture.secondAssignmentId(), fixture.studentOneId(), 1,
+				"SUBMITTED", "2026-08-15T00:00:00Z"
+		);
+
+		Page<TeacherReportAttemptResponse> result = repository.attempts(
+				new ReportFilter(
+						fixture.roomId(), fixture.lessonId(),
+						Instant.parse("2026-08-10T00:00:00Z"),
+						Instant.parse("2026-08-20T00:00:00Z")
+				),
+				fixture.studentOneId(),
+				PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "submittedAt"))
+		);
+
+		assertThat(result.getTotalElements()).isEqualTo(1);
+		assertThat(result.getContent())
+				.extracting(TeacherReportAttemptResponse::attemptId)
+				.containsExactly(atFrom);
+	}
+
+	@Test
+	void deveExporRespostaNumericaCongelada() {
+		Fixture fixture = createFixture();
+		UUID attemptId = insertAttempt(
+				fixture.assignmentId(), fixture.studentOneId(), 1,
+				"2026-08-10T10:00:00Z", 100, true, 3, 30
+		);
+		insertNumericAnswer(fixture.lessonId(), attemptId);
+
+		TeacherReportAttemptAnswerResponse answer = repository.attempts(
+				new ReportFilter(fixture.roomId(), null, null, null),
+				fixture.studentOneId(),
+				PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "submittedAt"))
+		).getContent().getFirst().answers().getFirst();
+
+		assertThat(answer.type()).isEqualTo(QuestionType.NUMERIC);
+		assertThat(answer.recordedAnswer().numericValue()).isEqualTo("12.5");
+		assertThat(answer.answerKey().numericValue()).isEqualTo("10");
 	}
 
 	@Test
@@ -220,7 +302,10 @@ class TeacherReportQueryRepositoryTest extends PostgresIntegrationTest {
 		insertAssignment(secondAssignmentId, roomId, secondLessonId, 2, now);
 		insertProgress(roomId, studentOneId, 100, now);
 		insertProgress(roomId, studentTwoId, 50, now);
-		return new Fixture(roomId, lessonId, assignmentId, studentOneId, studentTwoId);
+		return new Fixture(
+				roomId, lessonId, secondLessonId, assignmentId, secondAssignmentId,
+				studentOneId, studentTwoId
+		);
 	}
 
 	private void insertUser(UUID id, String role, String name, String email, String registration, UUID institution, Instant now) {
@@ -284,6 +369,34 @@ class TeacherReportQueryRepositoryTest extends PostgresIntegrationTest {
 		return attemptId;
 	}
 
+	private UUID insertAttemptWithStatus(
+			UUID assignmentId,
+			UUID studentId,
+			int sequence,
+			String status,
+			String submittedAt
+	) {
+		Instant started = submittedAt == null
+				? Instant.parse("2026-08-12T00:00:00Z")
+				: Instant.parse(submittedAt).minusSeconds(600);
+		Timestamp submitted = submittedAt == null ? null : Timestamp.from(Instant.parse(submittedAt));
+		UUID attemptId = UUID.randomUUID();
+		jdbcClient.sql("""
+				insert into attempts (id, assignment_id, student_id, sequence, status, started_at, submitted_at,
+				 total_questions, answered_questions, correct_answers, score_percent, passed, stars, xp_credited,
+				 created_at, updated_at)
+				values (:id, :assignment, :student, :sequence, :status, :started, :submitted,
+				 1, 1, 1, :score, :passed, :stars, :xp, :started, :started)
+				""").param("id", attemptId).param("assignment", assignmentId).param("student", studentId)
+				.param("sequence", sequence).param("status", status).param("started", Timestamp.from(started))
+				.param("submitted", submitted)
+				.param("score", submittedAt == null ? null : 100, Types.INTEGER)
+				.param("passed", submittedAt == null ? null : true, Types.BOOLEAN)
+				.param("stars", submittedAt == null ? null : 3, Types.INTEGER)
+				.param("xp", submittedAt == null ? null : 30, Types.INTEGER).update();
+		return attemptId;
+	}
+
 	private UUID insertBooleanAnswer(UUID lessonId, UUID attemptId, String prompt, boolean correctValue, boolean answer) {
 		UUID questionId = UUID.randomUUID();
 		UUID snapshotId = UUID.randomUUID();
@@ -308,11 +421,79 @@ class TeacherReportQueryRepositoryTest extends PostgresIntegrationTest {
 		return snapshotId;
 	}
 
+	private ChoiceAnswer insertChoiceAnswer(UUID lessonId, UUID attemptId) {
+		UUID questionId = UUID.randomUUID();
+		UUID sourceSelectedId = UUID.randomUUID();
+		UUID sourceCorrectId = UUID.randomUUID();
+		UUID questionSnapshotId = UUID.randomUUID();
+		UUID selectedSnapshotId = UUID.randomUUID();
+		UUID correctSnapshotId = UUID.randomUUID();
+		UUID answerId = UUID.randomUUID();
+		jdbcClient.sql("""
+				insert into questions (id, lesson_id, type, prompt, explanation, position, active, created_at, updated_at)
+				values (:id, :lesson, 'SINGLE_CHOICE', 'Enunciado atual', '', 1, true, now(), now())
+				""").param("id", questionId).param("lesson", lessonId).update();
+		jdbcClient.sql("""
+				insert into question_options (id, question_id, text, correct, position)
+				values (:selected, :question, 'Texto atual selecionado', false, 1),
+				       (:correct, :question, 'Texto atual correto', true, 2)
+				""").param("selected", sourceSelectedId).param("correct", sourceCorrectId)
+				.param("question", questionId).update();
+		jdbcClient.sql("""
+				insert into attempt_question_snapshots (id, attempt_id, question_id, type, prompt, explanation, position)
+				values (:id, :attempt, :question, 'SINGLE_CHOICE', 'Enunciado congelado', '', 1)
+				""").param("id", questionSnapshotId).param("attempt", attemptId).param("question", questionId).update();
+		jdbcClient.sql("""
+				insert into attempt_option_snapshots (id, question_snapshot_id, source_option_id, text, correct, position)
+				values (:selectedSnapshot, :snapshot, :sourceSelected, 'Opção congelada selecionada', false, 1),
+				       (:correctSnapshot, :snapshot, :sourceCorrect, 'Opção congelada correta', true, 2)
+				""").param("selectedSnapshot", selectedSnapshotId).param("correctSnapshot", correctSnapshotId)
+				.param("snapshot", questionSnapshotId).param("sourceSelected", sourceSelectedId)
+				.param("sourceCorrect", sourceCorrectId).update();
+		jdbcClient.sql("""
+				insert into attempt_answers (id, question_snapshot_id, correct, answered_at)
+				values (:id, :snapshot, false, now())
+				""").param("id", answerId).param("snapshot", questionSnapshotId).update();
+		jdbcClient.sql("""
+				insert into attempt_answer_selected_options (answer_id, option_snapshot_id)
+				values (:answer, :option)
+				""").param("answer", answerId).param("option", selectedSnapshotId).update();
+		jdbcClient.sql("""
+				update question_options set text = 'Texto alterado depois da tentativa'
+				where id in (:selected, :correct)
+				""").param("selected", sourceSelectedId).param("correct", sourceCorrectId).update();
+		return new ChoiceAnswer(selectedSnapshotId, correctSnapshotId);
+	}
+
+	private void insertNumericAnswer(UUID lessonId, UUID attemptId) {
+		UUID questionId = UUID.randomUUID();
+		UUID snapshotId = UUID.randomUUID();
+		jdbcClient.sql("""
+				insert into questions (id, lesson_id, type, prompt, explanation, position, active,
+				 correct_numeric_value, absolute_tolerance, unit, decimal_places, created_at, updated_at)
+				values (:id, :lesson, 'NUMERIC', 'Enunciado atual', '', 1, true,
+				 10, 0, 'NONE', 2, now(), now())
+				""").param("id", questionId).param("lesson", lessonId).update();
+		jdbcClient.sql("""
+				insert into attempt_question_snapshots (id, attempt_id, question_id, type, prompt, explanation,
+				 position, correct_numeric_value, absolute_tolerance, unit, decimal_places)
+				values (:id, :attempt, :question, 'NUMERIC', 'Enunciado congelado', '', 1, 10, 0, 'NONE', 2)
+				""").param("id", snapshotId).param("attempt", attemptId).param("question", questionId).update();
+		jdbcClient.sql("""
+				insert into attempt_answers (id, question_snapshot_id, numeric_value, correct, answered_at)
+				values (:id, :snapshot, 12.5, false, now())
+				""").param("id", UUID.randomUUID()).param("snapshot", snapshotId).update();
+	}
+
 	private record Fixture(
 			UUID roomId,
 			UUID lessonId,
+			UUID secondLessonId,
 			UUID assignmentId,
+			UUID secondAssignmentId,
 			UUID studentOneId,
 			UUID studentTwoId
 	) { }
+
+	private record ChoiceAnswer(UUID selectedSnapshotId, UUID correctSnapshotId) { }
 }

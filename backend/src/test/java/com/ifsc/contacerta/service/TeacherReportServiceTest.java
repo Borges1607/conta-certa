@@ -132,6 +132,41 @@ class TeacherReportServiceTest {
 		assertThat(result).isSameAs(expected);
 	}
 
+	@Test
+	void devePropagarFalhaInternaDaCriacaoDoFiltroDeAlunos() {
+		TeacherReportFilterFactory filterFactory = mock(TeacherReportFilterFactory.class);
+		TeacherReportService service = new TeacherReportService(
+				filterFactory, mock(TeacherReportQueryRepository.class)
+		);
+		UUID teacherId = UUID.randomUUID();
+		UUID roomId = UUID.randomUUID();
+		IllegalArgumentException failure = new IllegalArgumentException("falha interna");
+		when(filterFactory.create(teacherId, roomId, null, null, null, null)).thenThrow(failure);
+
+		assertThatThrownBy(() -> service.students(
+				teacherId, roomId, null, null, null, null,
+				0, 20, "totalXp", "desc"
+		)).isSameAs(failure);
+	}
+
+	@Test
+	void devePropagarFalhaInternaDaCriacaoDoFiltroDeTentativas() {
+		TeacherReportFilterFactory filterFactory = mock(TeacherReportFilterFactory.class);
+		TeacherReportService service = new TeacherReportService(
+				filterFactory, mock(TeacherReportQueryRepository.class)
+		);
+		UUID teacherId = UUID.randomUUID();
+		UUID roomId = UUID.randomUUID();
+		UUID studentId = UUID.randomUUID();
+		IllegalArgumentException failure = new IllegalArgumentException("falha interna");
+		when(filterFactory.create(teacherId, roomId, null, null, null, null)).thenThrow(failure);
+
+		assertThatThrownBy(() -> service.attempts(
+				teacherId, roomId, studentId, null, null, null, null,
+				0, 20, "desc"
+		)).isSameAs(failure);
+	}
+
 	private void assertBadRequest(Runnable action) {
 		assertThatThrownBy(action::run)
 				.isInstanceOfSatisfying(ApiException.class, exception -> {
