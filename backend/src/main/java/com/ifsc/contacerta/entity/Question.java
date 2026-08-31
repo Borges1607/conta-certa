@@ -177,6 +177,20 @@ public class Question {
 		this.decimalPlaces = type == QuestionType.NUMERIC ? decimalPlaces : null;
 	}
 
+	public Question duplicateInto(Lesson target, int targetPosition) {
+		List<QuestionOptionData> copiedOptions = options.stream()
+				.map(option -> new QuestionOptionData(option.getText(), option.isCorrect()))
+				.toList();
+		Question copy = create(target, type, prompt, explanation, copiedOptions, targetPosition);
+		if (type == QuestionType.TRUE_FALSE) {
+			copy.configureBoolean(correctBoolean);
+		}
+		if (type == QuestionType.NUMERIC) {
+			copy.configureNumeric(correctNumericValue, absoluteTolerance, unit, decimalPlaces);
+		}
+		return copy;
+	}
+
 	private void replaceOptions(List<QuestionOptionData> optionData) {
 		Map<UUID, QuestionOption> currentOptions = new HashMap<>();
 		for (QuestionOption option : options) {

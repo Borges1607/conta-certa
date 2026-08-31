@@ -5,6 +5,7 @@ import com.ifsc.contacerta.dto.question.QuestionOptionRequest;
 import com.ifsc.contacerta.dto.question.QuestionOrderRequest;
 import com.ifsc.contacerta.dto.question.QuestionResponse;
 import com.ifsc.contacerta.dto.question.UpdateQuestionRequest;
+import com.ifsc.contacerta.dto.lesson.LessonDetailResponse;
 import com.ifsc.contacerta.entity.Attempt;
 import com.ifsc.contacerta.entity.Institution;
 import com.ifsc.contacerta.entity.Lesson;
@@ -16,6 +17,8 @@ import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.model.AccountStatus;
 import com.ifsc.contacerta.model.AttemptStatus;
 import com.ifsc.contacerta.model.Grade;
+import com.ifsc.contacerta.model.ContentStatus;
+import com.ifsc.contacerta.model.NumericUnit;
 import com.ifsc.contacerta.model.QuestionType;
 import com.ifsc.contacerta.model.Role;
 import com.ifsc.contacerta.repository.InstitutionRepository;
@@ -32,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
 
 import java.time.Instant;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -47,6 +51,8 @@ class QuestionLifecycleIntegrationTest extends PostgresIntegrationTest {
 
 	@Autowired
 	private QuestionService questionService;
+	@Autowired
+	private LessonService lessonService;
 	@Autowired
 	private InstitutionRepository institutionRepository;
 	@Autowired
@@ -189,6 +195,37 @@ class QuestionLifecycleIntegrationTest extends PostgresIntegrationTest {
 		});
 	}
 
+	@Test
+	@Transactional
+	void deveDuplicarConfiguracaoCompletaDasQuestoesAtivasComNovosIds() {
+		Fixture fixture = createFixture();
+		QuestionResponse choice = questionService.create(fixture.teacherId(), fixture.lessonId(), choice("Escolha"));
+		QuestionResponse booleanQuestion = questionService.create(
+				fixture.teacherId(), fixture.lessonId(), trueFalse("Verdadeiro ou falso")
+		);
+		QuestionResponse numericQuestion = questionService.create(
+				fixture.teacherId(), fixture.lessonId(), numeric("Quanto vale?")
+		);
+		QuestionResponse archived = questionService.create(fixture.teacherId(), fixture.lessonId(), choice("Arquivada"));
+		assignLesson(fixture);
+		questionService.delete(fixture.teacherId(), archived.id());
+
+		LessonDetailResponse duplicated = lessonService.duplicate(fixture.teacherId(), fixture.lessonId());
+		List<Question> copied = questionRepository.findByLessonIdOrderByPositionAsc(duplicated.id());
+
+		assertThat(duplicated.status()).isEqualTo(ContentStatus.DRAFT);
+		assertThat(copied).hasSize(3).extracting(Question::getPosition).containsExactly(1, 2, 3);
+		assertThat(copied).extracting(Question::getId)
+				.doesNotContain(choice.id(), booleanQuestion.id(), numericQuestion.id(), archived.id());
+		assertThat(copied.get(0).getOptions()).hasSize(2)
+				.noneMatch(option -> choice.options().stream().anyMatch(source -> source.id().equals(option.getId())));
+		assertThat(copied.get(1).getCorrectBoolean()).isTrue();
+		assertThat(copied.get(2).getCorrectNumericValue()).isEqualByComparingTo("123.45");
+		assertThat(copied.get(2).getAbsoluteTolerance()).isEqualByComparingTo("0.10");
+		assertThat(copied.get(2).getUnit()).isEqualTo(NumericUnit.BRL);
+		assertThat(copied.get(2).getDecimalPlaces()).isEqualTo(2);
+	}
+
 	private LessonAssignment assignLesson(Fixture fixture) {
 		User teacher = userRepository.findById(fixture.teacherId()).orElseThrow();
 		Room room = roomRepository.save(new Room(
@@ -236,6 +273,20 @@ class QuestionLifecycleIntegrationTest extends PostgresIntegrationTest {
 				null,
 				null,
 				null
+		);
+	}
+
+	private CreateQuestionRequest trueFalse(String prompt) {
+		return new CreateQuestionRequest(
+				prompt, QuestionType.TRUE_FALSE, "Explicação", List.of(), true,
+				null, null, null, null
+		);
+	}
+
+	private CreateQuestionRequest numeric(String prompt) {
+		return new CreateQuestionRequest(
+				prompt, QuestionType.NUMERIC, "Explicação", List.of(), null,
+				new BigDecimal("123.45"), new BigDecimal("0.10"), NumericUnit.BRL, 2
 		);
 	}
 
