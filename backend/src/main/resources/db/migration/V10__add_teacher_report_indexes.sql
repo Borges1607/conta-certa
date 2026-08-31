@@ -1,0 +1,10 @@
+-- The project is pre-production, so these indexes are intentionally created transactionally.
+-- Before deploying against an active attempts table, replace this migration strategy with
+-- CREATE INDEX CONCURRENTLY in a non-transactional Flyway migration.
+create index idx_attempts_assignment_submitted_finalized
+    on attempts (assignment_id, submitted_at, student_id)
+    where status in ('SUBMITTED', 'EXPIRED');
+
+create index idx_attempts_student_submitted_finalized
+    on attempts (student_id, submitted_at desc, assignment_id)
+    where status in ('SUBMITTED', 'EXPIRED');

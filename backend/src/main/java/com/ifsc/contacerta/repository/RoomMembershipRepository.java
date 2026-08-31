@@ -30,6 +30,8 @@ public interface RoomMembershipRepository extends JpaRepository<RoomMembership, 
 
 	long countByRoomId(UUID roomId);
 
+	boolean existsByRoomIdAndStudentIdAndStatus(UUID roomId, UUID studentId, MembershipStatus status);
+
 	@Query("""
 			select new com.ifsc.contacerta.dto.room.RoomStudentResponse(
 				membership.student.id,
