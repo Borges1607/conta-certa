@@ -4,21 +4,33 @@ import com.ifsc.contacerta.dto.question.CreateQuestionRequest;
 import com.ifsc.contacerta.dto.question.QuestionOptionRequest;
 import com.ifsc.contacerta.dto.question.QuestionOrderRequest;
 import com.ifsc.contacerta.dto.question.QuestionResponse;
+import com.ifsc.contacerta.dto.question.UpdateQuestionRequest;
+import com.ifsc.contacerta.entity.Attempt;
 import com.ifsc.contacerta.entity.Institution;
 import com.ifsc.contacerta.entity.Lesson;
+import com.ifsc.contacerta.entity.LessonAssignment;
 import com.ifsc.contacerta.entity.Question;
+import com.ifsc.contacerta.entity.Room;
 import com.ifsc.contacerta.entity.User;
 import com.ifsc.contacerta.model.AccountStatus;
+import com.ifsc.contacerta.model.AttemptStatus;
+import com.ifsc.contacerta.model.Grade;
 import com.ifsc.contacerta.model.QuestionType;
 import com.ifsc.contacerta.model.Role;
 import com.ifsc.contacerta.repository.InstitutionRepository;
+import com.ifsc.contacerta.repository.AttemptRepository;
+import com.ifsc.contacerta.repository.LessonAssignmentRepository;
 import com.ifsc.contacerta.repository.LessonRepository;
 import com.ifsc.contacerta.repository.QuestionRepository;
+import com.ifsc.contacerta.repository.RoomRepository;
 import com.ifsc.contacerta.repository.UserRepository;
 import com.ifsc.contacerta.support.PostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -41,6 +53,14 @@ class QuestionLifecycleIntegrationTest extends PostgresIntegrationTest {
 	private LessonRepository lessonRepository;
 	@Autowired
 	private QuestionRepository questionRepository;
+	@Autowired
+	private RoomRepository roomRepository;
+	@Autowired
+	private LessonAssignmentRepository lessonAssignmentRepository;
+	@Autowired
+	private AttemptRepository attemptRepository;
+	@Autowired
+	private EntityManager entityManager;
 
 	@Test
 	void deveCriarSegundaQuestaoNaPosicaoDois() {
@@ -87,6 +107,45 @@ class QuestionLifecycleIntegrationTest extends PostgresIntegrationTest {
 		assertThat(questionRepository.findByLessonIdOrderByPositionAsc(fixture.lessonId()))
 				.extracting(Question::getPosition)
 				.containsExactly(1, 2);
+	}
+
+	@Test
+	@Transactional
+	void devePreservarSnapshotExistenteEAplicarEdicaoEmSnapshotFuturo() {
+		Fixture fixture = createFixture();
+		QuestionResponse created = questionService.create(fixture.teacherId(), fixture.lessonId(), choice("Antes"));
+		Question question = questionRepository.findById(created.id()).orElseThrow();
+		User teacher = userRepository.findById(fixture.teacherId()).orElseThrow();
+		Institution institution = teacher.getInstitution();
+		User student = userRepository.save(new User(
+				Role.STUDENT, AccountStatus.ACTIVE, "Estudante", "aluno@example.com", "ALUNO-1", institution
+		));
+		Room room = roomRepository.save(new Room(
+				"Turma", null, Grade.HIGH_SCHOOL_1, List.of(), 60, "ABC123", "hash-snapshot", teacher, institution
+		));
+		LessonAssignment assignment = lessonAssignmentRepository.save(new LessonAssignment(
+				room, lessonRepository.findById(fixture.lessonId()).orElseThrow(), 1,
+				null, null, null, null, null, false, false
+		));
+		Attempt oldAttempt = new Attempt(assignment, student, 1, Instant.now(), null);
+		oldAttempt.addSnapshot(question, 1, question.getOptions());
+		oldAttempt.finalizeAs(AttemptStatus.SUBMITTED, Instant.now(), 1, 1, 1, true, 3, 10);
+		attemptRepository.save(oldAttempt);
+
+		questionService.update(fixture.teacherId(), question.getId(), new UpdateQuestionRequest(
+				"Depois", null, null, null, null, null, null, null, null, created.version()
+		));
+		Question updated = questionRepository.findById(question.getId()).orElseThrow();
+		Attempt futureAttempt = new Attempt(assignment, student, 2, Instant.now(), null);
+		futureAttempt.addSnapshot(updated, 1, updated.getOptions());
+		attemptRepository.save(futureAttempt);
+		entityManager.flush();
+		entityManager.clear();
+
+		assertThat(attemptRepository.findById(oldAttempt.getId()).orElseThrow().getSnapshots().getFirst().getPrompt())
+				.isEqualTo("Antes");
+		assertThat(attemptRepository.findById(futureAttempt.getId()).orElseThrow().getSnapshots().getFirst().getPrompt())
+				.isEqualTo("Depois");
 	}
 
 	private void createAfter(CountDownLatch start, Fixture fixture, String prompt) {

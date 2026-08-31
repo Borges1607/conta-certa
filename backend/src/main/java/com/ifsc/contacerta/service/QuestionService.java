@@ -11,6 +11,7 @@ import com.ifsc.contacerta.entity.Lesson;
 import com.ifsc.contacerta.entity.Question;
 import com.ifsc.contacerta.entity.QuestionOptionData;
 import com.ifsc.contacerta.exception.ApiException;
+import com.ifsc.contacerta.model.NumericUnit;
 import com.ifsc.contacerta.model.QuestionType;
 import com.ifsc.contacerta.repository.LessonRepository;
 import com.ifsc.contacerta.repository.QuestionRepository;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
+import java.math.BigDecimal;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -40,7 +42,7 @@ public class QuestionService {
 		validate(request);
 		List<QuestionOptionData> options = request.options() == null
 				? List.of()
-				: request.options().stream().map(option -> new QuestionOptionData(option.text(), option.correct())).toList();
+				: request.options().stream().map(option -> new QuestionOptionData(option.id(), option.text(), option.correct())).toList();
 		Question question = Question.create(
 				lesson, request.type(), request.prompt(), request.explanation(), options, position
 		);
@@ -86,13 +88,25 @@ public class QuestionService {
 	@Transactional
 	public QuestionResponse update(UUID teacherId, UUID questionId, UpdateQuestionRequest request) {
 		Question question = requireOwnedQuestion(teacherId, questionId);
+		requireOwnedLessonForUpdate(teacherId, question.getLesson().getId());
 		if (request.version() != question.getVersion()) {
 			throw new ApiException(HttpStatus.CONFLICT, "VERSION_CONFLICT", "The question was changed by another request.");
 		}
-		question.updatePromptAndExplanation(
-				request.prompt() == null ? question.getPrompt() : request.prompt(),
-				request.explanation() == null ? question.getExplanation() : request.explanation()
-		);
+		QuestionConfiguration configuration = merge(question, request);
+		validate(configuration);
+		try {
+			question.replaceConfiguration(
+					configuration.type(), configuration.prompt(), configuration.explanation(), configuration.options(),
+					configuration.correctBoolean(), configuration.correctNumericValue(), configuration.absoluteTolerance(),
+					configuration.unit(), configuration.decimalPlaces()
+			);
+		} catch (IllegalArgumentException exception) {
+			throw new ApiException(
+					HttpStatus.UNPROCESSABLE_CONTENT,
+					"INVALID_QUESTION_OPTION",
+					"Question option does not belong to this question."
+			);
+		}
 		return toResponse(question);
 	}
 
@@ -121,26 +135,62 @@ public class QuestionService {
 	}
 
 	private void validate(CreateQuestionRequest request) {
-		if (request.type() == QuestionType.SINGLE_CHOICE) {
-			long correctOptions = request.options() == null ? 0 : request.options().stream().filter(QuestionOptionRequest::correct).count();
-			if (request.options() == null || request.options().size() < 2 || correctOptions != 1) {
+		validate(new QuestionConfiguration(
+				request.prompt(), request.type(), request.explanation(), toOptionData(request.options()),
+				request.correctBoolean(), request.correctNumericValue(), request.absoluteTolerance(), request.unit(),
+				request.decimalPlaces()
+		));
+	}
+
+	private void validate(QuestionConfiguration configuration) {
+		if (configuration.type() == QuestionType.SINGLE_CHOICE) {
+			long correctOptions = configuration.options().stream().filter(QuestionOptionData::correct).count();
+			if (configuration.options().size() < 2 || correctOptions != 1) {
 				throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_QUESTION_OPTIONS", "Single choice needs exactly one correct option.");
 			}
 		}
-		if (request.type() == QuestionType.MULTIPLE_CHOICE) {
-			long correctOptions = request.options() == null ? 0 : request.options().stream().filter(QuestionOptionRequest::correct).count();
-			if (request.options() == null || request.options().size() < 2 || correctOptions < 2) {
+		if (configuration.type() == QuestionType.MULTIPLE_CHOICE) {
+			long correctOptions = configuration.options().stream().filter(QuestionOptionData::correct).count();
+			if (configuration.options().size() < 2 || correctOptions < 2) {
 				throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_QUESTION_OPTIONS", "Multiple choice needs at least two correct options.");
 			}
 		}
-		if (request.type() == QuestionType.TRUE_FALSE && request.correctBoolean() == null) {
+		if (configuration.type() == QuestionType.TRUE_FALSE && configuration.correctBoolean() == null) {
 			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_TRUE_FALSE_ANSWER", "True or false questions need a correct answer.");
 		}
-		if (request.type() == QuestionType.NUMERIC && (request.correctNumericValue() == null || request.absoluteTolerance() == null
-				|| request.absoluteTolerance().signum() < 0 || request.unit() == null || request.decimalPlaces() == null
-				|| request.decimalPlaces() < 0)) {
+		if (configuration.type() == QuestionType.NUMERIC && (configuration.correctNumericValue() == null
+				|| configuration.absoluteTolerance() == null || configuration.absoluteTolerance().signum() < 0
+				|| configuration.unit() == null || configuration.decimalPlaces() == null
+				|| configuration.decimalPlaces() < 0)) {
 			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_NUMERIC_CONFIGURATION", "Numeric question configuration is invalid.");
 		}
+	}
+
+	private QuestionConfiguration merge(Question question, UpdateQuestionRequest request) {
+		QuestionType type = request.type() == null ? question.getType() : request.type();
+		boolean sameFamily = type == question.getType();
+		List<QuestionOptionData> options = request.options() != null
+				? toOptionData(request.options())
+				: sameFamily ? question.getOptions().stream()
+				.map(option -> new QuestionOptionData(option.getId(), option.getText(), option.isCorrect())).toList()
+				: List.of();
+		return new QuestionConfiguration(
+				request.prompt() == null ? question.getPrompt() : request.prompt(),
+				type,
+				request.explanation() == null ? question.getExplanation() : request.explanation(),
+				options,
+				request.correctBoolean() != null ? request.correctBoolean() : sameFamily ? question.getCorrectBoolean() : null,
+				request.correctNumericValue() != null ? request.correctNumericValue() : sameFamily ? question.getCorrectNumericValue() : null,
+				request.absoluteTolerance() != null ? request.absoluteTolerance() : sameFamily ? question.getAbsoluteTolerance() : null,
+				request.unit() != null ? request.unit() : sameFamily ? question.getUnit() : null,
+				request.decimalPlaces() != null ? request.decimalPlaces() : sameFamily ? question.getDecimalPlaces() : null
+		);
+	}
+
+	private List<QuestionOptionData> toOptionData(List<QuestionOptionRequest> options) {
+		return options == null ? List.of() : options.stream()
+				.map(option -> new QuestionOptionData(option.id(), option.text(), option.correct()))
+				.toList();
 	}
 
 	private Question requireOwnedQuestion(UUID teacherId, UUID questionId) {
@@ -160,5 +210,18 @@ public class QuestionService {
 				question.getOptions().stream().map(option -> new QuestionOptionResponse(option.getId(), option.getText(), option.isCorrect())).toList(),
 				question.getCorrectBoolean(), question.getCorrectNumericValue(), question.getAbsoluteTolerance(), question.getUnit(), question.getDecimalPlaces()
 		);
+	}
+
+	private record QuestionConfiguration(
+			String prompt,
+			QuestionType type,
+			String explanation,
+			List<QuestionOptionData> options,
+			Boolean correctBoolean,
+			BigDecimal correctNumericValue,
+			BigDecimal absoluteTolerance,
+			NumericUnit unit,
+			Integer decimalPlaces
+	) {
 	}
 }
