@@ -87,13 +87,20 @@ public class Question {
 	@Column(nullable = false)
 	private long version;
 
-	private Question(Lesson lesson, QuestionType type, String prompt, String explanation, List<QuestionOptionData> optionData) {
+	private Question(
+			Lesson lesson,
+			QuestionType type,
+			String prompt,
+			String explanation,
+			List<QuestionOptionData> optionData,
+			int position
+	) {
 		this.id = UUID.randomUUID();
 		this.lesson = lesson;
 		this.type = type;
 		this.prompt = prompt;
 		this.explanation = explanation;
-		this.position = 1;
+		this.position = position;
 		this.active = true;
 		for (int index = 0; index < optionData.size(); index++) {
 			QuestionOptionData option = optionData.get(index);
@@ -108,7 +115,18 @@ public class Question {
 			String explanation,
 			List<QuestionOptionData> options
 	) {
-		return new Question(lesson, type, prompt, explanation, options);
+		return create(lesson, type, prompt, explanation, options, 1);
+	}
+
+	public static Question create(
+			Lesson lesson,
+			QuestionType type,
+			String prompt,
+			String explanation,
+			List<QuestionOptionData> options,
+			int position
+	) {
+		return new Question(lesson, type, prompt, explanation, options, position);
 	}
 
 	public void configureBoolean(boolean correctBoolean) {

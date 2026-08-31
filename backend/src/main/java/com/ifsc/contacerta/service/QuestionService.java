@@ -20,7 +20,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,14 +35,15 @@ public class QuestionService {
 
 	@Transactional
 	public QuestionResponse create(UUID teacherId, UUID lessonId, CreateQuestionRequest request) {
-		Lesson lesson = lessonRepository.findByIdAndTeacherId(lessonId, teacherId).orElseThrow(() -> new ApiException(
-				HttpStatus.NOT_FOUND, "LESSON_NOT_FOUND", "Lesson was not found."
-		));
+		Lesson lesson = requireOwnedLessonForUpdate(teacherId, lessonId);
+		int position = questionRepository.findMaximumPositionByLessonId(lessonId) + 1;
 		validate(request);
 		List<QuestionOptionData> options = request.options() == null
 				? List.of()
 				: request.options().stream().map(option -> new QuestionOptionData(option.text(), option.correct())).toList();
-		Question question = Question.choice(lesson, request.type(), request.prompt(), request.explanation(), options);
+		Question question = Question.create(
+				lesson, request.type(), request.prompt(), request.explanation(), options, position
+		);
 		if (request.type() == QuestionType.TRUE_FALSE) {
 			question.configureBoolean(request.correctBoolean());
 		}
@@ -67,9 +72,12 @@ public class QuestionService {
 	@Transactional
 	public QuestionResponse duplicate(UUID teacherId, UUID questionId, DuplicateQuestionRequest request) {
 		Question source = requireOwnedQuestion(teacherId, questionId);
-		Lesson target = lessonRepository.findByIdAndTeacherId(request.targetLessonId(), teacherId).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "LESSON_NOT_FOUND", "Lesson was not found."));
+		Lesson target = requireOwnedLessonForUpdate(teacherId, request.targetLessonId());
+		int position = questionRepository.findMaximumPositionByLessonId(target.getId()) + 1;
 		List<QuestionOptionData> options = source.getOptions().stream().map(option -> new QuestionOptionData(option.getText(), option.isCorrect())).toList();
-		Question copy = Question.choice(target, source.getType(), source.getPrompt(), source.getExplanation(), options);
+		Question copy = Question.create(
+				target, source.getType(), source.getPrompt(), source.getExplanation(), options, position
+		);
 		if (source.getType() == QuestionType.TRUE_FALSE) copy.configureBoolean(source.getCorrectBoolean());
 		if (source.getType() == QuestionType.NUMERIC) copy.configureNumeric(source.getCorrectNumericValue(), source.getAbsoluteTolerance(), source.getUnit(), source.getDecimalPlaces());
 		return toResponse(questionRepository.save(copy));
@@ -90,15 +98,25 @@ public class QuestionService {
 
 	@Transactional
 	public List<QuestionResponse> reorder(UUID teacherId, UUID lessonId, QuestionOrderRequest request) {
-		lessonRepository.findByIdAndTeacherId(lessonId, teacherId).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "LESSON_NOT_FOUND", "Lesson was not found."));
+		requireOwnedLessonForUpdate(teacherId, lessonId);
 		List<Question> questions = questionRepository.findByLessonIdOrderByPositionAsc(lessonId);
-		if (questions.size() != request.questionIds().size() || !questions.stream().map(Question::getId).collect(java.util.stream.Collectors.toSet()).equals(new java.util.HashSet<>(request.questionIds()))) {
+		if (questions.size() != request.questionIds().size()
+				|| !questions.stream().map(Question::getId).collect(Collectors.toSet())
+				.equals(new HashSet<>(request.questionIds()))) {
 			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_QUESTION_ORDER", "Question order is invalid.");
 		}
-		for (int index = 0; index < request.questionIds().size(); index++) {
-			UUID questionId = request.questionIds().get(index);
-			questions.stream().filter(question -> question.getId().equals(questionId)).findFirst().orElseThrow().moveTo(index + 1);
+		int maximumPosition = questions.stream().mapToInt(Question::getPosition).max().orElse(0);
+		int temporaryStart = maximumPosition + questions.size() + 1;
+		for (int index = 0; index < questions.size(); index++) {
+			questions.get(index).moveTo(temporaryStart + index);
 		}
+		questionRepository.flush();
+		Map<UUID, Question> questionsById = questions.stream()
+				.collect(Collectors.toMap(Question::getId, Function.identity()));
+		for (int index = 0; index < request.questionIds().size(); index++) {
+			questionsById.get(request.questionIds().get(index)).moveTo(index + 1);
+		}
+		questionRepository.flush();
 		return questionRepository.findByLessonIdOrderByPositionAsc(lessonId).stream().map(this::toResponse).toList();
 	}
 
@@ -127,6 +145,12 @@ public class QuestionService {
 
 	private Question requireOwnedQuestion(UUID teacherId, UUID questionId) {
 		return questionRepository.findByIdAndLessonTeacherId(questionId, teacherId).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "QUESTION_NOT_FOUND", "Question was not found."));
+	}
+
+	private Lesson requireOwnedLessonForUpdate(UUID teacherId, UUID lessonId) {
+		return lessonRepository.findByIdAndTeacherIdForUpdate(lessonId, teacherId).orElseThrow(() -> new ApiException(
+				HttpStatus.NOT_FOUND, "LESSON_NOT_FOUND", "Lesson was not found."
+		));
 	}
 
 	private QuestionResponse toResponse(Question question) {
