@@ -6,6 +6,7 @@ import com.ifsc.contacerta.dto.lesson.LessonSummaryResponse;
 import com.ifsc.contacerta.dto.lesson.UpdateLessonRequest;
 import com.ifsc.contacerta.dto.shared.PageResponse;
 import com.ifsc.contacerta.entity.Lesson;
+import com.ifsc.contacerta.entity.Question;
 import com.ifsc.contacerta.entity.User;
 import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.model.AccountStatus;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -92,6 +94,10 @@ public class LessonService {
 		requireActiveTeacher(teacherId);
 		Lesson source = requireOwnedLesson(teacherId, lessonId);
 		Lesson copy = lessonRepository.save(source.duplicate(source.getTitle() + " (cópia)"));
+		List<Question> questions = questionRepository.findByLessonIdAndActiveTrueOrderByPositionAsc(source.getId());
+		for (int index = 0; index < questions.size(); index++) {
+			questionRepository.save(questions.get(index).duplicateInto(copy, index + 1));
+		}
 		return toDetailResponse(copy);
 	}
 

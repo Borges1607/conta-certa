@@ -41,4 +41,10 @@ public class QuestionOption {
 		this.correct = correct;
 		this.position = position;
 	}
+
+	void update(String text, boolean correct, int position) {
+		this.text = text;
+		this.correct = correct;
+		this.position = position;
+	}
 }

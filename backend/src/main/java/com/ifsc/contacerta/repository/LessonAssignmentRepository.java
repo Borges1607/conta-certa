@@ -19,6 +19,8 @@ public interface LessonAssignmentRepository extends JpaRepository<LessonAssignme
 
 	boolean existsByRoomIdAndLessonId(UUID roomId, UUID lessonId);
 
+	boolean existsByLessonId(UUID lessonId);
+
 	List<LessonAssignment> findByRoomIdAndStatusOrderByPositionAsc(UUID roomId, com.ifsc.contacerta.model.ContentStatus status);
 
 	Optional<LessonAssignment> findByRoomIdAndLessonId(UUID roomId, UUID lessonId);

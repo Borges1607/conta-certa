@@ -24,7 +24,9 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -87,13 +89,20 @@ public class Question {
 	@Column(nullable = false)
 	private long version;
 
-	private Question(Lesson lesson, QuestionType type, String prompt, String explanation, List<QuestionOptionData> optionData) {
+	private Question(
+			Lesson lesson,
+			QuestionType type,
+			String prompt,
+			String explanation,
+			List<QuestionOptionData> optionData,
+			int position
+	) {
 		this.id = UUID.randomUUID();
 		this.lesson = lesson;
 		this.type = type;
 		this.prompt = prompt;
 		this.explanation = explanation;
-		this.position = 1;
+		this.position = position;
 		this.active = true;
 		for (int index = 0; index < optionData.size(); index++) {
 			QuestionOptionData option = optionData.get(index);
@@ -108,7 +117,18 @@ public class Question {
 			String explanation,
 			List<QuestionOptionData> options
 	) {
-		return new Question(lesson, type, prompt, explanation, options);
+		return create(lesson, type, prompt, explanation, options, 1);
+	}
+
+	public static Question create(
+			Lesson lesson,
+			QuestionType type,
+			String prompt,
+			String explanation,
+			List<QuestionOptionData> options,
+			int position
+	) {
+		return new Question(lesson, type, prompt, explanation, options, position);
 	}
 
 	public void configureBoolean(boolean correctBoolean) {
@@ -133,6 +153,66 @@ public class Question {
 	public void updatePromptAndExplanation(String prompt, String explanation) {
 		this.prompt = prompt;
 		this.explanation = explanation;
+	}
+
+	public void replaceConfiguration(
+			QuestionType type,
+			String prompt,
+			String explanation,
+			List<QuestionOptionData> optionData,
+			Boolean correctBoolean,
+			BigDecimal correctNumericValue,
+			BigDecimal absoluteTolerance,
+			NumericUnit unit,
+			Integer decimalPlaces
+	) {
+		this.type = type;
+		this.prompt = prompt;
+		this.explanation = explanation;
+		replaceOptions(optionData);
+		this.correctBoolean = type == QuestionType.TRUE_FALSE ? correctBoolean : null;
+		this.correctNumericValue = type == QuestionType.NUMERIC ? correctNumericValue : null;
+		this.absoluteTolerance = type == QuestionType.NUMERIC ? absoluteTolerance : null;
+		this.unit = type == QuestionType.NUMERIC ? unit : null;
+		this.decimalPlaces = type == QuestionType.NUMERIC ? decimalPlaces : null;
+	}
+
+	public Question duplicateInto(Lesson target, int targetPosition) {
+		List<QuestionOptionData> copiedOptions = options.stream()
+				.map(option -> new QuestionOptionData(option.getText(), option.isCorrect()))
+				.toList();
+		Question copy = create(target, type, prompt, explanation, copiedOptions, targetPosition);
+		if (type == QuestionType.TRUE_FALSE) {
+			copy.configureBoolean(correctBoolean);
+		}
+		if (type == QuestionType.NUMERIC) {
+			copy.configureNumeric(correctNumericValue, absoluteTolerance, unit, decimalPlaces);
+		}
+		return copy;
+	}
+
+	private void replaceOptions(List<QuestionOptionData> optionData) {
+		Map<UUID, QuestionOption> currentOptions = new HashMap<>();
+		for (QuestionOption option : options) {
+			currentOptions.put(option.getId(), option);
+		}
+		List<QuestionOption> replacement = new ArrayList<>();
+		for (int index = 0; index < optionData.size(); index++) {
+			QuestionOptionData data = optionData.get(index);
+			QuestionOption option;
+			if (data.id() == null) {
+				option = new QuestionOption(this, data.text(), data.correct(), index + 1);
+			} else {
+				option = currentOptions.get(data.id());
+				if (option == null) {
+					throw new IllegalArgumentException("Question option does not belong to this question.");
+				}
+				option.update(data.text(), data.correct(), index + 1);
+			}
+			replacement.add(option);
+		}
+		options.clear();
+		options.addAll(replacement);
 	}
 
 	public List<QuestionOption> getOptions() {
