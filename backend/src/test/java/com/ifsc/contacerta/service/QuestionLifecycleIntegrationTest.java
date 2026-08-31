@@ -12,6 +12,7 @@ import com.ifsc.contacerta.entity.LessonAssignment;
 import com.ifsc.contacerta.entity.Question;
 import com.ifsc.contacerta.entity.Room;
 import com.ifsc.contacerta.entity.User;
+import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.model.AccountStatus;
 import com.ifsc.contacerta.model.AttemptStatus;
 import com.ifsc.contacerta.model.Grade;
@@ -40,6 +41,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class QuestionLifecycleIntegrationTest extends PostgresIntegrationTest {
 
@@ -146,6 +148,57 @@ class QuestionLifecycleIntegrationTest extends PostgresIntegrationTest {
 				.isEqualTo("Antes");
 		assertThat(attemptRepository.findById(futureAttempt.getId()).orElseThrow().getSnapshots().getFirst().getPrompt())
 				.isEqualTo("Depois");
+	}
+
+	@Test
+	void deveExcluirFisicamenteQuestaoNuncaUtilizada() {
+		Fixture fixture = createFixture();
+		QuestionResponse created = questionService.create(fixture.teacherId(), fixture.lessonId(), choice("Descartável"));
+
+		questionService.delete(fixture.teacherId(), created.id());
+
+		assertThat(questionRepository.findById(created.id())).isEmpty();
+	}
+
+	@Test
+	void deveArquivarQuestaoDeAulaAtribuida() {
+		Fixture fixture = createFixture();
+		QuestionResponse created = questionService.create(fixture.teacherId(), fixture.lessonId(), choice("Utilizada"));
+		assignLesson(fixture);
+
+		questionService.delete(fixture.teacherId(), created.id());
+		questionService.delete(fixture.teacherId(), created.id());
+
+		assertThat(questionRepository.findById(created.id())).get()
+				.extracting(Question::isActive)
+				.isEqualTo(false);
+	}
+
+	@Test
+	void deveBloquearCriacaoEmAulaArquivada() {
+		Fixture fixture = createFixture();
+		Lesson lesson = lessonRepository.findById(fixture.lessonId()).orElseThrow();
+		lesson.archive();
+		lessonRepository.save(lesson);
+
+		assertThatThrownBy(() -> questionService.create(
+				fixture.teacherId(), fixture.lessonId(), choice("Proibida")
+		)).isInstanceOfSatisfying(ApiException.class, exception -> {
+			assertThat(exception.getStatus().value()).isEqualTo(422);
+			assertThat(exception.getCode()).isEqualTo("LESSON_ARCHIVED");
+		});
+	}
+
+	private LessonAssignment assignLesson(Fixture fixture) {
+		User teacher = userRepository.findById(fixture.teacherId()).orElseThrow();
+		Room room = roomRepository.save(new Room(
+				"Turma atribuída", null, Grade.HIGH_SCHOOL_1, List.of(), 60,
+				"DEF456", "hash-assignment", teacher, teacher.getInstitution()
+		));
+		return lessonAssignmentRepository.save(new LessonAssignment(
+				room, lessonRepository.findById(fixture.lessonId()).orElseThrow(), 1,
+				null, null, null, null, null, false, false
+		));
 	}
 
 	private void createAfter(CountDownLatch start, Fixture fixture, String prompt) {

@@ -21,4 +21,7 @@ public interface QuestionRepository extends JpaRepository<Question, UUID> {
 
 	@Query("select coalesce(max(question.position), 0) from Question question where question.lesson.id = :lessonId")
 	int findMaximumPositionByLessonId(@Param("lessonId") UUID lessonId);
+
+	@Query("select (count(snapshot) > 0) from AttemptQuestionSnapshot snapshot where snapshot.question.id = :questionId")
+	boolean existsSnapshotByQuestionId(@Param("questionId") UUID questionId);
 }

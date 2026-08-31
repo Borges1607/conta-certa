@@ -12,7 +12,9 @@ import com.ifsc.contacerta.entity.Question;
 import com.ifsc.contacerta.entity.QuestionOptionData;
 import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.model.NumericUnit;
+import com.ifsc.contacerta.model.ContentStatus;
 import com.ifsc.contacerta.model.QuestionType;
+import com.ifsc.contacerta.repository.LessonAssignmentRepository;
 import com.ifsc.contacerta.repository.LessonRepository;
 import com.ifsc.contacerta.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,10 +36,12 @@ public class QuestionService {
 
 	private final LessonRepository lessonRepository;
 	private final QuestionRepository questionRepository;
+	private final LessonAssignmentRepository lessonAssignmentRepository;
 
 	@Transactional
 	public QuestionResponse create(UUID teacherId, UUID lessonId, CreateQuestionRequest request) {
 		Lesson lesson = requireOwnedLessonForUpdate(teacherId, lessonId);
+		requireMutable(lesson);
 		int position = questionRepository.findMaximumPositionByLessonId(lessonId) + 1;
 		validate(request);
 		List<QuestionOptionData> options = request.options() == null
@@ -68,13 +72,22 @@ public class QuestionService {
 	@Transactional
 	public void delete(UUID teacherId, UUID questionId) {
 		Question question = requireOwnedQuestion(teacherId, questionId);
-		questionRepository.delete(question);
+		Lesson lesson = requireOwnedLessonForUpdate(teacherId, question.getLesson().getId());
+		requireMutable(lesson);
+		boolean assigned = lessonAssignmentRepository.existsByLessonId(lesson.getId());
+		boolean snapshotted = questionRepository.existsSnapshotByQuestionId(question.getId());
+		if (!assigned && !snapshotted) {
+			questionRepository.delete(question);
+			return;
+		}
+		question.archive();
 	}
 
 	@Transactional
 	public QuestionResponse duplicate(UUID teacherId, UUID questionId, DuplicateQuestionRequest request) {
 		Question source = requireOwnedQuestion(teacherId, questionId);
 		Lesson target = requireOwnedLessonForUpdate(teacherId, request.targetLessonId());
+		requireMutable(target);
 		int position = questionRepository.findMaximumPositionByLessonId(target.getId()) + 1;
 		List<QuestionOptionData> options = source.getOptions().stream().map(option -> new QuestionOptionData(option.getText(), option.isCorrect())).toList();
 		Question copy = Question.create(
@@ -88,7 +101,8 @@ public class QuestionService {
 	@Transactional
 	public QuestionResponse update(UUID teacherId, UUID questionId, UpdateQuestionRequest request) {
 		Question question = requireOwnedQuestion(teacherId, questionId);
-		requireOwnedLessonForUpdate(teacherId, question.getLesson().getId());
+		Lesson lesson = requireOwnedLessonForUpdate(teacherId, question.getLesson().getId());
+		requireMutable(lesson);
 		if (request.version() != question.getVersion()) {
 			throw new ApiException(HttpStatus.CONFLICT, "VERSION_CONFLICT", "The question was changed by another request.");
 		}
@@ -112,7 +126,8 @@ public class QuestionService {
 
 	@Transactional
 	public List<QuestionResponse> reorder(UUID teacherId, UUID lessonId, QuestionOrderRequest request) {
-		requireOwnedLessonForUpdate(teacherId, lessonId);
+		Lesson lesson = requireOwnedLessonForUpdate(teacherId, lessonId);
+		requireMutable(lesson);
 		List<Question> questions = questionRepository.findByLessonIdOrderByPositionAsc(lessonId);
 		if (questions.size() != request.questionIds().size()
 				|| !questions.stream().map(Question::getId).collect(Collectors.toSet())
@@ -201,6 +216,16 @@ public class QuestionService {
 		return lessonRepository.findByIdAndTeacherIdForUpdate(lessonId, teacherId).orElseThrow(() -> new ApiException(
 				HttpStatus.NOT_FOUND, "LESSON_NOT_FOUND", "Lesson was not found."
 		));
+	}
+
+	private void requireMutable(Lesson lesson) {
+		if (lesson.getStatus() == ContentStatus.ARCHIVED) {
+			throw new ApiException(
+					HttpStatus.UNPROCESSABLE_CONTENT,
+					"LESSON_ARCHIVED",
+					"Archived lessons are read-only."
+			);
+		}
 	}
 
 	private QuestionResponse toResponse(Question question) {

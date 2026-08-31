@@ -14,6 +14,7 @@ import com.ifsc.contacerta.model.NumericUnit;
 import com.ifsc.contacerta.model.QuestionType;
 import com.ifsc.contacerta.model.Role;
 import com.ifsc.contacerta.repository.LessonRepository;
+import com.ifsc.contacerta.repository.LessonAssignmentRepository;
 import com.ifsc.contacerta.repository.QuestionRepository;
 import org.junit.jupiter.api.Test;
 
@@ -32,11 +33,12 @@ class QuestionServiceTest {
 	void deveRejeitarEscolhaUnicaSemExatamenteUmaOpcaoCorreta() {
 		LessonRepository lessonRepository = mock(LessonRepository.class);
 		QuestionRepository questionRepository = mock(QuestionRepository.class);
+		LessonAssignmentRepository lessonAssignmentRepository = mock(LessonAssignmentRepository.class);
 		Institution institution = new Institution("Instituto Exemplo", "11222333000181", "contato@example.com", "48999990000", true);
 		User teacher = new User(Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana@example.com", "PROF-1", institution);
 		Lesson lesson = new Lesson("Juros", "Conceitos", "# Teoria", teacher);
 		when(lessonRepository.findByIdAndTeacherIdForUpdate(lesson.getId(), teacher.getId())).thenReturn(Optional.of(lesson));
-		QuestionService service = new QuestionService(lessonRepository, questionRepository);
+		QuestionService service = new QuestionService(lessonRepository, questionRepository, lessonAssignmentRepository);
 
 		assertThatThrownBy(() -> service.create(teacher.getId(), lesson.getId(), new CreateQuestionRequest(
 				"Qual taxa?", QuestionType.SINGLE_CHOICE, null,
@@ -52,6 +54,7 @@ class QuestionServiceTest {
 	void deveTrocarQuestaoNumericaParaVerdadeiroFalsoELimparConfiguracao() {
 		LessonRepository lessonRepository = mock(LessonRepository.class);
 		QuestionRepository questionRepository = mock(QuestionRepository.class);
+		LessonAssignmentRepository lessonAssignmentRepository = mock(LessonAssignmentRepository.class);
 		Institution institution = new Institution("Instituto Exemplo", "11222333000181", "contato@example.com", "48999990000", true);
 		User teacher = new User(Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana@example.com", "PROF-1", institution);
 		Lesson lesson = new Lesson("Juros", "Conceitos", "# Teoria", teacher);
@@ -61,7 +64,7 @@ class QuestionServiceTest {
 				.thenReturn(Optional.of(question));
 		when(lessonRepository.findByIdAndTeacherIdForUpdate(lesson.getId(), teacher.getId()))
 				.thenReturn(Optional.of(lesson));
-		QuestionService service = new QuestionService(lessonRepository, questionRepository);
+		QuestionService service = new QuestionService(lessonRepository, questionRepository, lessonAssignmentRepository);
 
 		QuestionResponse response = service.update(teacher.getId(), question.getId(), new UpdateQuestionRequest(
 				null, QuestionType.TRUE_FALSE, null, null, true, null, null, null, null, question.getVersion()
