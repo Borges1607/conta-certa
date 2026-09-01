@@ -14,7 +14,6 @@ import com.ifsc.contacerta.entity.AttemptQuestionSnapshot;
 import com.ifsc.contacerta.entity.IdempotencyRecord;
 import com.ifsc.contacerta.entity.LessonAssignment;
 import com.ifsc.contacerta.entity.Question;
-import com.ifsc.contacerta.entity.RoomMembership;
 import com.ifsc.contacerta.entity.User;
 import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.mapper.AttemptMapper;
@@ -70,8 +69,12 @@ public class AttemptService {
 	public AttemptStartResult start(UUID studentId, UUID assignmentId, String key) {
 		if (key == null || key.isBlank()) throw error(HttpStatus.CONFLICT, "IDEMPOTENCY_KEY_REQUIRED", "Idempotency-Key is required.");
 		User student = requireStudent(studentId);
-		LessonAssignment assignment = assignmentRepository.findById(assignmentId).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "ASSIGNMENT_NOT_FOUND", "Assignment was not found."));
-		RoomMembership membership = membershipRepository.findForUpdateByRoomIdAndStudentId(assignment.getRoom().getId(), studentId).filter(m -> m.getStatus() == MembershipStatus.ACTIVE).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "MEMBERSHIP_NOT_FOUND", "Membership was not found."));
+		LessonAssignment assignment = assignmentRepository.findAccessibleByIdAndStudentId(
+				assignmentId, studentId, MembershipStatus.ACTIVE
+		).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "ASSIGNMENT_NOT_FOUND", "Assignment was not found."));
+		membershipRepository.findForUpdateByRoomIdAndStudentId(assignment.getRoom().getId(), studentId)
+				.filter(candidate -> candidate.getStatus() == MembershipStatus.ACTIVE)
+				.orElseThrow(() -> error(HttpStatus.NOT_FOUND, "ASSIGNMENT_NOT_FOUND", "Assignment was not found."));
 		Instant now = Instant.now(clock); IdempotencyRecord record = idempotencyRepository.findByUserIdAndKey(studentId, key).orElse(null);
 		if (record != null && record.getExpiresAt().isAfter(now)) { if (!record.getRouteScope().equals(assignmentId.toString()) || !record.getRequestHash().equals(hasher.hashStartScope())) throw error(HttpStatus.CONFLICT, "IDEMPOTENCY_KEY_REUSED", "Idempotency key was reused."); return new AttemptStartResult(HttpStatus.valueOf(record.getResponseStatus()), record.getResponseLocation() == null ? null : URI.create(record.getResponseLocation()), idempotencyResponseCodec.decode(record.getResponseBody())); }
 		if (record != null) { idempotencyRepository.delete(record); idempotencyRepository.flush(); }
@@ -113,8 +116,9 @@ public class AttemptService {
 		if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
 			throw error(HttpStatus.CONFLICT, "ATTEMPT_FINISHED", "Attempt is finished.");
 		}
-		AttemptQuestionSnapshot snapshot = snapshotRepository.findById(snapshotId)
-				.filter(candidate -> candidate.getAttempt().getId().equals(attemptId))
+		AttemptQuestionSnapshot snapshot = snapshotRepository.findByIdAndAttemptIdAndAttemptStudentId(
+				snapshotId, attemptId, studentId
+		)
 				.orElseThrow(() -> error(HttpStatus.NOT_FOUND, "QUESTION_SNAPSHOT_NOT_FOUND", "Question snapshot was not found."));
 		AttemptScoringService.ScoredAnswer scored = scoringService.validateAndScore(snapshot, request);
 		AttemptAnswer existing = answerRepository.findByQuestionSnapshotId(snapshotId).orElse(null);
@@ -159,8 +163,7 @@ public class AttemptService {
 
 	private Attempt ownedLockedAttempt(UUID studentId, UUID attemptId) {
 		requireStudent(studentId);
-		return attemptRepository.findByIdForUpdate(attemptId)
-				.filter(attempt -> attempt.getStudent().getId().equals(studentId))
+		return attemptRepository.findByIdAndStudentIdForUpdate(attemptId, studentId)
 				.orElseThrow(() -> error(HttpStatus.NOT_FOUND, "ATTEMPT_NOT_FOUND", "Attempt was not found."));
 	}
 

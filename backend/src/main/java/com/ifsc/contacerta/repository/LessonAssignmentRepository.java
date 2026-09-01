@@ -56,6 +56,19 @@ public interface LessonAssignmentRepository extends JpaRepository<LessonAssignme
 			@Param("membershipStatus") MembershipStatus membershipStatus
 	);
 
+	@Query("""
+			select assignment from LessonAssignment assignment
+			join RoomMembership membership on membership.room = assignment.room
+			where assignment.id = :assignmentId
+			and membership.student.id = :studentId
+			and membership.status = :membershipStatus
+			""")
+	Optional<LessonAssignment> findAccessibleByIdAndStudentId(
+			@Param("assignmentId") UUID assignmentId,
+			@Param("studentId") UUID studentId,
+			@Param("membershipStatus") MembershipStatus membershipStatus
+	);
+
 	Optional<LessonAssignment> findByRoomIdAndLessonId(UUID roomId, UUID lessonId);
 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
