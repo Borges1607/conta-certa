@@ -57,7 +57,7 @@ class MaterialServiceTest {
 	@Test
 	void deveCriarMaterialDeArquivoDoProfessor() {
 		StoredFile file = file(teacher);
-		when(storage.findById(file.getId())).thenReturn(Optional.of(file));
+		when(storage.findByIdAndOwnerTeacherId(file.getId(), teacher.getId())).thenReturn(Optional.of(file));
 
 		TeacherMaterialResponse created = service.create(teacher.getId(), new CreateMaterialRequest(
 				"Apostila", null, "Finanças", MaterialKind.FILE, null, file.getId()
@@ -93,7 +93,7 @@ class MaterialServiceTest {
 	@Test
 	void deveOcultarArquivoDeOutroProfessor() {
 		StoredFile file = file(anotherTeacher);
-		when(storage.findById(file.getId())).thenReturn(Optional.of(file));
+		when(storage.findByIdAndOwnerTeacherId(file.getId(), teacher.getId())).thenReturn(Optional.empty());
 
 		assertThatThrownBy(() -> service.create(teacher.getId(), new CreateMaterialRequest(
 				"Apostila", null, null, MaterialKind.FILE, null, file.getId()
