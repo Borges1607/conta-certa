@@ -35,6 +35,9 @@ class RoomRepositoryTest extends PostgresIntegrationTest {
 		Institution institution = institutionRepository.save(new Institution(
 				"Instituto Exemplo", "11222333000181", "contato@example.com", "48999990000", true
 		));
+		Institution otherInstitution = institutionRepository.save(new Institution(
+				"Outro Instituto", "11222333000190", "outro@example.com", "48999990001", true
+		));
 		User teacher = userRepository.save(new User(
 				Role.TEACHER, AccountStatus.ACTIVE, "Professora Ana", "ana2@example.com", "PROF-2", institution
 		));
@@ -52,6 +55,10 @@ class RoomRepositoryTest extends PostgresIntegrationTest {
 		assertThat(roomRepository.findByJoinCodeHash(new JoinCodeHasher().hash(" def567 ")))
 				.contains(room);
 		assertThat(roomRepository.findByJoinCodeHash("DEF567")).isEmpty();
+		assertThat(roomRepository.findByJoinCodeHashAndInstitutionId(DEF567_HASH, institution.getId()))
+				.contains(room);
+		assertThat(roomRepository.findByJoinCodeHashAndInstitutionId(DEF567_HASH, otherInstitution.getId()))
+				.isEmpty();
 		assertThat(roomRepository.findByTeacherIdOrderByCreatedAtDesc(
 				teacher.getId(), PageRequest.of(0, 10)
 		)).containsExactly(room);

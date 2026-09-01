@@ -45,7 +45,9 @@ public class RoomMembershipService {
 		if (student.getStatus() != AccountStatus.ACTIVE) {
 			throw new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_INACTIVE", "Student account is inactive.");
 		}
-		Room room = roomRepository.findByJoinCodeHash(joinCodeHasher.hash(joinCode)).orElseThrow(() ->
+		Room room = roomRepository.findByJoinCodeHashAndInstitutionId(
+				joinCodeHasher.hash(joinCode), student.getInstitution().getId()
+		).orElseThrow(() ->
 				new ApiException(HttpStatus.NOT_FOUND, "ROOM_NOT_FOUND", "Room was not found.")
 		);
 		if (room.getArchivedAt() != null) {
@@ -53,13 +55,6 @@ public class RoomMembershipService {
 					HttpStatus.UNPROCESSABLE_CONTENT,
 					"ROOM_ARCHIVED",
 					"Archived rooms do not accept new memberships."
-			);
-		}
-		if (!room.getInstitution().getId().equals(student.getInstitution().getId())) {
-			throw new ApiException(
-					HttpStatus.FORBIDDEN,
-					"INSTITUTION_MISMATCH",
-					"Student and room must belong to the same institution."
 			);
 		}
 		RoomMembership membership = membershipRepository
@@ -100,11 +95,19 @@ public class RoomMembershipService {
 	@Transactional
 	public void remove(UUID teacherId, UUID roomId, UUID studentId) {
 		requireTeacher(teacherId);
-		User teacher = userRepository.findById(teacherId).orElseThrow();
+		User teacher = userRepository.findById(teacherId).orElseThrow(() -> new ApiException(
+				HttpStatus.NOT_FOUND,
+				"TEACHER_NOT_FOUND",
+				"Teacher was not found."
+		));
 		requireOwnedRoom(teacherId, roomId);
 		RoomMembership membership = membershipRepository
 				.findByRoomIdAndStudentId(roomId, studentId)
-				.orElseThrow();
+				.orElseThrow(() -> new ApiException(
+						HttpStatus.NOT_FOUND,
+						"MEMBERSHIP_NOT_FOUND",
+						"Membership was not found."
+				));
 		membership.remove(teacher);
 	}
 
@@ -117,18 +120,24 @@ public class RoomMembershipService {
 	}
 
 	private void requireStudent(UUID studentId) {
-		userRepository.findById(studentId).ifPresent(student -> {
-			if (student.getRole() != Role.STUDENT) {
-				throw new ApiException(HttpStatus.FORBIDDEN, "STUDENT_REQUIRED", "A student account is required.");
-			}
-		});
+		User student = userRepository.findById(studentId).orElseThrow(() -> new ApiException(
+				HttpStatus.NOT_FOUND,
+				"STUDENT_NOT_FOUND",
+				"Student was not found."
+		));
+		if (student.getRole() != Role.STUDENT) {
+			throw new ApiException(HttpStatus.FORBIDDEN, "STUDENT_REQUIRED", "A student account is required.");
+		}
 	}
 
 	private void requireTeacher(UUID teacherId) {
-		userRepository.findById(teacherId).ifPresent(teacher -> {
-			if (teacher.getRole() != Role.TEACHER) {
-				throw new ApiException(HttpStatus.FORBIDDEN, "TEACHER_REQUIRED", "A teacher account is required.");
-			}
-		});
+		User teacher = userRepository.findById(teacherId).orElseThrow(() -> new ApiException(
+				HttpStatus.NOT_FOUND,
+				"TEACHER_NOT_FOUND",
+				"Teacher was not found."
+		));
+		if (teacher.getRole() != Role.TEACHER) {
+			throw new ApiException(HttpStatus.FORBIDDEN, "TEACHER_REQUIRED", "A teacher account is required.");
+		}
 	}
 }

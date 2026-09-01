@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class RoomMembershipServiceTest {
@@ -41,7 +42,9 @@ class RoomMembershipServiceTest {
 		User student = user(Role.STUDENT, "bruno@example.com", "ALUNO-1", institution);
 		Room room = room("ABC234", teacher, institution);
 		when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
-		when(roomRepository.findByJoinCodeHash(joinCodeHasher.hash("ABC234"))).thenReturn(Optional.of(room));
+		when(roomRepository.findByJoinCodeHashAndInstitutionId(
+				joinCodeHasher.hash("ABC234"), institution.getId()
+		)).thenReturn(Optional.of(room));
 		when(membershipRepository.findByRoomIdAndStudentId(room.getId(), student.getId()))
 				.thenReturn(Optional.empty());
 		when(membershipRepository.save(any(RoomMembership.class)))
@@ -64,16 +67,20 @@ class RoomMembershipServiceTest {
 		);
 		User teacher = user(Role.TEACHER, "ana2@example.com", "PROF-2", roomInstitution);
 		User student = user(Role.STUDENT, "bruno2@example.com", "ALUNO-2", studentInstitution);
-		Room room = room("ABC235", teacher, roomInstitution);
 		when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
-		when(roomRepository.findByJoinCodeHash(joinCodeHasher.hash("ABC235"))).thenReturn(Optional.of(room));
+		when(roomRepository.findByJoinCodeHashAndInstitutionId(
+				joinCodeHasher.hash("ABC235"), studentInstitution.getId()
+		)).thenReturn(Optional.empty());
 		RoomMembershipService service = service(userRepository, roomRepository, mock(RoomMembershipRepository.class));
 
 		assertThatThrownBy(() -> service.join(student.getId(), "ABC235"))
 				.isInstanceOfSatisfying(ApiException.class, exception -> {
-					assertThat(exception.getStatus().value()).isEqualTo(403);
-					assertThat(exception.getCode()).isEqualTo("INSTITUTION_MISMATCH");
+					assertThat(exception.getStatus().value()).isEqualTo(404);
+					assertThat(exception.getCode()).isEqualTo("ROOM_NOT_FOUND");
 				});
+		verify(roomRepository).findByJoinCodeHashAndInstitutionId(
+				joinCodeHasher.hash("ABC235"), studentInstitution.getId()
+		);
 	}
 
 	@Test
@@ -86,7 +93,9 @@ class RoomMembershipServiceTest {
 		Room room = room("ABC236", teacher, institution);
 		room.archive();
 		when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
-		when(roomRepository.findByJoinCodeHash(joinCodeHasher.hash("ABC236"))).thenReturn(Optional.of(room));
+		when(roomRepository.findByJoinCodeHashAndInstitutionId(
+				joinCodeHasher.hash("ABC236"), institution.getId()
+		)).thenReturn(Optional.of(room));
 		RoomMembershipService service = service(userRepository, roomRepository, mock(RoomMembershipRepository.class));
 
 		assertThatThrownBy(() -> service.join(student.getId(), "ABC236"))
@@ -109,7 +118,9 @@ class RoomMembershipServiceTest {
 		UUID membershipId = membership.getId();
 		membership.remove(teacher);
 		when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
-		when(roomRepository.findByJoinCodeHash(joinCodeHasher.hash("ABC237"))).thenReturn(Optional.of(room));
+		when(roomRepository.findByJoinCodeHashAndInstitutionId(
+				joinCodeHasher.hash("ABC237"), institution.getId()
+		)).thenReturn(Optional.of(room));
 		when(membershipRepository.findByRoomIdAndStudentId(room.getId(), student.getId()))
 				.thenReturn(Optional.of(membership));
 		RoomMembershipService service = service(userRepository, roomRepository, membershipRepository);
@@ -133,7 +144,9 @@ class RoomMembershipServiceTest {
 		Room room = room("ABC240", teacher, institution);
 		RoomMembership membership = new RoomMembership(room, student);
 		when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
-		when(roomRepository.findByJoinCodeHash(joinCodeHasher.hash("ABC240"))).thenReturn(Optional.of(room));
+		when(roomRepository.findByJoinCodeHashAndInstitutionId(
+				joinCodeHasher.hash("ABC240"), institution.getId()
+		)).thenReturn(Optional.of(room));
 		when(membershipRepository.findByRoomIdAndStudentId(room.getId(), student.getId()))
 				.thenReturn(Optional.of(membership));
 		RoomMembershipService service = service(userRepository, roomRepository, membershipRepository);
@@ -157,6 +170,7 @@ class RoomMembershipServiceTest {
 		Room olderRoom = room("ABC242", teacher, institution);
 		RoomMembership newerMembership = new RoomMembership(newerRoom, student);
 		RoomMembership olderMembership = new RoomMembership(olderRoom, student);
+		when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
 		when(membershipRepository.findByStudentIdAndStatusOrderByJoinedAtDesc(student.getId(), MembershipStatus.ACTIVE))
 				.thenReturn(List.of(newerMembership, olderMembership));
 		RoomMembershipService service = service(userRepository, roomRepository, membershipRepository);
@@ -185,6 +199,7 @@ class RoomMembershipServiceTest {
 				0, 0, 0, 0, null, MembershipStatus.ACTIVE
 		);
 		PageRequest pageable = PageRequest.of(0, 20);
+		when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
 		when(roomRepository.findByIdAndTeacherId(room.getId(), teacher.getId())).thenReturn(Optional.of(room));
 		when(membershipRepository.findStudentResponsesByRoomIdAndStatusAndSearchOrderByJoinedAtDesc(
 				room.getId(), MembershipStatus.ACTIVE, "Bruno", pageable
@@ -203,11 +218,15 @@ class RoomMembershipServiceTest {
 
 	@Test
 	void deveOcultarListaDeAlunosQuandoSalaNaoPertencerAoProfessor() {
-		UUID teacherId = UUID.randomUUID();
+		Institution institution = institution();
+		User teacher = user(Role.TEACHER, "ana-estrangeira@example.com", "PROF-12", institution);
+		UUID teacherId = teacher.getId();
 		UUID roomId = UUID.randomUUID();
+		UserRepository userRepository = mock(UserRepository.class);
 		RoomRepository roomRepository = mock(RoomRepository.class);
+		when(userRepository.findById(teacherId)).thenReturn(Optional.of(teacher));
 		when(roomRepository.findByIdAndTeacherId(roomId, teacherId)).thenReturn(Optional.empty());
-		RoomMembershipService service = service(mock(UserRepository.class), roomRepository, mock(RoomMembershipRepository.class));
+		RoomMembershipService service = service(userRepository, roomRepository, mock(RoomMembershipRepository.class));
 
 		assertThatThrownBy(() -> service.listRoomStudents(teacherId, roomId, null, PageRequest.of(0, 20)))
 				.isInstanceOfSatisfying(ApiException.class, exception -> {
@@ -265,6 +284,28 @@ class RoomMembershipServiceTest {
 	}
 
 	@Test
+	void deveRetornarErroExplicitoQuandoMatriculaRemovidaNaoExistir() {
+		UserRepository userRepository = mock(UserRepository.class);
+		RoomRepository roomRepository = mock(RoomRepository.class);
+		RoomMembershipRepository membershipRepository = mock(RoomMembershipRepository.class);
+		Institution institution = institution();
+		User teacher = user(Role.TEACHER, "ana-sem-matricula@example.com", "PROF-11", institution);
+		User student = user(Role.STUDENT, "bruno-sem-matricula@example.com", "ALUNO-12", institution);
+		Room room = room("ABC245", teacher, institution);
+		when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
+		when(roomRepository.findByIdAndTeacherId(room.getId(), teacher.getId())).thenReturn(Optional.of(room));
+		when(membershipRepository.findByRoomIdAndStudentId(room.getId(), student.getId()))
+				.thenReturn(Optional.empty());
+		RoomMembershipService service = service(userRepository, roomRepository, membershipRepository);
+
+		assertThatThrownBy(() -> service.remove(teacher.getId(), room.getId(), student.getId()))
+				.isInstanceOfSatisfying(ApiException.class, exception -> {
+					assertThat(exception.getStatus().value()).isEqualTo(404);
+					assertThat(exception.getCode()).isEqualTo("MEMBERSHIP_NOT_FOUND");
+				});
+	}
+
+	@Test
 	void deveRejeitarIngressoQuandoUsuarioNaoForAluno() {
 		UserRepository userRepository = mock(UserRepository.class);
 		Institution institution = institution();
@@ -316,7 +357,9 @@ class RoomMembershipServiceTest {
 		RoomRepository roomRepository = mock(RoomRepository.class);
 		User student = user(Role.STUDENT, "bruno6@example.com", "ALUNO-7", institution());
 		when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
-		when(roomRepository.findByJoinCodeHash(joinCodeHasher.hash("INVALIDO"))).thenReturn(Optional.empty());
+		when(roomRepository.findByJoinCodeHashAndInstitutionId(
+				joinCodeHasher.hash("INVALIDO"), student.getInstitution().getId()
+		)).thenReturn(Optional.empty());
 		RoomMembershipService service = service(userRepository, roomRepository, mock(RoomMembershipRepository.class));
 
 		assertThatThrownBy(() -> service.join(student.getId(), "invalido"))
