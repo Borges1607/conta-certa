@@ -14,6 +14,7 @@ import com.ifsc.contacerta.entity.AttemptQuestionSnapshot;
 import com.ifsc.contacerta.entity.IdempotencyRecord;
 import com.ifsc.contacerta.entity.LessonAssignment;
 import com.ifsc.contacerta.entity.Question;
+import com.ifsc.contacerta.entity.QuestionOption;
 import com.ifsc.contacerta.entity.User;
 import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.mapper.AttemptMapper;
@@ -40,8 +41,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
+import java.util.random.RandomGenerator;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -64,7 +72,7 @@ public class AttemptService {
 	private final AttemptFinalizationService finalizationService;
 	private final StudentProgressService progressService;
 	private final RoomStudentProgressRepository roomProgressRepository;
-	private final java.util.random.RandomGenerator randomGenerator;
+	private final RandomGenerator randomGenerator;
 	@Transactional
 	public AttemptStartResult start(UUID studentId, UUID assignmentId, String key) {
 		if (key == null || key.isBlank()) throw error(HttpStatus.CONFLICT, "IDEMPOTENCY_KEY_REQUIRED", "Idempotency-Key is required.");
@@ -82,17 +90,17 @@ public class AttemptService {
 		if (assignment.getRoom().getArchivedAt() != null) throw error(HttpStatus.CONFLICT, "ROOM_ARCHIVED", "Room is archived."); if (assignment.getStatus() != ContentStatus.PUBLISHED) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "ASSIGNMENT_NOT_AVAILABLE", "Assignment is not published."); if (assignment.getAvailableFrom() != null && now.isBefore(assignment.getAvailableFrom())) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "ASSIGNMENT_NOT_AVAILABLE", "Assignment is not available."); if (assignment.getDueAt() != null && !now.isBefore(assignment.getDueAt())) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "ASSIGNMENT_CLOSED", "Assignment is closed.");
 		LessonAssignment previous = assignmentRepository.findByRoomIdAndStatusOrderByPositionAsc(assignment.getRoom().getId(), ContentStatus.PUBLISHED).stream()
 				.filter(candidate -> candidate.getPosition() < assignment.getPosition())
-				.max(java.util.Comparator.comparingInt(LessonAssignment::getPosition)).orElse(null);
+				.max(Comparator.comparingInt(LessonAssignment::getPosition)).orElse(null);
 		if (previous != null && !progressService.hasPassedAssignment(studentId, previous.getId())) throw error(HttpStatus.CONFLICT, "PREREQUISITE_NOT_MET", "The previous assignment must be passed first.");
 		long used = attemptRepository.countByAssignmentIdAndStudentId(assignmentId, studentId); long allowed = assignment.getMaxAttempts() == null ? Long.MAX_VALUE : assignment.getMaxAttempts() + grantRepository.sumQuantityByAssignmentIdAndStudentId(assignmentId, studentId); if (used >= allowed) throw error(HttpStatus.CONFLICT, "ATTEMPT_LIMIT_REACHED", "Attempt limit reached.");
 		List<Question> questions = questionRepository.findByLessonIdAndActiveTrueOrderByPositionAsc(assignment.getLesson().getId()); int wanted = assignment.getQuestionCount() == null ? questions.size() : assignment.getQuestionCount(); if (questions.size() < wanted || wanted == 0) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "ASSIGNMENT_CONTENT_UNAVAILABLE", "Assignment content is unavailable.");
 		Instant expiresAt = assignment.getTimeLimitMinutes() == null ? assignment.getDueAt() : now.plusSeconds(assignment.getTimeLimitMinutes() * 60L); if (assignment.getDueAt() != null && (expiresAt == null || assignment.getDueAt().isBefore(expiresAt))) expiresAt = assignment.getDueAt();
-		List<Question> selectedQuestions = new java.util.ArrayList<>(questions);
-		if (assignment.isShuffleQuestions()) java.util.Collections.shuffle(selectedQuestions, new java.util.Random(randomGenerator.nextLong()));
+		List<Question> selectedQuestions = new ArrayList<>(questions);
+		if (assignment.isShuffleQuestions()) Collections.shuffle(selectedQuestions, new Random(randomGenerator.nextLong()));
 		Attempt attempt = new Attempt(assignment, student, (int) used + 1, now, expiresAt);
 		for (int index = 0; index < wanted; index++) {
-			List<com.ifsc.contacerta.entity.QuestionOption> options = new java.util.ArrayList<>(selectedQuestions.get(index).getOptions());
-			if (assignment.isShuffleOptions()) java.util.Collections.shuffle(options, new java.util.Random(randomGenerator.nextLong()));
+			List<QuestionOption> options = new ArrayList<>(selectedQuestions.get(index).getOptions());
+			if (assignment.isShuffleOptions()) Collections.shuffle(options, new Random(randomGenerator.nextLong()));
 			attempt.addSnapshot(selectedQuestions.get(index), index + 1, options);
 		}
 		attemptRepository.saveAndFlush(attempt); AttemptResponse body = publicResponse(attempt); URI location = URI.create("/student/attempts/" + attempt.getId()); idempotencyRepository.save(new IdempotencyRecord(student, "POST", assignmentId.toString(), key, hasher.hashStartScope(), 201, "application/json", location.toString(), idempotencyResponseCodec.encode(body), attempt, now, now.plus(properties.idempotencyTtl()))); return new AttemptStartResult(HttpStatus.CREATED, location, body);
@@ -197,8 +205,8 @@ public class AttemptService {
 		if (incoming.booleanValue() != null) {
 			return incoming.booleanValue().equals(existing.getBooleanValue());
 		}
-		return existing.getSelectedOptions().stream().map(option -> option.getId()).collect(java.util.stream.Collectors.toSet())
-				.equals(incoming.selectedOptions().stream().map(option -> option.getId()).collect(java.util.stream.Collectors.toSet()));
+		return existing.getSelectedOptions().stream().map(option -> option.getId()).collect(Collectors.toSet())
+				.equals(incoming.selectedOptions().stream().map(option -> option.getId()).collect(Collectors.toSet()));
 	}
 
 	private AttemptResponse publicResponse(Attempt attempt) {
@@ -246,8 +254,8 @@ public class AttemptService {
 	}
 
 	private List<AttemptAnswerReviewResponse> review(Attempt attempt) {
-		java.util.Map<UUID, AttemptAnswer> answers = answerRepository.findByQuestionSnapshotAttemptId(attempt.getId()).stream()
-				.collect(java.util.stream.Collectors.toMap(answer -> answer.getQuestionSnapshot().getId(), answer -> answer));
+		Map<UUID, AttemptAnswer> answers = answerRepository.findByQuestionSnapshotAttemptId(attempt.getId()).stream()
+				.collect(Collectors.toMap(answer -> answer.getQuestionSnapshot().getId(), answer -> answer));
 		return attempt.getSnapshots().stream().map(snapshot -> {
 			AttemptAnswer answer = answers.get(snapshot.getId());
 			return new AttemptAnswerReviewResponse(

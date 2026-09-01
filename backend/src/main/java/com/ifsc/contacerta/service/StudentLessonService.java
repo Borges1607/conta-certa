@@ -8,11 +8,13 @@ import com.ifsc.contacerta.dto.studentlesson.StudentLessonPathResponse;
 import com.ifsc.contacerta.entity.Attempt;
 import com.ifsc.contacerta.entity.LessonAssignment;
 import com.ifsc.contacerta.exception.ApiException;
+import com.ifsc.contacerta.model.AccountStatus;
 import com.ifsc.contacerta.model.AttemptAvailabilityStatus;
 import com.ifsc.contacerta.model.AttemptStatus;
 import com.ifsc.contacerta.model.ContentStatus;
 import com.ifsc.contacerta.model.LessonLockReason;
 import com.ifsc.contacerta.model.MembershipStatus;
+import com.ifsc.contacerta.model.Role;
 import com.ifsc.contacerta.repository.AttemptRepository;
 import com.ifsc.contacerta.repository.ExtraAttemptGrantRepository;
 import com.ifsc.contacerta.repository.LessonAssignmentRepository;
@@ -27,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -102,7 +105,7 @@ public class StudentLessonService {
 				.findFirstByAssignmentIdAndStudentIdAndStatusInOrderByScorePercentDescSubmittedAtAsc(
 						assignment.getId(), studentId, FINAL
 				)
-				.map(com.ifsc.contacerta.entity.Attempt::getId)
+				.map(Attempt::getId)
 				.orElse(null);
 		return PageResponse.from(attemptRepository.findByAssignmentIdAndStudentIdOrderBySequenceDesc(assignment.getId(), studentId, pageable)
 				.map(attempt -> new AttemptHistoryResponse(
@@ -214,7 +217,7 @@ public class StudentLessonService {
 		return assignmentRepository.findAccessibleByRoomIdAndStudentIdAndStatusOrderByPositionAsc(
 				assignment.getRoom().getId(), studentId, MembershipStatus.ACTIVE, ContentStatus.PUBLISHED
 		).stream()
-				.filter(candidate -> candidate.getPosition() < assignment.getPosition()).max(java.util.Comparator.comparingInt(LessonAssignment::getPosition))
+				.filter(candidate -> candidate.getPosition() < assignment.getPosition()).max(Comparator.comparingInt(LessonAssignment::getPosition))
 				.map(previous -> attemptRepository.findFirstByAssignmentIdAndStudentIdAndStatusInOrderByScorePercentDescSubmittedAtAsc(previous.getId(), studentId, FINAL)
 						.map(attempt -> Boolean.TRUE.equals(attempt.getPassed())).orElse(false)).orElse(true);
 	}
@@ -236,10 +239,10 @@ public class StudentLessonService {
 	private void requireStudent(UUID studentId) {
 		var student = userRepository.findById(studentId)
 				.orElseThrow(() -> error("STUDENT_NOT_FOUND", "Student was not found."));
-		if (student.getRole() != com.ifsc.contacerta.model.Role.STUDENT) {
+		if (student.getRole() != Role.STUDENT) {
 			throw new ApiException(HttpStatus.FORBIDDEN, "STUDENT_REQUIRED", "A student account is required.");
 		}
-		if (student.getStatus() != com.ifsc.contacerta.model.AccountStatus.ACTIVE) {
+		if (student.getStatus() != AccountStatus.ACTIVE) {
 			throw new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_INACTIVE", "Student account is inactive.");
 		}
 	}
