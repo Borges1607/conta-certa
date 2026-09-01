@@ -49,8 +49,7 @@ public class ExtraAttemptGrantService {
 		if (teacher.getStatus() != AccountStatus.ACTIVE) {
 			throw error(HttpStatus.FORBIDDEN, "ACCOUNT_INACTIVE", "Teacher account is inactive.");
 		}
-		LessonAssignment assignment = assignmentRepository.findById(assignmentId)
-				.filter(candidate -> candidate.getRoom().getTeacher().getId().equals(teacherId))
+		LessonAssignment assignment = assignmentRepository.findByIdAndRoomTeacherId(assignmentId, teacherId)
 				.orElseThrow(() -> error(HttpStatus.NOT_FOUND, "ASSIGNMENT_NOT_FOUND", "Assignment was not found."));
 		if (assignment.getMaxAttempts() == null) {
 			throw error(HttpStatus.CONFLICT, "UNLIMITED_ATTEMPTS", "Assignment already has unlimited attempts.");

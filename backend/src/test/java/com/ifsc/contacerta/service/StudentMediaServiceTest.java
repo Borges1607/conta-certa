@@ -73,7 +73,9 @@ class StudentMediaServiceTest {
 		archivedVideo.archive();
 		MediaAssignment first = MediaAssignment.video(room, viewedVideo, null, 1, NOW);
 		MediaAssignment second = MediaAssignment.video(room, archivedVideo, null, 2, NOW);
-		when(assignments.findByRoomIdOrderByPositionAsc(room.getId())).thenReturn(List.of(first, second));
+		when(assignments.findAccessibleByRoomIdAndStudentIdOrderByPositionAsc(
+				room.getId(), student.getId(), MembershipStatus.ACTIVE
+		)).thenReturn(List.of(first, second));
 		when(views.findByStudentIdAndRoomIdAndVideoId(student.getId(), room.getId(), viewedVideo.getId()))
 				.thenReturn(Optional.of(MediaView.video(student, room, viewedVideo, NOW.minusSeconds(60))));
 
@@ -104,7 +106,9 @@ class StudentMediaServiceTest {
 		StoredFile file = new StoredFile(room.getTeacher(), "aula.pdf", "application/pdf", 4,
 				"sha256", new byte[]{1, 2, 3, 4}, NOW);
 		Material material = Material.file(room.getTeacher(), "Apostila", null, null, file, NOW);
-		when(assignments.findByRoomIdOrderByPositionAsc(room.getId()))
+		when(assignments.findAccessibleByRoomIdAndStudentIdOrderByPositionAsc(
+				room.getId(), student.getId(), MembershipStatus.ACTIVE
+		))
 				.thenReturn(List.of(MediaAssignment.material(room, material, null, 1, NOW)));
 		when(views.findByStudentIdAndRoomIdAndMaterialId(student.getId(), room.getId(), material.getId()))
 				.thenReturn(Optional.empty());

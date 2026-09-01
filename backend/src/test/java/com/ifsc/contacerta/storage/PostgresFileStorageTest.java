@@ -38,6 +38,9 @@ class PostgresFileStorageTest extends PostgresIntegrationTest {
 		User teacher = userRepository.save(new User(
 				Role.TEACHER, AccountStatus.ACTIVE, "Professora", "prof@example.com", "P-1", institution
 		));
+		User otherTeacher = userRepository.save(new User(
+				Role.TEACHER, AccountStatus.ACTIVE, "Outro Professor", "outro@example.com", "P-2", institution
+		));
 		byte[] content = {0x00, 0x01, (byte) 0xFF, 0x7F};
 
 		StoredFile stored = storage.store(
@@ -48,8 +51,9 @@ class PostgresFileStorageTest extends PostgresIntegrationTest {
 		entityManager.flush();
 		entityManager.clear();
 
-		assertThat(storage.findById(stored.getId())).get()
+		assertThat(storage.findByIdAndOwnerTeacherId(stored.getId(), teacher.getId())).get()
 				.extracting(StoredFile::getContent)
 				.isEqualTo(content);
+		assertThat(storage.findByIdAndOwnerTeacherId(stored.getId(), otherTeacher.getId())).isEmpty();
 	}
 }

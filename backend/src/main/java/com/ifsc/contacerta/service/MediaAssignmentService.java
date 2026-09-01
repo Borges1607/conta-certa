@@ -49,7 +49,8 @@ public class MediaAssignmentService {
 		requireActiveTeacher(teacherId);
 		Room room = requireOwnedRoom(teacherId, roomId);
 		LessonAssignment lesson = resolveLesson(teacherId, roomId, request.lessonAssignmentId());
-		int position = assignmentRepository.findByRoomIdOrderByPositionAsc(roomId).stream()
+		int position = assignmentRepository
+				.findByRoomIdAndRoomTeacherIdOrderByPositionAsc(roomId, teacherId).stream()
 				.map(MediaAssignment::getPosition)
 				.max(Comparator.naturalOrder())
 				.orElse(0) + 1;
@@ -88,7 +89,9 @@ public class MediaAssignmentService {
 					? null
 					: resolveLesson(teacherId, roomId, parseUuid(request.lessonAssignmentId().asText()));
 		}
-		ArrayList<MediaAssignment> ordered = new ArrayList<>(assignmentRepository.findByRoomIdOrderByPositionAsc(roomId));
+		ArrayList<MediaAssignment> ordered = new ArrayList<>(
+				assignmentRepository.findByRoomIdAndRoomTeacherIdOrderByPositionAsc(roomId, teacherId)
+		);
 		ordered.removeIf(item -> item.getId().equals(target.getId()));
 		int requestedPosition = request.position() == null ? target.getPosition() : request.position();
 		int targetPosition = Math.max(1, Math.min(requestedPosition, ordered.size() + 1));
@@ -104,7 +107,10 @@ public class MediaAssignmentService {
 	public List<MediaAssignmentResponse> list(UUID teacherId, UUID roomId) {
 		requireActiveTeacher(teacherId);
 		requireOwnedRoom(teacherId, roomId);
-		return assignmentRepository.findByRoomIdOrderByPositionAsc(roomId).stream().map(this::toResponse).toList();
+		return assignmentRepository.findByRoomIdAndRoomTeacherIdOrderByPositionAsc(roomId, teacherId)
+				.stream()
+				.map(this::toResponse)
+				.toList();
 	}
 
 	@Transactional
@@ -113,7 +119,9 @@ public class MediaAssignmentService {
 		requireOwnedRoom(teacherId, roomId);
 		MediaAssignment target = requireOwnedAssignment(teacherId, roomId, assignmentId);
 		assignmentRepository.delete(target);
-		ArrayList<MediaAssignment> remaining = new ArrayList<>(assignmentRepository.findByRoomIdOrderByPositionAsc(roomId));
+		ArrayList<MediaAssignment> remaining = new ArrayList<>(
+				assignmentRepository.findByRoomIdAndRoomTeacherIdOrderByPositionAsc(roomId, teacherId)
+		);
 		remaining.removeIf(item -> item.getId().equals(target.getId()));
 		for (int index = 0; index < remaining.size(); index++) {
 			MediaAssignment item = remaining.get(index);

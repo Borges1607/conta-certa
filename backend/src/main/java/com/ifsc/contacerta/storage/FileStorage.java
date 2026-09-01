@@ -10,5 +10,5 @@ import java.util.UUID;
 
 public interface FileStorage {
 	StoredFile store(User owner, MaterialFileValidator.ValidatedMaterialFile file, Instant createdAt);
-	Optional<StoredFile> findById(UUID fileId);
+	Optional<StoredFile> findByIdAndOwnerTeacherId(UUID fileId, UUID teacherId);
 }

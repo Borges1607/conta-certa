@@ -149,8 +149,7 @@ public class MaterialService {
 	}
 
 	private StoredFile requireOwnedFile(UUID teacherId, UUID fileId) {
-		return fileStorage.findById(fileId)
-				.filter(file -> file.getOwnerTeacher().getId().equals(teacherId))
+		return fileStorage.findByIdAndOwnerTeacherId(fileId, teacherId)
 				.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "FILE_NOT_FOUND", "File was not found."));
 	}
 

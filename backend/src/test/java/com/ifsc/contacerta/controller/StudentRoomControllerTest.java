@@ -126,8 +126,8 @@ class StudentRoomControllerTest extends PostgresIntegrationTest {
 					.header("Authorization", bearer(login))
 					.contentType(MediaType.APPLICATION_JSON)
 					.content("{\"code\":\"YZA789\"}"))
-				.andExpect(status().isForbidden())
-				.andExpect(jsonPath("$.code").value("INSTITUTION_MISMATCH"));
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("ROOM_NOT_FOUND"));
 	}
 
 	@Test

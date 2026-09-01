@@ -82,6 +82,14 @@ public interface AttemptRepository extends JpaRepository<Attempt, UUID> {
 	Integer findBestScoreByAssignmentIdAndStudentIdAndStatusIn(@Param("assignmentId") UUID assignmentId, @Param("studentId") UUID studentId, @Param("statuses") List<AttemptStatus> statuses);
 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("select attempt from Attempt attempt "
+			+ "where attempt.id = :attemptId and attempt.student.id = :studentId")
+	Optional<Attempt> findByIdAndStudentIdForUpdate(
+			@Param("attemptId") UUID attemptId,
+			@Param("studentId") UUID studentId
+	);
+
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("select attempt from Attempt attempt where attempt.id = :id")
 	Optional<Attempt> findByIdForUpdate(@Param("id") UUID id);
 }

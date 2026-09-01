@@ -13,6 +13,8 @@ public interface RoomRepository extends JpaRepository<Room, UUID>, JpaSpecificat
 
 	Optional<Room> findByJoinCodeHash(String joinCodeHash);
 
+	Optional<Room> findByJoinCodeHashAndInstitutionId(String joinCodeHash, UUID institutionId);
+
 	Optional<Room> findByIdAndTeacherId(UUID id, UUID teacherId);
 
 	boolean existsByJoinCodeHash(String joinCodeHash);

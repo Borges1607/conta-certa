@@ -37,6 +37,14 @@ class AttemptRepositoryTest extends PostgresIntegrationTest {
 	void deveBuscarTentativaAtivaDoAlunoPorAtribuicao() {
 		Fixture fixture = createFixture();
 		Attempt attempt = new Attempt(fixture.assignment(), fixture.student(), 1, Instant.now(), null);
+		User otherStudent = userRepository.save(new User(
+				Role.STUDENT,
+				AccountStatus.ACTIVE,
+				"Outra Aluna",
+				"outra@example.com",
+				"ALU-2",
+				fixture.assignment().getRoom().getInstitution()
+		));
 		attemptRepository.saveAndFlush(attempt);
 
 		assertThat(attemptRepository.findByAssignmentIdAndStudentIdAndStatus(
@@ -44,6 +52,12 @@ class AttemptRepositoryTest extends PostgresIntegrationTest {
 		)).get().extracting(Attempt::getId).isEqualTo(attempt.getId());
 		assertThat(attemptRepository.findByIdForUpdate(attempt.getId())).get()
 				.extracting(Attempt::getId).isEqualTo(attempt.getId());
+		assertThat(attemptRepository.findByIdAndStudentIdForUpdate(attempt.getId(), fixture.student().getId()))
+				.get()
+				.extracting(Attempt::getId)
+				.isEqualTo(attempt.getId());
+		assertThat(attemptRepository.findByIdAndStudentIdForUpdate(attempt.getId(), otherStudent.getId()))
+				.isEmpty();
 	}
 
 	private Fixture createFixture() {

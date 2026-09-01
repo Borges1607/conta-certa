@@ -57,9 +57,11 @@ class LessonAssignmentRepositoryTest extends PostgresIntegrationTest {
 				.containsExactly("Primeira", "Segunda");
 		assertThat(assignmentRepository.findByRoomIdAndRoomTeacherIdOrderByPositionAsc(room.getId(), other.getId()))
 				.isEmpty();
-		assertThat(assignmentRepository.findByRoomIdForUpdate(room.getId()))
+		assertThat(assignmentRepository.findByRoomIdAndRoomTeacherIdForUpdate(room.getId(), owner.getId()))
 				.extracting(LessonAssignment::getPosition)
 				.containsExactly(1, 2);
+		assertThat(assignmentRepository.findByRoomIdAndRoomTeacherIdForUpdate(room.getId(), other.getId()))
+				.isEmpty();
 	}
 
 	private Room persistRoom(String name, String code, String hash, User teacher, Institution institution) {
