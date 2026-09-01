@@ -19,6 +19,8 @@ public interface LessonAssignmentRepository extends JpaRepository<LessonAssignme
 
 	Optional<LessonAssignment> findByIdAndRoomIdAndRoomTeacherId(UUID id, UUID roomId, UUID teacherId);
 
+	Optional<LessonAssignment> findByIdAndRoomTeacherId(UUID id, UUID teacherId);
+
 	boolean existsByRoomIdAndLessonId(UUID roomId, UUID lessonId);
 
 	boolean existsByLessonId(UUID lessonId);

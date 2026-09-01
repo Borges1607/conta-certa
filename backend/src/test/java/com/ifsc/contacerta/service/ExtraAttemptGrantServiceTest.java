@@ -69,7 +69,8 @@ class ExtraAttemptGrantServiceTest {
 
 		when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
 		when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
-		when(assignmentRepository.findById(assignment.getId())).thenReturn(Optional.of(assignment));
+		when(assignmentRepository.findByIdAndRoomTeacherId(assignment.getId(), teacher.getId()))
+				.thenReturn(Optional.of(assignment));
 		when(membershipRepository.findForUpdateByRoomIdAndStudentId(room.getId(), student.getId()))
 				.thenReturn(Optional.of(new RoomMembership(room, student)));
 
@@ -124,6 +125,20 @@ class ExtraAttemptGrantServiceTest {
 				"INVALID_EXTRA_ATTEMPT_QUANTITY",
 				() -> service.grant(
 						teacher.getId(), assignment.getId(), student.getId(), new CreateExtraAttemptGrantRequest(101)
+				)
+		);
+	}
+
+	@Test
+	void deveOcultarAtribuicaoDeOutroProfessor() {
+		when(assignmentRepository.findByIdAndRoomTeacherId(assignment.getId(), teacher.getId()))
+				.thenReturn(Optional.empty());
+
+		assertApiError(
+				HttpStatus.NOT_FOUND,
+				"ASSIGNMENT_NOT_FOUND",
+				() -> service.grant(
+						teacher.getId(), assignment.getId(), student.getId(), new CreateExtraAttemptGrantRequest(1)
 				)
 		);
 	}
