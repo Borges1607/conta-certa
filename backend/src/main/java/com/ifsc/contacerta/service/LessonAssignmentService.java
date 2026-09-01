@@ -99,7 +99,9 @@ public class LessonAssignmentService {
 				activeQuestionCount
 		);
 
-		List<LessonAssignment> existing = new ArrayList<>(assignmentRepository.findByRoomIdForUpdate(roomId));
+		List<LessonAssignment> existing = new ArrayList<>(
+				assignmentRepository.findByRoomIdAndRoomTeacherIdForUpdate(roomId, teacherId)
+		);
 		int position = request.position() == null ? existing.size() + 1 : request.position();
 		if (position < 1 || position > existing.size() + 1) {
 			throw new ApiException(
@@ -199,7 +201,9 @@ public class LessonAssignmentService {
 			);
 		}
 
-		List<LessonAssignment> assignments = new ArrayList<>(assignmentRepository.findByRoomIdForUpdate(roomId));
+		List<LessonAssignment> assignments = new ArrayList<>(
+				assignmentRepository.findByRoomIdAndRoomTeacherIdForUpdate(roomId, teacherId)
+		);
 		assignmentRepository.delete(assignment);
 		assignmentRepository.flush();
 		List<LessonAssignment> remaining = assignments.stream()
@@ -216,7 +220,9 @@ public class LessonAssignmentService {
 	) {
 		requireActiveTeacher(teacherId);
 		requireMutableRoom(teacherId, roomId);
-		List<LessonAssignment> assignments = new ArrayList<>(assignmentRepository.findByRoomIdForUpdate(roomId));
+		List<LessonAssignment> assignments = new ArrayList<>(
+				assignmentRepository.findByRoomIdAndRoomTeacherIdForUpdate(roomId, teacherId)
+		);
 		validateCompleteOrder(assignments, request);
 
 		Map<UUID, LessonAssignment> assignmentsById = new HashMap<>();

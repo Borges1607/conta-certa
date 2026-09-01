@@ -76,7 +76,7 @@ class MediaAssignmentServiceTest {
 		when(lessonAssignments.findByIdAndRoomIdAndRoomTeacherId(
 				lessonAssignment.getId(), room.getId(), teacher.getId()
 		)).thenReturn(Optional.of(lessonAssignment));
-		when(assignments.findByRoomIdOrderByPositionAsc(room.getId())).thenReturn(List.of(
+		when(assignments.findByRoomIdAndRoomTeacherIdOrderByPositionAsc(room.getId(), teacher.getId())).thenReturn(List.of(
 				com.ifsc.contacerta.entity.MediaAssignment.video(room, video, null, 3, NOW)
 		));
 
@@ -122,7 +122,8 @@ class MediaAssignmentServiceTest {
 		MediaAssignment third = MediaAssignment.video(room, thirdVideo, null, 3, NOW);
 		when(assignments.findByIdAndRoomIdAndRoomTeacherId(target.getId(), room.getId(), teacher.getId()))
 				.thenReturn(Optional.of(target));
-		when(assignments.findByRoomIdOrderByPositionAsc(room.getId())).thenReturn(List.of(first, target, third));
+		when(assignments.findByRoomIdAndRoomTeacherIdOrderByPositionAsc(room.getId(), teacher.getId()))
+				.thenReturn(List.of(first, target, third));
 
 		MediaAssignmentResponse updated = service.update(
 				teacher.getId(), room.getId(), target.getId(), new PatchMediaAssignmentRequest(0L, null, 1)

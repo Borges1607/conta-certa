@@ -12,6 +12,7 @@ import java.util.UUID;
 
 public interface MediaAssignmentRepository extends JpaRepository<MediaAssignment, UUID> {
 	List<MediaAssignment> findByRoomIdOrderByPositionAsc(UUID roomId);
+	List<MediaAssignment> findByRoomIdAndRoomTeacherIdOrderByPositionAsc(UUID roomId, UUID teacherId);
 	Optional<MediaAssignment> findByIdAndRoomIdAndRoomTeacherId(UUID id, UUID roomId, UUID teacherId);
 	boolean existsByRoomIdAndVideoId(UUID roomId, UUID videoId);
 	boolean existsByRoomIdAndMaterialId(UUID roomId, UUID materialId);

@@ -26,6 +26,11 @@ public interface LessonAssignmentRepository extends JpaRepository<LessonAssignme
 	Optional<LessonAssignment> findByRoomIdAndLessonId(UUID roomId, UUID lessonId);
 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
-	@Query("select assignment from LessonAssignment assignment where assignment.room.id = :roomId order by assignment.position")
-	List<LessonAssignment> findByRoomIdForUpdate(@Param("roomId") UUID roomId);
+	@Query("select assignment from LessonAssignment assignment "
+			+ "where assignment.room.id = :roomId and assignment.room.teacher.id = :teacherId "
+			+ "order by assignment.position")
+	List<LessonAssignment> findByRoomIdAndRoomTeacherIdForUpdate(
+			@Param("roomId") UUID roomId,
+			@Param("teacherId") UUID teacherId
+	);
 }

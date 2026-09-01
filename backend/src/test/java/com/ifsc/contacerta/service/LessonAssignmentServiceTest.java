@@ -76,7 +76,8 @@ class LessonAssignmentServiceTest {
 		when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
 		when(roomRepository.findByIdAndTeacherId(room.getId(), teacher.getId())).thenReturn(Optional.of(room));
 		when(lessonRepository.findByIdAndTeacherId(lesson.getId(), teacher.getId())).thenReturn(Optional.of(lesson));
-		when(assignmentRepository.findByRoomIdForUpdate(room.getId())).thenReturn(new ArrayList<>());
+		when(assignmentRepository.findByRoomIdAndRoomTeacherIdForUpdate(room.getId(), teacher.getId()))
+				.thenReturn(new ArrayList<>());
 		when(assignmentRepository.findByRoomIdAndRoomTeacherIdOrderByPositionAsc(room.getId(), teacher.getId()))
 				.thenReturn(List.of());
 		when(assignmentRepository.save(any(LessonAssignment.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -212,7 +213,8 @@ class LessonAssignmentServiceTest {
 		LessonAssignment first = assignment(firstLesson, 1);
 		LessonAssignment second = assignment(secondLesson, 2);
 		List<LessonAssignment> assignments = new ArrayList<>(List.of(first, second));
-		when(assignmentRepository.findByRoomIdForUpdate(room.getId())).thenReturn(assignments);
+		when(assignmentRepository.findByRoomIdAndRoomTeacherIdForUpdate(room.getId(), teacher.getId()))
+				.thenReturn(assignments);
 
 		LessonAssignmentResponse response = service.create(
 				teacher.getId(), room.getId(), request(lesson, 1, null, null, null)
@@ -344,7 +346,7 @@ class LessonAssignmentServiceTest {
 		LessonAssignment removed = assignment(lesson, 1);
 		LessonAssignment remaining = assignment(new Lesson("Segunda", null, "# Segunda", teacher), 2);
 		stubOwnedAssignment(removed);
-		when(assignmentRepository.findByRoomIdForUpdate(room.getId()))
+		when(assignmentRepository.findByRoomIdAndRoomTeacherIdForUpdate(room.getId(), teacher.getId()))
 				.thenReturn(new ArrayList<>(List.of(removed, remaining)));
 
 		service.delete(teacher.getId(), room.getId(), removed.getId(), removed.getVersion());
@@ -367,7 +369,7 @@ class LessonAssignmentServiceTest {
 				true
 		);
 		stubOwnedAssignment(assignment);
-		when(assignmentRepository.findByRoomIdForUpdate(room.getId()))
+		when(assignmentRepository.findByRoomIdAndRoomTeacherIdForUpdate(room.getId(), teacher.getId()))
 				.thenReturn(new ArrayList<>(List.of(assignment)));
 
 		service.delete(teacher.getId(), room.getId(), assignment.getId(), assignment.getVersion());
@@ -423,7 +425,7 @@ class LessonAssignmentServiceTest {
 	void deveReordenarListaCompletaComPosicoesContiguas() {
 		LessonAssignment first = assignment(lesson, 1);
 		LessonAssignment second = assignment(new Lesson("Segunda", null, "# Segunda", teacher), 2);
-		when(assignmentRepository.findByRoomIdForUpdate(room.getId()))
+		when(assignmentRepository.findByRoomIdAndRoomTeacherIdForUpdate(room.getId(), teacher.getId()))
 				.thenReturn(new ArrayList<>(List.of(first, second)));
 		LessonAssignmentOrderRequest request = new LessonAssignmentOrderRequest(List.of(
 				new LessonAssignmentOrderItem(second.getId(), second.getVersion()),
@@ -437,7 +439,8 @@ class LessonAssignmentServiceTest {
 
 	@Test
 	void deveRejeitarListaDeOrdemVazia() {
-		when(assignmentRepository.findByRoomIdForUpdate(room.getId())).thenReturn(new ArrayList<>());
+		when(assignmentRepository.findByRoomIdAndRoomTeacherIdForUpdate(room.getId(), teacher.getId()))
+				.thenReturn(new ArrayList<>());
 
 		assertApiError(
 				HttpStatus.CONFLICT,
@@ -452,7 +455,7 @@ class LessonAssignmentServiceTest {
 	void deveRejeitarIdentificadorDuplicado() {
 		LessonAssignment first = assignment(lesson, 1);
 		LessonAssignment second = assignment(new Lesson("Segunda", null, "# Segunda", teacher), 2);
-		when(assignmentRepository.findByRoomIdForUpdate(room.getId()))
+		when(assignmentRepository.findByRoomIdAndRoomTeacherIdForUpdate(room.getId(), teacher.getId()))
 				.thenReturn(new ArrayList<>(List.of(first, second)));
 		LessonAssignmentOrderRequest request = new LessonAssignmentOrderRequest(List.of(
 				new LessonAssignmentOrderItem(first.getId(), first.getVersion()),
@@ -469,7 +472,7 @@ class LessonAssignmentServiceTest {
 	@Test
 	void deveRejeitarIdentificadorAusenteOuExtra() {
 		LessonAssignment first = assignment(lesson, 1);
-		when(assignmentRepository.findByRoomIdForUpdate(room.getId()))
+		when(assignmentRepository.findByRoomIdAndRoomTeacherIdForUpdate(room.getId(), teacher.getId()))
 				.thenReturn(new ArrayList<>(List.of(first)));
 		LessonAssignmentOrderRequest request = new LessonAssignmentOrderRequest(List.of(
 				new LessonAssignmentOrderItem(UUID.randomUUID(), 0L)
@@ -485,7 +488,7 @@ class LessonAssignmentServiceTest {
 	@Test
 	void deveRejeitarVersaoDesatualizadaNaOrdenacao() {
 		LessonAssignment assignment = assignment(lesson, 1);
-		when(assignmentRepository.findByRoomIdForUpdate(room.getId()))
+		when(assignmentRepository.findByRoomIdAndRoomTeacherIdForUpdate(room.getId(), teacher.getId()))
 				.thenReturn(new ArrayList<>(List.of(assignment)));
 		LessonAssignmentOrderRequest request = new LessonAssignmentOrderRequest(List.of(
 				new LessonAssignmentOrderItem(assignment.getId(), assignment.getVersion() + 1)
