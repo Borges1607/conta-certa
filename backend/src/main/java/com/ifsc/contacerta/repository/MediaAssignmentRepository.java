@@ -13,6 +13,20 @@ import java.util.UUID;
 public interface MediaAssignmentRepository extends JpaRepository<MediaAssignment, UUID> {
 	List<MediaAssignment> findByRoomIdOrderByPositionAsc(UUID roomId);
 	List<MediaAssignment> findByRoomIdAndRoomTeacherIdOrderByPositionAsc(UUID roomId, UUID teacherId);
+
+	@Query("""
+			select assignment from MediaAssignment assignment
+			join RoomMembership membership on membership.room = assignment.room
+			where assignment.room.id = :roomId
+			and membership.student.id = :studentId
+			and membership.status = :membershipStatus
+			order by assignment.position
+			""")
+	List<MediaAssignment> findAccessibleByRoomIdAndStudentIdOrderByPositionAsc(
+			@Param("roomId") UUID roomId,
+			@Param("studentId") UUID studentId,
+			@Param("membershipStatus") MembershipStatus membershipStatus
+	);
 	Optional<MediaAssignment> findByIdAndRoomIdAndRoomTeacherId(UUID id, UUID roomId, UUID teacherId);
 	boolean existsByRoomIdAndVideoId(UUID roomId, UUID videoId);
 	boolean existsByRoomIdAndMaterialId(UUID roomId, UUID materialId);

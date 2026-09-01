@@ -48,7 +48,9 @@ public class StudentLessonService {
 		requireStudent(studentId);
 		requireMembership(studentId, roomId);
 		Instant now = Instant.now(clock);
-		return assignmentRepository.findByRoomIdAndStatusOrderByPositionAsc(roomId, ContentStatus.PUBLISHED).stream()
+		return assignmentRepository.findAccessibleByRoomIdAndStudentIdAndStatusOrderByPositionAsc(
+				roomId, studentId, MembershipStatus.ACTIVE, ContentStatus.PUBLISHED
+		).stream()
 				.map(assignment -> pathResponse(studentId, assignment, now)).toList();
 	}
 
@@ -56,7 +58,9 @@ public class StudentLessonService {
 	public StudentLessonDetailResponse detail(UUID studentId, UUID roomId, UUID lessonId) {
 		requireStudent(studentId);
 		requireMembership(studentId, roomId);
-		LessonAssignment assignment = assignmentRepository.findByRoomIdAndLessonId(roomId, lessonId)
+		LessonAssignment assignment = assignmentRepository.findAccessibleByRoomIdAndLessonIdAndStudentId(
+				roomId, lessonId, studentId, MembershipStatus.ACTIVE
+		)
 				.filter(candidate -> candidate.getStatus() == ContentStatus.PUBLISHED)
 				.orElseThrow(() -> error("ASSIGNMENT_NOT_FOUND", "Assignment was not found."));
 		LessonState state = lessonState(studentId, assignment, Instant.now(clock));
@@ -89,7 +93,9 @@ public class StudentLessonService {
 	) {
 		requireStudent(studentId);
 		requireMembership(studentId, roomId);
-		LessonAssignment assignment = assignmentRepository.findByRoomIdAndLessonId(roomId, lessonId)
+		LessonAssignment assignment = assignmentRepository.findAccessibleByRoomIdAndLessonIdAndStudentId(
+				roomId, lessonId, studentId, MembershipStatus.ACTIVE
+		)
 				.filter(candidate -> candidate.getStatus() == ContentStatus.PUBLISHED)
 				.orElseThrow(() -> error("ASSIGNMENT_NOT_FOUND", "Assignment was not found."));
 		UUID bestAttemptId = attemptRepository
@@ -205,7 +211,9 @@ public class StudentLessonService {
 	}
 
 	private boolean hasPassedPrevious(UUID studentId, LessonAssignment assignment) {
-		return assignmentRepository.findByRoomIdAndStatusOrderByPositionAsc(assignment.getRoom().getId(), ContentStatus.PUBLISHED).stream()
+		return assignmentRepository.findAccessibleByRoomIdAndStudentIdAndStatusOrderByPositionAsc(
+				assignment.getRoom().getId(), studentId, MembershipStatus.ACTIVE, ContentStatus.PUBLISHED
+		).stream()
 				.filter(candidate -> candidate.getPosition() < assignment.getPosition()).max(java.util.Comparator.comparingInt(LessonAssignment::getPosition))
 				.map(previous -> attemptRepository.findFirstByAssignmentIdAndStudentIdAndStatusInOrderByScorePercentDescSubmittedAtAsc(previous.getId(), studentId, FINAL)
 						.map(attempt -> Boolean.TRUE.equals(attempt.getPassed())).orElse(false)).orElse(true);

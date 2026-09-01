@@ -8,11 +8,14 @@ import com.ifsc.contacerta.entity.LessonAssignment;
 import com.ifsc.contacerta.entity.Room;
 import com.ifsc.contacerta.entity.RoomMembership;
 import com.ifsc.contacerta.entity.User;
+import com.ifsc.contacerta.exception.ApiException;
 import com.ifsc.contacerta.model.AccountStatus;
 import com.ifsc.contacerta.model.AttemptAvailabilityStatus;
 import com.ifsc.contacerta.model.AttemptStatus;
+import com.ifsc.contacerta.model.ContentStatus;
 import com.ifsc.contacerta.model.Grade;
 import com.ifsc.contacerta.model.LessonLockReason;
+import com.ifsc.contacerta.model.MembershipStatus;
 import com.ifsc.contacerta.model.Role;
 import com.ifsc.contacerta.repository.AttemptRepository;
 import com.ifsc.contacerta.repository.ExtraAttemptGrantRepository;
@@ -22,6 +25,7 @@ import com.ifsc.contacerta.repository.RoomMembershipRepository;
 import com.ifsc.contacerta.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -31,6 +35,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -94,6 +99,26 @@ class StudentLessonServiceTest {
 		assertThat(item.activeAttemptExpiresAt()).isEqualTo(active.getExpiresAt());
 	}
 
+	@Test
+	void deveOcultarDetalheQuandoAtribuicaoNaoEstiverNaMatriculaAtiva() {
+		Fixture fixture = fixture(null, null);
+		UUID studentId = fixture.student().getId();
+		UUID roomId = fixture.room().getId();
+		UUID lessonId = fixture.assignment().getLesson().getId();
+		when(userRepository.findById(studentId)).thenReturn(Optional.of(fixture.student()));
+		when(membershipRepository.findByRoomIdAndStudentId(roomId, studentId))
+				.thenReturn(Optional.of(new RoomMembership(fixture.room(), fixture.student())));
+		when(assignmentRepository.findAccessibleByRoomIdAndLessonIdAndStudentId(
+				roomId, lessonId, studentId, MembershipStatus.ACTIVE
+		)).thenReturn(Optional.empty());
+
+		assertThatThrownBy(() -> service.detail(studentId, roomId, lessonId))
+				.isInstanceOfSatisfying(ApiException.class, error -> {
+					assertThat(error.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+					assertThat(error.getCode()).isEqualTo("ASSIGNMENT_NOT_FOUND");
+				});
+	}
+
 	private void stubPath(Fixture fixture) {
 		UUID studentId = fixture.student().getId();
 		UUID roomId = fixture.room().getId();
@@ -101,7 +126,9 @@ class StudentLessonServiceTest {
 		when(userRepository.findById(studentId)).thenReturn(Optional.of(fixture.student()));
 		when(membershipRepository.findByRoomIdAndStudentId(roomId, studentId))
 				.thenReturn(Optional.of(new RoomMembership(fixture.room(), fixture.student())));
-		when(assignmentRepository.findByRoomIdAndStatusOrderByPositionAsc(roomId, com.ifsc.contacerta.model.ContentStatus.PUBLISHED))
+		when(assignmentRepository.findAccessibleByRoomIdAndStudentIdAndStatusOrderByPositionAsc(
+				roomId, studentId, MembershipStatus.ACTIVE, ContentStatus.PUBLISHED
+		))
 				.thenReturn(List.of(fixture.assignment()));
 		when(attemptRepository.findFirstByAssignmentIdAndStudentIdAndStatusInOrderByScorePercentDescSubmittedAtAsc(
 				assignmentId, studentId, List.of(AttemptStatus.SUBMITTED, AttemptStatus.EXPIRED)

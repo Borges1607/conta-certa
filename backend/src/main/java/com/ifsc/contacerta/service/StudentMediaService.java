@@ -46,7 +46,9 @@ public class StudentMediaService {
 	public MediaCollectionResponse<StudentVideoResponse> videos(UUID studentId, UUID roomId) {
 		requireActiveStudent(studentId);
 		requireActiveMembership(studentId, roomId);
-		List<StudentVideoResponse> items = assignmentRepository.findByRoomIdOrderByPositionAsc(roomId).stream()
+		List<StudentVideoResponse> items = assignmentRepository.findAccessibleByRoomIdAndStudentIdOrderByPositionAsc(
+				roomId, studentId, MembershipStatus.ACTIVE
+		).stream()
 				.filter(assignment -> assignment.getMediaType() == MediaViewType.VIDEO)
 				.filter(assignment -> assignment.getVideo().getStatus() == ContentStatus.PUBLISHED)
 				.map(assignment -> toStudentVideo(studentId, roomId, assignment))
@@ -58,7 +60,9 @@ public class StudentMediaService {
 	public MediaCollectionResponse<StudentMaterialResponse> materials(UUID studentId, UUID roomId) {
 		requireActiveStudent(studentId);
 		requireActiveMembership(studentId, roomId);
-		List<StudentMaterialResponse> items = assignmentRepository.findByRoomIdOrderByPositionAsc(roomId).stream()
+		List<StudentMaterialResponse> items = assignmentRepository.findAccessibleByRoomIdAndStudentIdOrderByPositionAsc(
+				roomId, studentId, MembershipStatus.ACTIVE
+		).stream()
 				.filter(assignment -> assignment.getMediaType() == MediaViewType.MATERIAL)
 				.filter(assignment -> assignment.getMaterial().getStatus() == ContentStatus.PUBLISHED)
 				.map(assignment -> toStudentMaterial(studentId, roomId, assignment))
