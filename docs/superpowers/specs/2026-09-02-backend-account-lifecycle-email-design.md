@@ -118,13 +118,13 @@ The operation is transactional so token consumption and account activation canno
 
 ### Verification resend
 
-`POST /auth/resend-verification` always returns `202 Accepted`, regardless of whether the email is unknown, already verified, inactive, or otherwise ineligible. For an eligible pending student, it invalidates earlier verification tokens, creates a replacement, and enqueues a new message.
+Within the configured rate limit, `POST /auth/resend-verification` always returns `202 Accepted`, regardless of whether the email is unknown, already verified, inactive, or otherwise ineligible. For an eligible pending student, it invalidates earlier verification tokens, creates a replacement, and enqueues a new message.
 
-The endpoint must not expose account existence through response status, body, or materially different synchronous work. Rate limiting is applied using the existing attempt/rate-limit configuration pattern.
+The endpoint must not expose account existence through response status, body, or materially different synchronous work. Rate limiting is persisted in PostgreSQL and keyed by a SHA-256 hash of the normalized email plus operation, so it works consistently across application instances without storing the submitted address in the limiter table.
 
 ### Forgot and reset password
 
-`POST /auth/forgot-password` always returns `202 Accepted`. For an eligible teacher or student, it invalidates earlier reset tokens, creates a replacement, and enqueues the recovery message. It does not reveal whether the email exists.
+Within the configured rate limit, `POST /auth/forgot-password` always returns `202 Accepted`. For an eligible teacher or student, it invalidates earlier reset tokens, creates a replacement, and enqueues the recovery message. It does not reveal whether the email exists.
 
 `POST /auth/reset-password` validates the new password, consumes the token, replaces the password hash, and revokes all persisted sessions for the user in one transaction. Success returns `204 No Content` and does not create a new authenticated session. Token errors use the same `404`, `409`, and `410` contracts as verification.
 
@@ -177,7 +177,9 @@ Action-token errors are deliberately state-specific because the Angular screens 
 - `409 ACTION_TOKEN_USED` for a consumed token;
 - `410 ACTION_TOKEN_EXPIRED` for an expired token.
 
-The resend and forgot-password endpoints suppress these distinctions and always return the same accepted response.
+The resend and forgot-password endpoints suppress these distinctions and return the same accepted response while within the rate limit.
+
+Resend verification and forgot-password each allow five requests per rolling hour for the same normalized email. The limit and window are configurable. Exceeding the limit returns `429 RATE_LIMIT_EXCEEDED` whether or not an account exists; rate-limit records store only a hash of the normalized email and operation.
 
 ## Configuration
 
@@ -188,6 +190,7 @@ Introduce typed configuration properties for:
 - SMTP host, port, username, password, authentication, and TLS;
 - the three action-token lifetimes;
 - outbox batch size, polling interval, claim lease, maximum attempts, and retry delays.
+- account-message rate-limit count and rolling-window duration.
 
 Tests override scheduling and SMTP where required. Production-required values are validated without making local tests depend on Mailpit.
 
@@ -199,6 +202,7 @@ Implementation is test-driven and adds regression coverage at the narrowest effe
 - service tests for active/inactive institutions, duplicate email, confirmation, neutral resend, neutral recovery, password reset, session revocation, and invitation acceptance;
 - persistence tests proving constraints, scoped queries, and single consumption under competing transactions;
 - controller tests for request validation, public access, response statuses, and Problem Details codes;
+- rate-limit tests for the configured allowance, `429` response, window reset, hashed keys, and identical behavior for known and unknown emails;
 - outbox tests for enqueueing in the caller transaction, successful delivery, abandoned-claim recovery, retry scheduling, five-attempt exhaustion, and retained failed messages;
 - SMTP adapter tests using a mocked `JavaMailSender`;
 - migration validation and the complete PostgreSQL-backed Maven verification suite.
