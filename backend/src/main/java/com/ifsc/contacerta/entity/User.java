@@ -100,6 +100,14 @@ public class User {
 		mustChangePassword = false;
 	}
 
+	public void verifyEmail(Instant now) {
+		emailVerifiedAt = now;
+	}
+
+	public void activate() {
+		status = AccountStatus.ACTIVE;
+	}
+
 	public void updateFullName(String newFullName) {
 		fullName = newFullName;
 	}
