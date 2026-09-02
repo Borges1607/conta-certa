@@ -27,7 +27,9 @@ public class SecurityConfig {
 				.csrf(csrf -> csrf.disable())
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(authorize -> authorize
-						.requestMatchers(HttpMethod.POST, "/auth/login", "/auth/refresh").permitAll()
+						.requestMatchers(HttpMethod.POST, "/auth/login", "/auth/refresh", "/auth/student-registration",
+								"/auth/verify-email", "/auth/resend-verification", "/auth/forgot-password",
+								"/auth/reset-password", "/auth/accept-teacher-invite").permitAll()
 						.requestMatchers(HttpMethod.GET, "/institutions/options").permitAll()
 						.requestMatchers(
 								HttpMethod.GET,
