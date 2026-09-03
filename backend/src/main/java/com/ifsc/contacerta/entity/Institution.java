@@ -63,6 +63,21 @@ public class Institution {
 		this.active = active;
 	}
 
+	public void update(String name, String cnpj, String contactEmail, String contactPhone) {
+		this.name = name;
+		this.cnpj = cnpj;
+		this.contactEmail = contactEmail;
+		this.contactPhone = contactPhone;
+	}
+
+	public void activate() {
+		active = true;
+	}
+
+	public void deactivate() {
+		active = false;
+	}
+
 	@PrePersist
 	void onCreate() {
 		Instant now = Instant.now();
