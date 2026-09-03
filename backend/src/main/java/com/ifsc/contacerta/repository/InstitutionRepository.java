@@ -12,5 +12,7 @@ public interface InstitutionRepository extends JpaRepository<Institution, UUID>,
 
 	Optional<Institution> findByCnpj(String cnpj);
 
+	long countByActive(boolean active);
+
 	List<Institution> findByActiveTrueOrderByNameAsc();
 }
