@@ -15,6 +15,9 @@ public interface AuthSessionRepository extends JpaRepository<AuthSession, UUID> 
 	@Query("select s from AuthSession s join fetch s.user where s.id = :id")
 	Optional<AuthSession> findWithUserById(@Param("id") UUID id);
 
+	@Query("select max(s.lastUsedAt) from AuthSession s where s.user.id = :userId")
+	Optional<Instant> findLastUsedAtByUserId(@Param("userId") UUID userId);
+
 	@Modifying
 	@Query("""
 			update AuthSession s

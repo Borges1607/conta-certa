@@ -108,8 +108,18 @@ public class User {
 		status = AccountStatus.ACTIVE;
 	}
 
+	public void deactivate() {
+		status = AccountStatus.INACTIVE;
+	}
+
 	public void updateFullName(String newFullName) {
 		fullName = newFullName;
+	}
+
+	public void updateTeacherProfile(String newFullName, String newRegistrationNumber, Institution newInstitution) {
+		fullName = newFullName;
+		registrationNumber = newRegistrationNumber;
+		institution = newInstitution;
 	}
 
 	@PrePersist

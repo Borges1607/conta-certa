@@ -1,10 +1,12 @@
 package com.ifsc.contacerta.config;
 
 import com.ifsc.contacerta.entity.AuthSession;
+import com.ifsc.contacerta.entity.Institution;
 import com.ifsc.contacerta.entity.User;
 import com.ifsc.contacerta.model.AccountStatus;
 import com.ifsc.contacerta.model.Role;
 import com.ifsc.contacerta.repository.AuthSessionRepository;
+import com.ifsc.contacerta.repository.InstitutionRepository;
 import com.ifsc.contacerta.repository.UserRepository;
 import com.ifsc.contacerta.security.CurrentUser;
 import com.ifsc.contacerta.security.JwtService;
@@ -38,6 +40,8 @@ class SecurityConfigTest extends PostgresIntegrationTest {
 	@Autowired
 	private AuthSessionRepository sessionRepository;
 	@Autowired
+	private InstitutionRepository institutionRepository;
+	@Autowired
 	private JwtService jwtService;
 
 	@Test
@@ -52,6 +56,24 @@ class SecurityConfigTest extends PostgresIntegrationTest {
 				.andExpect(status().isUnauthorized())
 				.andExpect(content().contentType("application/problem+json"))
 				.andExpect(jsonPath("$.code").value("INVALID_ACCESS_TOKEN"));
+	}
+
+	@Test
+	void deveRestringirDashboardAdministrativoAoAdmin() throws Exception {
+		mockMvc.perform(get("/admin/dashboard"))
+				.andExpect(status().isUnauthorized());
+
+		AuthSession teacherSession = session(Role.TEACHER, AccountStatus.ACTIVE, Instant.now().plus(1, ChronoUnit.DAYS), Instant.now());
+		String teacherToken = jwtService.issue(teacherSession.getUser().getId(), Role.TEACHER, teacherSession.getId());
+		mockMvc.perform(get("/admin/dashboard").header("Authorization", "Bearer " + teacherToken))
+				.andExpect(status().isForbidden());
+
+		AuthSession adminSession = activeSession(AccountStatus.ACTIVE);
+		String adminToken = jwtService.issue(adminSession.getUser().getId(), Role.ADMIN, adminSession.getId());
+		mockMvc.perform(get("/admin/dashboard").header("Authorization", "Bearer " + adminToken))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.institutions").exists())
+				.andExpect(jsonPath("$.teachers").exists());
 	}
 
 	@Test
@@ -138,8 +160,15 @@ class SecurityConfigTest extends PostgresIntegrationTest {
 	}
 
 	private AuthSession session(AccountStatus status, Instant expiresAt, Instant createdAt) {
+		return session(Role.ADMIN, status, expiresAt, createdAt);
+	}
+
+	private AuthSession session(Role role, AccountStatus status, Instant expiresAt, Instant createdAt) {
 		String email = "admin-" + UUID.randomUUID() + "@example.com";
-		User user = userRepository.saveAndFlush(new User(Role.ADMIN, status, "Admin", email, null, null));
+		Institution institution = role == Role.TEACHER
+				? institutionRepository.saveAndFlush(new Institution("Test Institution", "12345678000195", "test@example.com", "+5548999999999", true))
+				: null;
+		User user = userRepository.saveAndFlush(new User(role, status, "Admin", email, role == Role.TEACHER ? "TEST-1" : null, institution));
 		return sessionRepository.saveAndFlush(new AuthSession(user, expiresAt, createdAt));
 	}
 

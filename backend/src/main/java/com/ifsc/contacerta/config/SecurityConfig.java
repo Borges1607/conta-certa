@@ -36,6 +36,7 @@ public class SecurityConfig {
 								"/student/rooms/*/ranking",
 								"/student/rooms/*/achievements"
 						).hasRole("STUDENT")
+						.requestMatchers("/admin/**").hasRole("ADMIN")
 						.anyRequest().authenticated()
 				)
 				.exceptionHandling(exceptions -> exceptions
