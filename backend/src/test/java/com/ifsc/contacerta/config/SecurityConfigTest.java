@@ -77,6 +77,22 @@ class SecurityConfigTest extends PostgresIntegrationTest {
 	}
 
 	@Test
+	void deveRestringirDicasFinanceirasAoAdmin() throws Exception {
+		mockMvc.perform(get("/admin/financial-tips"))
+				.andExpect(status().isUnauthorized());
+
+		AuthSession teacherSession = session(Role.TEACHER, AccountStatus.ACTIVE, Instant.now().plus(1, ChronoUnit.DAYS), Instant.now());
+		String teacherToken = jwtService.issue(teacherSession.getUser().getId(), Role.TEACHER, teacherSession.getId());
+		mockMvc.perform(get("/admin/financial-tips").header("Authorization", "Bearer " + teacherToken))
+				.andExpect(status().isForbidden());
+
+		AuthSession adminSession = activeSession(AccountStatus.ACTIVE);
+		String adminToken = jwtService.issue(adminSession.getUser().getId(), Role.ADMIN, adminSession.getId());
+		mockMvc.perform(get("/admin/financial-tips").header("Authorization", "Bearer " + adminToken))
+				.andExpect(status().isOk());
+	}
+
+	@Test
 	void deveRestringirGamificacaoAoAluno() throws Exception {
 		AuthSession session = activeSession(AccountStatus.ACTIVE);
 		String token = jwtService.issue(session.getUser().getId(), Role.ADMIN, session.getId());
