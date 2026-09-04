@@ -76,6 +76,10 @@ public final class RoomMapper {
 	}
 
 	public static StudentRoomResponse toStudentResponse(Room room, MembershipStatus membershipStatus) {
+		return toStudentResponse(room, membershipStatus, 0);
+	}
+
+	public static StudentRoomResponse toStudentResponse(Room room, MembershipStatus membershipStatus, int progressPercent) {
 		return new StudentRoomResponse(
 				room.getId(),
 				room.getName(),
@@ -88,7 +92,7 @@ public final class RoomMapper {
 				InstitutionMapper.toSummaryResponse(room.getInstitution()),
 				membershipStatus,
 				room.getArchivedAt() != null,
-				0
+				progressPercent
 		);
 	}
 }
