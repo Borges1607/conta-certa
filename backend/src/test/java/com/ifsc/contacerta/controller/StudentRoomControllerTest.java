@@ -142,6 +142,45 @@ class StudentRoomControllerTest extends PostgresIntegrationTest {
 				.andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
 	}
 
+	@Test
+	void deveExporDashboardParaAlunoMatriculadoMesmoComSalaArquivada() throws Exception {
+		Institution institution = institution();
+		User teacher = user(Role.TEACHER, institution);
+		User student = user(Role.STUDENT, institution);
+		Room room = room("Sala arquivada", "DAS123", teacher, institution);
+		room.archive();
+		roomRepository.saveAndFlush(room);
+		membershipRepository.saveAndFlush(new RoomMembership(room, student));
+
+		mockMvc.perform(get("/student/rooms/{roomId}/dashboard", room.getId()).header("Authorization", bearer(login(student))))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.room.id").value(room.getId().toString()))
+				.andExpect(jsonPath("$.room.archived").value(true))
+				.andExpect(jsonPath("$.progress.level").value(1));
+	}
+
+	@Test
+	void deveOcultarDashboardSemMatriculaAtivaOuForaDaInstituicao() throws Exception {
+		Institution firstInstitution = institution();
+		Institution secondInstitution = institution();
+		User teacher = user(Role.TEACHER, firstInstitution);
+		User student = user(Role.STUDENT, firstInstitution);
+		Room removedRoom = room("Sala removida", "DAS456", teacher, firstInstitution);
+		RoomMembership removedMembership = membershipRepository.saveAndFlush(new RoomMembership(removedRoom, student));
+		removedMembership.remove(teacher);
+		membershipRepository.saveAndFlush(removedMembership);
+		Room foreignRoom = room("Sala externa", "DAS789", teacher, firstInstitution);
+		User foreignStudent = user(Role.STUDENT, secondInstitution);
+		membershipRepository.saveAndFlush(new RoomMembership(foreignRoom, foreignStudent));
+
+		mockMvc.perform(get("/student/rooms/{roomId}/dashboard", removedRoom.getId()).header("Authorization", bearer(login(student))))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("ROOM_NOT_FOUND"));
+		mockMvc.perform(get("/student/rooms/{roomId}/dashboard", foreignRoom.getId()).header("Authorization", bearer(login(foreignStudent))))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("ROOM_NOT_FOUND"));
+	}
+
 	private Institution institution() {
 		return institutionRepository.saveAndFlush(new Institution(
 				"IFSC " + UUID.randomUUID(), randomCnpj(), "contato@example.com", "48999990000", true
