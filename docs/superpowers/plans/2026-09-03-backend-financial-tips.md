@@ -27,6 +27,7 @@
 **Files:**
 - Create: `backend/src/main/resources/db/migration/V13__create_financial_tips.sql`
 - Create: `backend/src/main/java/com/ifsc/contacerta/entity/FinancialTip.java`
+- Modify: `backend/src/test/java/com/ifsc/contacerta/support/PostgresIntegrationTest.java`
 - Test: `backend/src/test/java/com/ifsc/contacerta/entity/FinancialTipPersistenceTest.java`
 
 **Interfaces:**
@@ -45,7 +46,7 @@
 
 - [ ] **Step 3: Implement migration and entity**
 
-  Criar tabela com `id uuid`, `title varchar(160)`, `content text`, `source_url varchar(2048)`, `publication_date date`, `active boolean`, `archived_at timestamptz`, timestamps e `version bigint`; adicionar índices para `(publication_date, active)` e `archived_at`. A entidade deve usar `@Version`, callbacks de timestamp e lançar `IllegalStateException` em qualquer mutação de item arquivado.
+  Criar tabela com `id uuid`, `title varchar(160)`, `content text`, `source_url varchar(2048)`, `publication_date date`, `active boolean`, `archived_at timestamptz`, timestamps e `version bigint`; adicionar índices para `(publication_date, active)` e `archived_at`. A entidade deve usar `@Version`, callbacks de timestamp e lançar `IllegalStateException` em qualquer mutação de item arquivado. Atualizar a limpeza do `PostgresIntegrationTest` para truncar `financial_tips`.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -55,7 +56,7 @@
 
 - [ ] **Step 5: Commit atomically**
 
-  `git add backend/src/main/resources/db/migration/V13__create_financial_tips.sql backend/src/main/java/com/ifsc/contacerta/entity/FinancialTip.java backend/src/test/java/com/ifsc/contacerta/entity/FinancialTipPersistenceTest.java && git commit -m "feat: cria agregado de dicas financeiras"`
+  `git add backend/src/main/resources/db/migration/V13__create_financial_tips.sql backend/src/main/java/com/ifsc/contacerta/entity/FinancialTip.java backend/src/test/java/com/ifsc/contacerta/support/PostgresIntegrationTest.java backend/src/test/java/com/ifsc/contacerta/entity/FinancialTipPersistenceTest.java && git commit -m "feat: cria agregado de dicas financeiras"`
 
 ### Task 2: Adicionar repository e filtros administrativos
 
