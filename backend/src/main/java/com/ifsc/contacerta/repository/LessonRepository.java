@@ -1,6 +1,7 @@
 package com.ifsc.contacerta.repository;
 
 import com.ifsc.contacerta.entity.Lesson;
+import com.ifsc.contacerta.model.ContentStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.domain.Page;
@@ -13,6 +14,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface LessonRepository extends JpaRepository<Lesson, UUID> {
+
+	long countByTeacherId(UUID teacherId);
+
+	long countByTeacherIdAndStatus(UUID teacherId, ContentStatus status);
 
 	Optional<Lesson> findByIdAndTeacherId(UUID id, UUID teacherId);
 

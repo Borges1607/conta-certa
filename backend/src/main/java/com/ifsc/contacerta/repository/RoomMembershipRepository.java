@@ -17,6 +17,12 @@ import java.util.UUID;
 
 public interface RoomMembershipRepository extends JpaRepository<RoomMembership, UUID> {
 
+	@Query("select count(distinct membership.student.id) from RoomMembership membership "
+			+ "where membership.room.teacher.id = :teacherId")
+	long countDistinctStudentsByTeacherId(@Param("teacherId") UUID teacherId);
+
+	long countByRoomTeacherIdAndStatus(UUID teacherId, MembershipStatus status);
+
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	Optional<RoomMembership> findForUpdateByRoomIdAndStudentId(UUID roomId, UUID studentId);
 
