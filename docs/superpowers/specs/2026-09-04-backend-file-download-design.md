@@ -1,6 +1,6 @@
 # Download autorizado de arquivos — desenho do backend
 
-Status: proposta para revisão
+Status: implementado e verificado
 Data: 2026-09-04
 
 ## 1. Objetivo e escopo
