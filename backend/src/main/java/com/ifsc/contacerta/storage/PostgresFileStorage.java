@@ -39,6 +39,16 @@ public class PostgresFileStorage implements FileStorage {
 		return repository.findByIdAndOwnerTeacherId(fileId, teacherId);
 	}
 
+	@Override
+	public Optional<StoredFile> findDownloadableByTeacherId(UUID fileId, UUID teacherId) {
+		return repository.findDownloadableByTeacherId(fileId, teacherId);
+	}
+
+	@Override
+	public Optional<StoredFile> findDownloadableByStudentId(UUID fileId, UUID studentId) {
+		return repository.findDownloadableByStudentId(fileId, studentId);
+	}
+
 	private String sha256(byte[] content) {
 		try {
 			return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content));
