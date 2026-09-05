@@ -15,6 +15,10 @@ import java.util.UUID;
 
 public interface LessonAssignmentRepository extends JpaRepository<LessonAssignment, UUID> {
 
+	long countByRoomTeacherId(UUID teacherId);
+
+	long countByRoomTeacherIdAndStatus(UUID teacherId, ContentStatus status);
+
 	List<LessonAssignment> findByRoomIdAndRoomTeacherIdOrderByPositionAsc(UUID roomId, UUID teacherId);
 
 	Optional<LessonAssignment> findByIdAndRoomIdAndRoomTeacherId(UUID id, UUID roomId, UUID teacherId);

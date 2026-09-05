@@ -59,6 +59,48 @@ class SecurityConfigTest extends PostgresIntegrationTest {
 	}
 
 	@Test
+	void deveExigirTokenParaDashboardDoProfessor() throws Exception {
+		mockMvc.perform(get("/teacher/dashboard"))
+				.andExpect(status().isUnauthorized())
+				.andExpect(content().contentType("application/problem+json"))
+				.andExpect(jsonPath("$.code").value("INVALID_ACCESS_TOKEN"));
+	}
+
+	@Test
+	void deveImpedirAlunoDeConsultarDashboardDoProfessor() throws Exception {
+		AuthSession studentSession = session(
+				Role.STUDENT, AccountStatus.ACTIVE, Instant.now().plus(1, ChronoUnit.DAYS), Instant.now()
+		);
+		String token = jwtService.issue(studentSession.getUser().getId(), Role.STUDENT, studentSession.getId());
+
+		mockMvc.perform(get("/teacher/dashboard").header("Authorization", "Bearer " + token))
+				.andExpect(status().isForbidden())
+				.andExpect(content().contentType("application/problem+json"))
+				.andExpect(jsonPath("$.code").value("TEACHER_REQUIRED"));
+	}
+
+	@Test
+	void deveRetornarDashboardZeradoParaProfessorAutenticadoSemDados() throws Exception {
+		AuthSession teacherSession = session(
+				Role.TEACHER, AccountStatus.ACTIVE, Instant.now().plus(1, ChronoUnit.DAYS), Instant.now()
+		);
+		String token = jwtService.issue(teacherSession.getUser().getId(), Role.TEACHER, teacherSession.getId());
+
+		mockMvc.perform(get("/teacher/dashboard").header("Authorization", "Bearer " + token))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.rooms.total").value(0))
+				.andExpect(jsonPath("$.rooms.active").value(0))
+				.andExpect(jsonPath("$.rooms.archived").value(0))
+				.andExpect(jsonPath("$.students.total").value(0))
+				.andExpect(jsonPath("$.students.activeMemberships").value(0))
+				.andExpect(jsonPath("$.lessons.total").value(0))
+				.andExpect(jsonPath("$.lessons.published").value(0))
+				.andExpect(jsonPath("$.lessons.draft").value(0))
+				.andExpect(jsonPath("$.assignments.total").value(0))
+				.andExpect(jsonPath("$.assignments.published").value(0));
+	}
+
+	@Test
 	void deveRestringirDashboardAdministrativoAoAdmin() throws Exception {
 		mockMvc.perform(get("/admin/dashboard"))
 				.andExpect(status().isUnauthorized());
@@ -181,10 +223,10 @@ class SecurityConfigTest extends PostgresIntegrationTest {
 
 	private AuthSession session(Role role, AccountStatus status, Instant expiresAt, Instant createdAt) {
 		String email = "admin-" + UUID.randomUUID() + "@example.com";
-		Institution institution = role == Role.TEACHER
+		Institution institution = role != Role.ADMIN
 				? institutionRepository.saveAndFlush(new Institution("Test Institution", "12345678000195", "test@example.com", "+5548999999999", true))
 				: null;
-		User user = userRepository.saveAndFlush(new User(role, status, "Admin", email, role == Role.TEACHER ? "TEST-1" : null, institution));
+		User user = userRepository.saveAndFlush(new User(role, status, "Admin", email, role != Role.ADMIN ? "TEST-1" : null, institution));
 		return sessionRepository.saveAndFlush(new AuthSession(user, expiresAt, createdAt));
 	}
 

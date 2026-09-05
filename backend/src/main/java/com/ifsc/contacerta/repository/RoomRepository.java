@@ -11,6 +11,12 @@ import java.util.UUID;
 
 public interface RoomRepository extends JpaRepository<Room, UUID>, JpaSpecificationExecutor<Room> {
 
+	long countByTeacherId(UUID teacherId);
+
+	long countByTeacherIdAndArchivedAtIsNull(UUID teacherId);
+
+	long countByTeacherIdAndArchivedAtIsNotNull(UUID teacherId);
+
 	Optional<Room> findByJoinCodeHash(String joinCodeHash);
 
 	Optional<Room> findByJoinCodeHashAndInstitutionId(String joinCodeHash, UUID institutionId);
